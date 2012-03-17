@@ -1,0 +1,111 @@
+package com.appaquet.mry.api.protobuf;
+option optimize_for = LITE_RUNTIME;
+
+message PTransaction {
+	optional uint64 id = 1;
+	optional PTransactionResult return = 2;
+
+	repeated PTransactionBlock blocks = 10;
+}
+
+message PTransactionResult {
+	optional PTransactionError error = 1;
+	repeated PTransactionValue data = 2;
+}
+
+message PTransactionError {
+	required uint32 id = 1;
+	required string message = 2;
+}
+
+message PTransactionBlock {
+	required uint32 id = 1;
+	repeated PTransactionOperation operations = 2;
+	repeated PTransactionVariable variables = 3;
+
+	optional PTransactionBlock parent = 5;
+}
+
+message PTransactionVariable {
+	required uint32 block = 1;
+	required uint32 id = 2;
+	optional PTransactionValue value = 3;
+}
+
+message PTransactionValue {
+    enum Type {
+        INT = 1;
+        BOOL = 2;
+        DOUBLE = 3;
+        STRING = 4;
+        BYTES = 5;
+        ARRAY = 6;
+        MAP = 7;
+    }
+
+    required Type type = 1;
+
+	optional int64 int_value = 2;
+	optional bool bool_value = 3;
+	optional double double_value = 4;
+	optional string string_value = 5;
+	optional bytes bytes_value = 6;
+	optional PTransactionCollection array = 7;
+	optional PTransactionCollection map = 8;
+}
+
+message PTransactionCollection {
+	repeated PTransactionCollectionValue values = 1;
+}
+
+message PTransactionCollectionValue {
+	required PTransactionValue value = 1;
+	optional string key = 2;
+}
+
+message PTransactionObject {
+	optional PTransactionValue value = 1;
+	optional PTransactionVariable variable = 2;
+}
+
+message PTransactionOperation {
+	optional group Set = 1 {
+		required PTransactionVariable destination = 1;
+		required PTransactionObject key = 2;
+		required PTransactionObject value = 3;
+	};
+	optional group Get = 2 {
+		required PTransactionVariable source = 1;
+		required PTransactionObject key = 2;
+		required PTransactionVariable destination = 3;
+	};
+	optional group Get_table = 3 {
+		required PTransactionObject table_name = 1;
+		required PTransactionVariable destination = 2;
+		optional PTransactionVariable source = 3;
+	};
+	optional group Return = 4 {
+		repeated PTransactionObject data = 1;
+	};
+	optional group GetAll = 5 {
+		required PTransactionVariable source = 1;
+		required PTransactionVariable destination = 2;
+	};
+}
+
+
+/*
+message JobRow {
+	required uint64 timestamp = 1;
+	required PTransactionValue data = 2;
+	required string key1 = 3;
+	optional string key2 = 4;
+	optional string key3 = 5;
+	optional string key4 = 6;
+}
+
+message JobRowMutation {
+	required JobRow new = 1;
+	optional JobRow old = 2;
+}
+*/
