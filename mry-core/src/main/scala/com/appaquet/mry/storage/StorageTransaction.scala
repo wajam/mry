@@ -1,11 +1,8 @@
 package com.appaquet.mry.storage
 
 /**
- * DESCRIPTION HERE
- *
- * Author: Andre-Philippe Paquet < app@quet.ca >
+ * Storage operations transactions that
  */
-
 class StorageTransaction {
 
 }

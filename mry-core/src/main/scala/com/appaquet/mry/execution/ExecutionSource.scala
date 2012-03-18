@@ -1,12 +1,11 @@
 package com.appaquet.mry.execution
 
-
 /**
- * DESCRIPTION HERE
+ * Trait that makes an object source of the execution of an operation. All operations
+ * are executed against something, this something must implements this trait.
  *
- * Author: Andre-Philippe Paquet < app@quet.ca >
+ * Ex: record.get("key"), record must be an execution source
  */
-
 trait ExecutionSource {
   def sourceBlock: Block
 

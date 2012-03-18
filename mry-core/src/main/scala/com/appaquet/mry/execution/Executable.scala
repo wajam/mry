@@ -1,13 +1,10 @@
 package com.appaquet.mry.execution
 
 /**
- * DESCRIPTION HERE
- *
- * Author: Andre-Philippe Paquet < app@quet.ca >
+ * Marks an object has executable
  */
-
 trait Executable {
-  def execute(context:Context)
+  def execute(context:ExecutionContext)
 
   def reset()
 }

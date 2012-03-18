@@ -2,13 +2,10 @@ package com.appaquet.mry.api
 
 import com.appaquet.mry.execution.Transaction
 
-
 /**
- * DESCRIPTION HERE
- *
- * Author: Andre-Philippe Paquet < app@quet.ca >
+ * Transaction translators, used to translate protocol specific transactions to
+ * mry objects
  */
-
 trait ProtocolTranslator[T] {
   def translateTransaction(transaction: T): Transaction
 

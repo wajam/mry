@@ -1,10 +1,7 @@
 package com.appaquet.mry.execution
 
 /**
- * DESCRIPTION HERE
- *
- * Author: Andre-Philippe Paquet < app@quet.ca >
+ * Object of a transaction (variable or value)
  */
-
 class Object {
 }

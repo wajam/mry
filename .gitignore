@@ -2,6 +2,7 @@
 ###################
 build
 target
+lib_managed
 
 # IDE generated files #
 ######################

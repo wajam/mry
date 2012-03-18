@@ -5,17 +5,14 @@ import com.appaquet.mry.api.protobuf.Transaction.PTransaction
 import com.appaquet.mry.execution.{Transaction => MryTransaction}
 
 /**
- * DESCRIPTION HERE
- *
- * Author: Andre-Philippe Paquet < app@quet.ca >
+ * Protocol buffers translator
  */
-
 class ProtobufTranslator extends ProtocolTranslator[PTransaction] {
-  def translateTransaction(transaction: PTransaction):MryTransaction = {
+  def translateTransaction(transaction: PTransaction): MryTransaction = {
     null
   }
 
-  def translateReturn(transaction: MryTransaction):PTransaction = {
+  def translateReturn(transaction: MryTransaction): PTransaction = {
     null
   }
 }

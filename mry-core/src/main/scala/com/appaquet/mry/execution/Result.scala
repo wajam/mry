@@ -1,11 +1,8 @@
 package com.appaquet.mry.execution
 
 /**
- * DESCRIPTION HERE
- *
- * Author: Andre-Philippe Paquet < app@quet.ca >
+ * Result (return) of a transaction execution
  */
-
 class Result {
 
 }

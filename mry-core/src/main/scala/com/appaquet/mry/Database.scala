@@ -5,11 +5,8 @@ import com.appaquet.nrv.cluster.Cluster
 import execution.Transaction
 
 /**
- * DESCRIPTION HERE
- *
- * Author: Andre-Philippe Paquet < app@quet.ca >
+ * MRY database
  */
-
 class Database(var cluster: Cluster, var serviceName: String = "database") {
   val dbService = new Service(serviceName)
 

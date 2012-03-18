@@ -1,11 +1,8 @@
 package com.appaquet.mry.storage
 
 /**
- * DESCRIPTION HERE
- *
- * Author: Andre-Philippe Paquet < app@quet.ca >
+ * Storage engine used to store records
  */
-
 class Storage {
 
 }

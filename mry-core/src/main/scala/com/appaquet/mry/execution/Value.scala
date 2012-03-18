@@ -1,11 +1,8 @@
 package com.appaquet.mry.execution
 
 /**
- * DESCRIPTION HERE
- *
- * Author: Andre-Philippe Paquet < app@quet.ca >
+ * Value (string, int, record) used in transaction operations
  */
-
 class Value extends Object {
 
 }
