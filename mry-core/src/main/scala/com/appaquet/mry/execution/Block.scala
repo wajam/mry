@@ -1,5 +1,7 @@
 package com.appaquet.mry.execution
 
+import com.appaquet.mry.execution.Operation.Return
+
 /**
  * Programmatic block of operations and variables that is executed against storage
  */
@@ -24,7 +26,7 @@ trait Block {
   }
 
   def addOperation(operation: Operation) {
-    this.operations ::= operation
+    this.operations :+= operation
   }
 
   def reset() {
@@ -33,6 +35,13 @@ trait Block {
   }
 
   def execute(context: ExecutionContext) {
-    for (operation <- this.operations) operation.execute(context)
+    for (operation <- this.operations) {
+      operation.execute(context)
+
+      // break execution if it's return
+      if (operation.isInstanceOf[Return]) {
+        return
+      }
+    }
   }
 }

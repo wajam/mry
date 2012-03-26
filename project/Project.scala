@@ -18,6 +18,8 @@ object mryBuild extends Build {
 
 	var commonDeps = Seq (
 		"com.appaquet" %% "nrv-core" % "0.1-SNAPSHOT",
+		"c3p0" % "c3p0" % "0.9.1.2",
+    "mysql" % "mysql-connector-java" % "5.1.6",
 		"org.scalatest" %% "scalatest" % "1.7.1" % "test",
 		"junit" % "junit" % "4.10" % "test"
 	)

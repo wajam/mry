@@ -4,25 +4,37 @@ package com.appaquet.mry.execution
 /**
  * Represents an operation executed within a transaction
  */
-abstract class Operation(var source: ExecutionSource) extends Executable {
+abstract class Operation(var source: OperationSource) extends Executable {
 }
 
 object Operation {
-  def getTable(source: ExecutionSource, name: String, into: Variable): Operation = new GetTable(source, name, into)
-
-  class GetTable(source: ExecutionSource, name: String, into: Variable) extends Operation(source) {
+  class Return(source: OperationSource, from: Seq[Variable]) extends Operation(source) {
     def execute(context: ExecutionContext) {
-      source.execGetTable(name, into)
+      source.execReturn(context, from)
     }
 
     def reset() {}
   }
 
-  def get(source: ExecutionSource, key: Object, into: Variable) = new Get(source, key, into)
-
-  class Get(source: ExecutionSource, key: Object, into: Variable) extends Operation(source) {
+  class GetTable(source: OperationSource, name: String, into: Variable) extends Operation(source) {
     def execute(context: ExecutionContext) {
-      source.execGet(key, into)
+      source.execFromTable(context, name, into)
+    }
+
+    def reset() {}
+  }
+
+  class Get(source: OperationSource, key: Object, into: Variable) extends Operation(source) {
+    def execute(context: ExecutionContext) {
+      source.execGet(context, key, into)
+    }
+
+    def reset() {}
+  }
+  
+  class Set(source: OperationSource, key: Object, value:Object, into: Variable) extends Operation(source) {
+    def execute(context: ExecutionContext) {
+      source.execSet(context, key, value, into)
     }
 
     def reset() {}

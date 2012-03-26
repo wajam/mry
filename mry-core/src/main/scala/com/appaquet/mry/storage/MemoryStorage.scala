@@ -9,21 +9,20 @@ import com.appaquet.mry.execution.Timestamp
 class MemoryStorage extends Storage {
   var globData = Map[(Table, Seq[String]), Record]()
 
-  def init() {}
-
-  def getTransaction:StorageTransaction = new MemoryTransaction
+  def getTransaction: StorageTransaction = new Transaction
 
   def syncModel(model: Model) {}
+
   def nuke() {}
 
-  class MemoryTransaction extends StorageTransaction {
+  class Transaction extends StorageTransaction {
     var trxData = Map[(Table, Seq[String]), Option[Record]]()
 
     def set(table: Table, keys: Seq[String], record: Record) {
       this.trxData += ((table, keys) -> Some(record))
     }
 
-    def get(table: Table, keys: Seq[String]):Option[Record] = {
+    def get(table: Table, keys: Seq[String]): Option[Record] = {
       this.trxData.getOrElse((table, keys), globData.get((table, keys)))
     }
 
@@ -44,4 +43,5 @@ class MemoryStorage extends Storage {
       }
     }
   }
+
 }

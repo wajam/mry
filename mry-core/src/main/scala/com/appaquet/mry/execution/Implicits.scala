@@ -5,5 +5,5 @@ package com.appaquet.mry.execution
  * mry types
  */
 object Implicits {
-  implicit def string2value(value:String) = new ValueString(value)
+  implicit def string2value(value:String) = new StringValue(value)
 }

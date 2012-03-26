@@ -4,11 +4,11 @@ import org.scalatest.FunSuite
 
 class TestProtobufTranslator extends FunSuite {
 
-  test("protobuf to mry") {
+  ignore("protobuf to mry") {
 
   }
 
-  test("mry to protobuf") {
+  ignore("mry to protobuf") {
 
   }
 

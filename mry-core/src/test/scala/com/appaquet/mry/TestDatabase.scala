@@ -8,7 +8,7 @@ class TestDatabase extends FunSuite {
   val db = new Database(cluster)
   cluster.start()
 
-  test("execute") {
+  ignore("execute") {
   }
 
   cluster.stop()
