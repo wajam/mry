@@ -9,7 +9,7 @@ import com.appaquet.mry.execution.Timestamp
 class MemoryStorage extends Storage {
   var globData = Map[(Table, Seq[String]), Record]()
 
-  def getTransaction: StorageTransaction = new Transaction
+  def getTransaction(time:Timestamp): StorageTransaction = new Transaction
 
   def syncModel(model: Model) {}
 

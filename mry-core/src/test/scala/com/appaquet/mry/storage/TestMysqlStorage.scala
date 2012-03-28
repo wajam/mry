@@ -10,5 +10,7 @@ import org.junit.runner.RunWith
 class TestMysqlStorage extends TestStorageSuite {
   val storage = new MysqlStorage("localhost", "mry", "mry", "mry")
 
+  storage.nuke()
+
   testStorage(storage)
 }

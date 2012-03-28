@@ -2,6 +2,7 @@ package com.appaquet.mry.storage
 
 import com.appaquet.mry.model.{Model, Table}
 import org.scalatest.FunSuite
+import com.appaquet.mry.execution.Timestamp
 
 
 /**
@@ -15,7 +16,7 @@ trait TestStorageSuite extends FunSuite {
     storage.syncModel(model)
 
     test("set") {
-      val t = storage.getTransaction
+      val t = storage.getTransaction(Timestamp.now)
       t.set(table1, Seq("key1"), "value1")
       val v = t.get(table1, Seq("key1"))
       assert(v != null)
@@ -25,7 +26,7 @@ trait TestStorageSuite extends FunSuite {
     }
 
     test("commited get") {
-      val t = storage.getTransaction
+      val t = storage.getTransaction(Timestamp.now)
       val v = t.get(table1, Seq("key1"))
       assert(v != null)
       assert(v != None)
@@ -35,7 +36,7 @@ trait TestStorageSuite extends FunSuite {
     }
 
     test("uncommited get") {
-      val t = storage.getTransaction
+      val t = storage.getTransaction(Timestamp.now)
       val v = t.get(table1, Seq("key2"))
       assert(v == None)
     }

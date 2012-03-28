@@ -9,6 +9,6 @@ import com.appaquet.mry.model.Model
  */
 class ExecutionContext(var model:Model, var storage:Storage) {
   var timestamp = Timestamp.now
-  var storageTransaction = storage.getTransaction
+  var storageTransaction = storage.getTransaction(timestamp)
   var returnValues:Seq[Value] = Seq()
 }

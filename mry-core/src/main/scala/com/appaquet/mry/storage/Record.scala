@@ -5,7 +5,7 @@ import com.appaquet.mry.execution.Timestamp
 /**
  * Record (row/document) stored in a storage
  */
-class Record(var value: Array[Byte], var key: String = "", var timestamp: Timestamp = Timestamp(0)) {
+class Record(var value: Array[Byte] = Array[Byte](), var key: String = "", var timestamp: Timestamp = Timestamp(0)) {
 
   import Record._
 

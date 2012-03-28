@@ -18,7 +18,7 @@ trait TableCollection {
   def depth:Int = {
     this.parentTable match {
       case None => 1
-      case p:Table => p.depth + 1
+      case Some(p) => p.depth + 1
     }
   }
 
