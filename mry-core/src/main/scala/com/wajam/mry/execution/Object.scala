@@ -1,0 +1,7 @@
+package com.wajam.mry.execution
+
+/**
+ * Object of a transaction (variable or value)
+ */
+class Object {
+}

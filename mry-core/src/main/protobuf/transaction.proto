@@ -1,4 +1,4 @@
-package com.appaquet.mry.api.protobuf;
+package com.wajam.mry.api.protobuf;
 option optimize_for = LITE_RUNTIME;
 
 message PTransaction {
