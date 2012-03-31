@@ -1,44 +1,48 @@
 package com.wajam.mry.storage
 
-import com.wajam.mry.model.{Table, Model}
-import com.wajam.mry.execution.Timestamp
+import com.wajam.mry.execution._
 
 /**
  * In memory storage engine
  */
-class MemoryStorage extends Storage {
-  var globData = Map[(Table, Seq[String]), Record]()
+class MemoryStorage(name: String) extends Storage(name) {
+  var globData = Map[String, Value]()
 
-  def getTransaction(time: Timestamp): StorageTransaction = new Transaction
+  def getStorageTransaction(time: Timestamp) = new MemoryTransaction
 
-  def syncModel(model: Model) {}
+  def getStorageValue(transaction: StorageTransaction, context: ExecutionContext): Value = transaction.asInstanceOf[MemoryTransaction]
 
   def nuke() {}
 
-  class Transaction extends StorageTransaction {
-    var trxData = Map[(Table, Seq[String]), Option[Record]]()
+  def close() {}
 
-    def set(table: Table, keys: Seq[String], record: Record) {
-      this.trxData += ((table, keys) -> Some(record))
+  class MemoryTransaction extends StorageTransaction with Value {
+    var trxData = Map[String, Option[Value]]()
+
+    override def execSet(context: ExecutionContext, into: Variable, value: Object, keys: Object*) {
+      val key = param[StringValue](keys, 0).strValue
+      this.trxData += (key -> Some(value.value))
     }
 
-    def get(table: Table, keys: Seq[String]): Option[Record] = {
-      this.trxData.getOrElse((table, keys), globData.get((table, keys)))
+    override def execGet(context: ExecutionContext, into: Variable, keys: Object*) {
+      val key = param[StringValue](keys, 0).strValue
+
+      val value = this.trxData.getOrElse(key, globData.get(key))
+      value match {
+        case Some(v) => into.value = v
+        case None => into.value = new NullValue
+      }
     }
-
-    def query(query: Query) = throw new Error("Implement me!")
-
-    def timeline(table: Table, from: Timestamp) = throw new Error("Implement me!")
 
     def rollback() {}
 
     def commit() {
-      for (((t, k), r) <- this.trxData) {
-        r match {
+      for ((k, v) <- this.trxData) {
+        v match {
           case Some(x) =>
-            globData += ((t, k) -> x)
+            globData += (k -> x)
           case None =>
-            globData -= ((t, k))
+            globData -= (k)
         }
       }
     }

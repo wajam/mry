@@ -1,4 +1,4 @@
-package com.wajam.mry.model
+package com.wajam.mry.storage.mysql
 
 /**
  * Model of the database, composed of a hierarchy of tables

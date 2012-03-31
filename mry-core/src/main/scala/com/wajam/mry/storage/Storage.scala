@@ -1,15 +1,17 @@
 package com.wajam.mry.storage
 
-import com.wajam.mry.model.Model
-import com.wajam.mry.execution.Timestamp
+import com.wajam.mry.execution.{ExecutionContext, Value, Timestamp}
+
 
 /**
- * Storage engine used to store records
+ * Storage engine used by executed transaction
  */
-abstract class Storage {
-  def getTransaction(time: Timestamp): StorageTransaction
+abstract class Storage(var name: String) {
+  def getStorageValue(transaction: StorageTransaction, context: ExecutionContext): Value
 
-  def syncModel(model: Model)
+  def getStorageTransaction(time: Timestamp): StorageTransaction
 
   def nuke()
+
+  def close()
 }

@@ -3,7 +3,7 @@ package com.wajam.mry.api
 import com.wajam.mry.execution.Transaction
 
 /**
- * Transaction translators, used to translate protocol specific transactions to
+ * MysqlTransaction translators, used to translate protocol specific transactions to
  * mry objects
  */
 trait ProtocolTranslator[T] {

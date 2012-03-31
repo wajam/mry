@@ -1,10 +1,11 @@
-package com.wajam.mry.storage
+package com.wajam.mry.storage.mysql
 
 import com.wajam.mry.execution.Timestamp
 
 /**
- * Record (row/document) stored in a storage
+ * Description
  */
+
 class Record(var value: Array[Byte] = Array[Byte](), var key: String = "", var timestamp: Timestamp = Timestamp(0)) {
 
   import Record._

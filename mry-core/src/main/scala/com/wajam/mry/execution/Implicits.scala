@@ -6,4 +6,5 @@ package com.wajam.mry.execution
  */
 object Implicits {
   implicit def string2value(value: String) = new StringValue(value)
+  implicit def value2string(value: StringValue) = value.value
 }

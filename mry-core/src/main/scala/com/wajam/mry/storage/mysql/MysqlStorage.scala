@@ -1,21 +1,66 @@
-package com.wajam.mry.storage
+package com.wajam.mry.storage.mysql
 
 import com.mchange.v2.c3p0.ComboPooledDataSource
-import com.wajam.mry.model.{Table, Model}
-import com.wajam.mry.execution.Timestamp
-import java.sql._
 import com.wajam.nrv.Logging
+import java.sql.{PreparedStatement, ResultSet, SQLException, Connection}
+import com.wajam.mry.execution._
+import com.wajam.mry.storage.{StorageException, StorageTransaction, Storage}
 
 /**
  * MySQL backed storage
  */
-class MysqlStorage(host: String, database: String, username: String, password: String) extends Storage with Logging {
+class MysqlStorage(name: String, host: String, database: String, username: String, password: String) extends Storage(name) with Logging {
   val datasource = new ComboPooledDataSource()
+  var model = new Model
 
   datasource.setDriverClass("com.mysql.jdbc.Driver")
   datasource.setJdbcUrl(String.format("jdbc:mysql://%s/%s?zeroDateTimeBehavior=convertToNull", host, database))
   datasource.setUser(username)
   datasource.setPassword(password)
+
+  def getStorageTransaction(time: Timestamp) = new MysqlTransaction(time)
+
+  def getStorageValue(transaction: StorageTransaction, context: ExecutionContext): Value = transaction.asInstanceOf[MysqlTransaction]
+
+  def syncModel(model: Model) {
+    this.model = model
+
+    val mysqlTables = this.getTables
+    var modelTables = Map[String, Boolean]()
+
+    def sync(table: Table) {
+      val fullName = table.depthName("_")
+      modelTables += (fullName -> true)
+
+      if (!mysqlTables.contains(fullName)) {
+        createTable(table, fullName)
+      }
+
+      for ((name, table) <- table.tables) {
+        sync(table)
+      }
+    }
+
+    for ((name, table) <- model.tables) {
+      sync(table)
+    }
+
+    for (table <- mysqlTables) {
+      this.dropTable(table)
+    }
+  }
+
+  def nuke() {
+    val tables = this.getTables
+
+    for (table <- tables) {
+      this.dropTable(table)
+    }
+  }
+
+  def close() {
+    this.datasource.close()
+  }
 
   private def getConnection = datasource.getConnection
 
@@ -114,10 +159,12 @@ class MysqlStorage(host: String, database: String, username: String, password: S
 
     try {
       results = this.executeSql(connection, true, sql)
+
     } catch {
       case e: Exception =>
         error("Couldn't create table {}", fullTableName, e)
         throw e
+
     } finally {
       if (connection != null)
         connection.close()
@@ -130,64 +177,102 @@ class MysqlStorage(host: String, database: String, username: String, password: S
   private def dropTable(tableName: String) {
     val sql = "DROP TABLE `%s`".format(tableName)
 
-    val connection = this.getConnection
     var results: SqlResults = null
+    val connection = this.getConnection
+
     try {
       results = this.executeSql(connection, true, sql)
+
     } catch {
       case e: Exception =>
         error("Couldn't drop table {}", tableName, e)
         throw e
+
     } finally {
       if (connection != null)
         connection.close()
+
       if (results != null)
         results.close()
     }
   }
 
-  def getTransaction(time: Timestamp) = new Transaction(time)
-
-  def syncModel(model: Model) {
-    val mysqlTables = this.getTables
-    var modelTables = Map[String, Boolean]()
-
-    def sync(table: Table) {
-      val fullName = table.depthName("_")
-      modelTables += (fullName -> true)
-
-      if (!mysqlTables.contains(fullName)) {
-        createTable(table, fullName)
-      }
-
-      for ((name, table) <- table.tables) {
-        sync(table)
-      }
-    }
-
-    for ((name, table) <- model.tables) {
-      sync(table)
-    }
-
-    for (table <- mysqlTables) {
-      this.dropTable(table)
-    }
-  }
-
-  def nuke() {
-    val tables = this.getTables
-
-    for (table <- tables) {
-      this.dropTable(table)
-    }
-  }
-
-
-  class Transaction(time: Timestamp) extends StorageTransaction {
+  class MysqlTransaction(time: Timestamp) extends StorageTransaction with Value {
     val connection = getConnection
     connection.setAutoCommit(false)
 
-    def set(table: Table, keys: Seq[String], record: Record) {
+    override def execFrom(context: ExecutionContext, into: Variable, keys: Object*) {
+      var tableName = param[StringValue](keys, 0).strValue
+      var optTable = model.getTable(tableName)
+
+      optTable match {
+        case Some(t) =>
+          into.value = new TableValue(t)
+
+        case None =>
+          throw new StorageException("Non existing table %s".format(tableName))
+
+      }
+    }
+
+    class TableValue(table: Table, prefixKeys: Seq[String] = Seq()) extends Value {
+      override def execGet(context: ExecutionContext, into: Variable, keys: Object*) {
+        val key = param[StringValue](keys, 0).strValue
+        val keysSeq = prefixKeys ++ Seq(key)
+        val record = MysqlTransaction.this.get(table, keysSeq)
+
+        if (record != None) {
+          into.value = new RecordValue(table, record.get, keysSeq)
+        }
+      }
+
+      override def execSet(context: ExecutionContext, into: Variable, value: Object, keys: Object*) {
+        val key = param[StringValue](keys, 0).strValue
+        val strVal = param[StringValue](value).strValue
+
+        MysqlTransaction.this.set(table, prefixKeys ++ Seq(key), strVal)
+      }
+    }
+
+    class RecordValue(table: Table, record: Record, prefixKeys: Seq[String]) extends StringValue(record.stringValue) {
+      override def execFrom(context: ExecutionContext, into: Variable, keys: Object*) {
+        var tableName = param[StringValue](keys, 0).strValue
+        var optTable = table.getTable(tableName)
+
+        optTable match {
+          case Some(t) =>
+            into.value = new TableValue(t, prefixKeys)
+
+          case None =>
+            throw new StorageException("Non existing table %s".format(tableName))
+
+        }
+      }
+    }
+
+
+    def rollback() {
+      if (this.connection != null) {
+        try {
+          this.connection.rollback()
+        } finally {
+          this.connection.close()
+        }
+      }
+    }
+
+    def commit() {
+      if (this.connection != null) {
+        try {
+          this.connection.commit()
+        } finally {
+          this.connection.close()
+        }
+      }
+    }
+
+
+    private def set(table: Table, keys: Seq[String], record: Record) {
       assert(keys.length == table.depth)
 
       val fullName = table.depthName("_")
@@ -219,35 +304,8 @@ class MysqlStorage(host: String, database: String, username: String, password: S
       }
     }
 
-    private def readRecord(resultset: ResultSet, depth: Int): Record = {
-      val record = new Record
-      record.timestamp = Timestamp(resultset.getLong(1))
-
-      // TODO: set key
-      for (i <- 0 to depth) {
-      }
-
-      record.value = resultset.getBytes(depth + 2)
-
-      record
-    }
-
-    def get(table: Table, keys: Seq[String]): Option[Record] = {
+    private def get(table: Table, keys: Seq[String]): Option[Record] = {
       assert(keys.length == table.depth)
-
-      /*
-      sqlKeys := ""
-      projKeys := ""
-      for i := 1; i <= len(keys); i++ {
-        if sqlKeys != "" {
-          sqlKeys += " AND "
-        }
-        projKeys += fmt.Sprintf("k%d,", i)
-        sqlKeys += fmt.Sprintf("k%d = ?", i)
-      }
-
-      stmt, err := t.client.Prepare("SELECT t," + projKeys + " d FROM `" + t.client.Escape(t.storage.toTableString(table)) + "` WHERE " + sqlKeys + " AND `t` <= ? ORDER BY `t` DESC LIMIT 0,1")
-      */
 
       val fullName = table.depthName("_")
       var projKeys = ""
@@ -275,33 +333,19 @@ class MysqlStorage(host: String, database: String, username: String, password: S
       None
     }
 
-    def query(query: Query): Result[Record] = {
-      null
-    }
+    private def readRecord(resultset: ResultSet, depth: Int): Record = {
+      val record = new Record
+      record.timestamp = Timestamp(resultset.getLong(1))
 
-    def timeline(table: Table, from: Timestamp): Result[RecordMutation] = {
-      null
-    }
-
-    def rollback() {
-      if (this.connection != null) {
-        try {
-          this.connection.rollback()
-        } finally {
-          this.connection.close()
-        }
+      // TODO: set key
+      for (i <- 0 to depth) {
       }
+
+      record.value = resultset.getBytes(depth + 2)
+
+      record
     }
 
-    def commit() {
-      if (this.connection != null) {
-        try {
-          this.connection.commit()
-        } finally {
-          this.connection.close()
-        }
-      }
-    }
   }
 
 }

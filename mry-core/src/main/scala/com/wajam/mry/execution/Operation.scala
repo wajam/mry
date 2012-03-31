@@ -16,25 +16,25 @@ object Operation {
     def reset() {}
   }
 
-  class GetTable(source: OperationSource, name: String, into: Variable) extends Operation(source) {
+  class From(source: OperationSource, into: Variable, keys: Object*) extends Operation(source) {
     def execute(context: ExecutionContext) {
-      source.execFromTable(context, name, into)
+      source.execFrom(context, into, keys: _*)
     }
 
     def reset() {}
   }
 
-  class Get(source: OperationSource, key: Object, into: Variable) extends Operation(source) {
+  class Get(source: OperationSource, into: Variable, keys: Object*) extends Operation(source) {
     def execute(context: ExecutionContext) {
-      source.execGet(context, key, into)
+      source.execGet(context, into, keys: _*)
     }
 
     def reset() {}
   }
 
-  class Set(source: OperationSource, key: Object, value: Object, into: Variable) extends Operation(source) {
+  class Set(source: OperationSource, into: Variable, value: Object, keys: Object*) extends Operation(source) {
     def execute(context: ExecutionContext) {
-      source.execSet(context, key, value, into)
+      source.execSet(context, into, value, keys: _*)
     }
 
     def reset() {}

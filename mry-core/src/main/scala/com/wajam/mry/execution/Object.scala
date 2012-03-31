@@ -3,5 +3,6 @@ package com.wajam.mry.execution
 /**
  * Object of a transaction (variable or value)
  */
-class Object {
+trait Object {
+  def value:Value
 }

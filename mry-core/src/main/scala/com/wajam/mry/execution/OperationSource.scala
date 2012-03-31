@@ -16,22 +16,39 @@ trait OperationSource {
     }
   }
 
+  def param[T : ClassManifest](param:Object):T = {
+    this.param[T](Seq(param), 0)
+  }
+
+  def param[T : ClassManifest](params:Seq[Object], position:Int):T = {
+    if (params.size <= position)
+      throw new InvalidParameter("Excepted parameter at position %d".format(position))
+
+    val param = params(0).value
+    if (!params.isInstanceOf[T])
+      throw new InvalidParameter("Excepted parameter at position %d to be of instance %s".format(position, classManifest[T].erasure.getName))
+
+    param.asInstanceOf[T]
+  }
+
   def execReturn(context: ExecutionContext, from: Seq[Variable]) {
     getProxiedSource.execReturn(context, from)
   }
 
-  def execFromTable(context: ExecutionContext, name: String, into: Variable) {
-    getProxiedSource.execFromTable(context, name, into)
+  def execFrom(context: ExecutionContext, into: Variable, keys: Object*) {
+    getProxiedSource.execFrom(context, into, keys: _*)
   }
 
-  def execGet(context: ExecutionContext, key: Object, into: Variable) {
-    getProxiedSource.execGet(context, key, into)
+  def execGet(context: ExecutionContext, into: Variable, keys: Object*) {
+    getProxiedSource.execGet(context, into, keys: _*)
   }
 
-  def execSet(context: ExecutionContext, key: Object, value: Object, into: Variable) {
-    getProxiedSource.execSet(context, key, value, into)
+  def execSet(context: ExecutionContext, into: Variable, value: Object, keys: Object*) {
+    getProxiedSource.execSet(context, into, value, keys: _*)
   }
 
-  class UnsupportedExecutionSource extends Exception
+  class InvalidParameter(reason: String) extends Exception("%s: %s".format(getClass.toString, reason))
+
+  class UnsupportedExecutionSource extends Exception(getClass.toString)
 
 }

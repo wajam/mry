@@ -1,4 +1,6 @@
-package com.wajam.mry.model
+package com.wajam.mry.storage.mysql
+
+import com.wajam.mry.storage.mysql.Table
 
 /**
  * Collection of tables

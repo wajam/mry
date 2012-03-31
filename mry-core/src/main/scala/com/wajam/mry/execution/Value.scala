@@ -1,39 +1,34 @@
 package com.wajam.mry.execution
 
-import com.wajam.mry.model.Table
-import com.wajam.mry.storage.Record
 
 /**
  * Value (string, int, record) used in transaction operations
  */
-abstract class Value extends Object with OperationSource {
+trait Value extends Object with OperationSource {
+  def value = this
+  def serializableValue:Value = this
+
+  def equalsValue(that: Value): Boolean = this == that
 }
 
-class NullValue() extends Value {
+class NullValue() extends Value with Serializable {
+  override def equalsValue(that: Value): Boolean = this.isInstanceOf[NullValue]
 }
 
-class StringValue(var value: String) extends Value {
-  override def toString = value
+class MapValue(var mapValue: Map[String, Value]) extends Value with Serializable {
 }
 
-class TableValue(var table: Table) extends Value {
-  override def execGet(context: ExecutionContext, key: Object, into: Variable) {
-    val record = context.storageTransaction.get(table, Seq(key.toString))
-    into.value = record match {
-      case None =>
-        new NullValue
-      case Some(r) =>
-        new RecordValue(r)
+class StringValue(var strValue: String) extends Value with Serializable {
+  override def toString = strValue
+
+
+  override def equalsValue(that: Value): Boolean = {
+    that match {
+      case s:StringValue => s.strValue == strValue
+      case _ => false
     }
   }
-
-  override def execSet(context: ExecutionContext, key: Object, value: Object, into: Variable) {
-    context.storageTransaction.set(table, Seq(key.toString), value.toString)
-  }
 }
 
-class RecordValue(var record: Record) extends Value {
-  override def toString = record.stringValue
-}
 
 
