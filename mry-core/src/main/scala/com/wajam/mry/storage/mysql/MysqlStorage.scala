@@ -5,6 +5,7 @@ import com.wajam.nrv.Logging
 import java.sql.{PreparedStatement, ResultSet, SQLException, Connection}
 import com.wajam.mry.execution._
 import com.wajam.mry.storage.{StorageException, StorageTransaction, Storage}
+import com.wajam.nrv.codec.JavaSerializeCodec
 
 /**
  * MySQL backed storage
@@ -12,6 +13,9 @@ import com.wajam.mry.storage.{StorageException, StorageTransaction, Storage}
 class MysqlStorage(name: String, host: String, database: String, username: String, password: String) extends Storage(name) with Logging {
   val datasource = new ComboPooledDataSource()
   var model = new Model
+
+  // TODO: change for a static serializer
+  val valueSerializer = new JavaSerializeCodec
 
   datasource.setDriverClass("com.mysql.jdbc.Driver")
   datasource.setJdbcUrl(String.format("jdbc:mysql://%s/%s?zeroDateTimeBehavior=convertToNull", host, database))
@@ -64,7 +68,7 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
 
   private def getConnection = datasource.getConnection
 
-  class SqlResults {
+  private class SqlResults {
     var statement: PreparedStatement = null
     var resultset: ResultSet = null
 
@@ -217,24 +221,38 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
 
     class TableValue(table: Table, prefixKeys: Seq[String] = Seq()) extends Value {
       override def execGet(context: ExecutionContext, into: Variable, keys: Object*) {
+        // TODO: get with no keys = multiple row
+
         val key = param[StringValue](keys, 0).strValue
         val keysSeq = prefixKeys ++ Seq(key)
-        val record = MysqlTransaction.this.get(table, keysSeq)
-
-        if (record != None) {
-          into.value = new RecordValue(table, record.get, keysSeq)
-        }
+        into.value = new RecordValue(table, keysSeq)
       }
 
       override def execSet(context: ExecutionContext, into: Variable, value: Object, keys: Object*) {
         val key = param[StringValue](keys, 0).strValue
-        val strVal = param[StringValue](value).strValue
+        val mapVal = param[MapValue](value)
 
-        MysqlTransaction.this.set(table, prefixKeys ++ Seq(key), strVal)
+        MysqlTransaction.this.set(table, prefixKeys ++ Seq(key), new Record(mapVal))
       }
     }
 
-    class RecordValue(table: Table, record: Record, prefixKeys: Seq[String]) extends StringValue(record.stringValue) {
+    // TODO: change to MapValue
+    class RecordValue(table: Table, prefixKeys: Seq[String]) extends Value {
+      override def serializableValue = this.innerValue
+
+      override def proxiedSource: Option[OperationSource] = Some(this.innerValue)
+
+      lazy val record = MysqlTransaction.this.get(table, prefixKeys)
+
+      lazy val innerValue = {
+        this.record match {
+          case Some(r) =>
+            r.value
+          case None =>
+            new NullValue
+        }
+      }
+
       override def execFrom(context: ExecutionContext, into: Variable, keys: Object*) {
         var tableName = param[StringValue](keys, 0).strValue
         var optTable = table.getTable(tableName)
@@ -249,7 +267,6 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
         }
       }
     }
-
 
     def rollback() {
       if (this.connection != null) {
@@ -268,6 +285,16 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
         } finally {
           this.connection.close()
         }
+      }
+    }
+
+    class Record(var value: MapValue = new MapValue(Map()), var key: String = "", var timestamp: Timestamp = Timestamp(0)) {
+      def serializeValue: Array[Byte] = {
+        valueSerializer.encodeAny(value)
+      }
+
+      def unserializeValue(bytes: Array[Byte]) {
+        this.value = valueSerializer.decodeAny(bytes).asInstanceOf[MapValue]
       }
     }
 
@@ -294,10 +321,9 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
 
       val sql = "INSERT INTO `%s` (`t`,%s,`d`) VALUES (?,%s,?) ON DUPLICATE KEY UPDATE d=VALUES(d)".format(fullName, sqlKeys, sqlValues)
 
-
       var results: SqlResults = null
       try {
-        results = executeSql(connection, true, sql, (Seq(time.value) ++ keys ++ Seq(record.value)): _*)
+        results = executeSql(connection, true, sql, (Seq(time.value) ++ keys ++ Seq(record.serializeValue)): _*)
       } finally {
         if (results != null)
           results.close()
@@ -341,11 +367,10 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
       for (i <- 0 to depth) {
       }
 
-      record.value = resultset.getBytes(depth + 2)
+      record.unserializeValue(resultset.getBytes(depth + 2))
 
       record
     }
-
   }
 
 }

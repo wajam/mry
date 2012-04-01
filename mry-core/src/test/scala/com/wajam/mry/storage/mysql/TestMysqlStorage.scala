@@ -4,7 +4,7 @@ import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 import com.wajam.mry.execution.Implicits._
 import org.scalatest.{FunSuite, BeforeAndAfterAll}
-import com.wajam.mry.execution.{NullValue, ExecutionContext, Transaction}
+import com.wajam.mry.execution._
 
 /**
  * Test MySQL storage
@@ -25,11 +25,18 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll {
     val context = new ExecutionContext(storages)
     val storage = transac.from("mysql")
     val table = storage.from("table1")
-    table.set("value1", "key1")
+    table.set(Map("mapk" -> toVal("value1")), "key1")
     val v = table.get("key1")
+    transac.ret(v)
     transac.execute(context)
     context.commit()
-    assert(v.value.serializableValue.equalsValue("value1"))
+
+    v.value.serializableValue match {
+      case m:MapValue =>
+        assert(m("mapk").equalsValue("value1"))
+      case _ =>
+        fail("Didn't receive a map")
+    }
   }
 
   test("commited get") {
@@ -38,9 +45,17 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll {
     val storage = transac.from("mysql")
     val table = storage.from("table1")
     val v = table.get("key1")
-    table.set("value2", "key2")
+    table.set(Map("mapk" -> toVal("value2")), "key2")
+    transac.ret(v)
     transac.execute(context)
-    assert(v.value.serializableValue.equalsValue("value1"))
+
+    v.value.serializableValue match {
+      case m:MapValue =>
+        assert(m("mapk").equalsValue("value1"))
+      case _ =>
+        fail("Didn't receive a map")
+    }
+    context.rollback()
   }
 
   test("uncommited get") {
@@ -49,8 +64,9 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll {
     val storage = transac.from("mysql")
     val table = storage.from("table1")
     val v = table.get("key2")
+    transac.ret(v)
     transac.execute(context)
-    assert(v.value.equalsValue(new NullValue), "got %s".format(v.value))
+    assert(v.value.serializableValue.equalsValue(new NullValue))
   }
 
   test("multi level get/set") {
@@ -61,32 +77,21 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll {
     val record1 = table1.get("key1")
 
     val table2 = record1.from("table2")
-    table2.set("value1", "key1.2")
+    table2.set(Map("mapk" -> toVal("value1")), "key1.2")
 
     val record2 = table2.get("key1.2")
 
+    transac.ret(record1, record2)
     transac.execute(context)
     context.commit()
-    assert(record2.value.equalsValue("value1"), "got %s".format(record2.value))
-  }
 
-  /*
-  test("multi level get/set") {
-    var t = storage.getStorageTransaction(Timestamp.now)
-    t.set(table2, Seq("key1", "key2"), "value3")
-    var v = t.get(table2, Seq("key1", "key2"))
-    assert(v != null)
-    assert(v != None)
-    assert(v.get.stringValue == "value3")
-    t.commit()
-
-    t = storage.getStorageTransaction(Timestamp.now)
-    v = t.get(table2, Seq("key1", "key2"))
-    assert(v != null)
-    assert(v != None)
-    assert(v.get.stringValue == "value3")
+    record2.value.serializableValue match {
+      case m:MapValue =>
+        assert(m("mapk").equalsValue("value1"))
+      case _ =>
+        fail("Didn't receive a map")
+    }
   }
-  */
 
   override protected def afterAll() {
     storage.close()

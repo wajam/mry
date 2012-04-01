@@ -15,6 +15,6 @@ class Transaction(var id: Int = 0) extends Block with OperationApi with Operatio
   }
 
   override def execReturn(context: ExecutionContext, from: Seq[Variable]) {
-    context.returnValues = for (variable <- from) yield variable.value
+    context.returnValues = for (variable <- from) yield variable.value.serializableValue
   }
 }

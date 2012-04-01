@@ -16,11 +16,14 @@ class NullValue() extends Value with Serializable {
 }
 
 class MapValue(var mapValue: Map[String, Value]) extends Value with Serializable {
+
+  def apply(key:String) = {
+    mapValue.getOrElse(key, new NullValue)
+  }
 }
 
 class StringValue(var strValue: String) extends Value with Serializable {
   override def toString = strValue
-
 
   override def equalsValue(that: Value): Boolean = {
     that match {
