@@ -32,7 +32,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll {
     context.commit()
 
     v.value.serializableValue match {
-      case m:MapValue =>
+      case m: MapValue =>
         assert(m("mapk").equalsValue("value1"))
       case _ =>
         fail("Didn't receive a map")
@@ -50,7 +50,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll {
     transac.execute(context)
 
     v.value.serializableValue match {
-      case m:MapValue =>
+      case m: MapValue =>
         assert(m("mapk").equalsValue("value1"))
       case _ =>
         fail("Didn't receive a map")
@@ -86,7 +86,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll {
     context.commit()
 
     record2.value.serializableValue match {
-      case m:MapValue =>
+      case m: MapValue =>
         assert(m("mapk").equalsValue("value1"))
       case _ =>
         fail("Didn't receive a map")
