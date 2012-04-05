@@ -1,6 +1,5 @@
 package com.wajam.mry.storage
 
-import mysql.{Table, Model}
 import org.scalatest.FunSuite
 import com.wajam.mry.execution.Implicits._
 import org.junit.runner.RunWith
@@ -10,8 +9,6 @@ import com.wajam.mry.execution.{NullValue, Transaction, ExecutionContext}
 @RunWith(classOf[JUnitRunner])
 class TestMemory extends FunSuite {
   val storage = new MemoryStorage("memory")
-  val model = new Model
-  model.addTable(new Table("table1"))
 
   test("commited get set") {
     var context = new ExecutionContext(Map("memory" -> storage))
@@ -23,6 +20,7 @@ class TestMemory extends FunSuite {
     t.execute(context)
     context.commit()
     assert(v.value.toString == "value1")
+    assert(context.hasToken("key1"))
 
     t = new Transaction()
     context = new ExecutionContext(Map("memory" -> storage))
@@ -33,6 +31,8 @@ class TestMemory extends FunSuite {
     t.execute(context)
     context.rollback()
     assert(context.returnValues(0).equalsValue("value1"))
+    assert(context.hasToken("key2"))
+    assert(context.hasToken("key1"))
   }
 
   test("uncommited get set") {

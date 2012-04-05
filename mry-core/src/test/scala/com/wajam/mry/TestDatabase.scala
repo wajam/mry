@@ -1,15 +1,29 @@
 package com.wajam.mry
 
-import org.scalatest.FunSuite
-import com.wajam.nrv.cluster.{StaticClusterManager, Node, Cluster}
+import execution.Transaction
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import com.wajam.nrv.cluster._
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
-class TestDatabase extends FunSuite {
-  val cluster = new Cluster(new Node("127.0.0.1", Map("nrv" -> 12345)), new StaticClusterManager)
-  val db = new Database(cluster)
-  cluster.start()
+@RunWith(classOf[JUnitRunner])
+class TestDatabase extends FunSuite with BeforeAndAfterAll {
+  val driver = new TestingClusterDriver((n, manager) => {
+    val cluster = new Cluster(new Node("127.0.0.1", Map("nrv" -> (50000 + 10*n), "mry" -> (50001 + 10*n))), manager)
+    val db = cluster.addService(new Database("mry"))
+    db.addMember((n*500), cluster.localNode)
+    new TestingClusterInstance(cluster, db)
+  })
 
-  ignore("execute") {
+  test("exec") {
+    driver.execute((driver, oneInstance) => {
+      val db = oneInstance.data.asInstanceOf[Database]
+
+      db.execute(new Transaction())
+    })
   }
 
-  cluster.stop()
+  override protected def afterAll() {
+    driver.destroy()
+  }
 }

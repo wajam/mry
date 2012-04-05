@@ -1,4 +1,4 @@
-package com.wajam.mry.storage.mysql
+package com.wajam.mry.storage
 
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
@@ -15,9 +15,9 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll {
   val storages = Map(("mysql" -> storage))
   storage.nuke()
 
-  val model = new Model
-  val table1 = model.addTable(new Table("table1"))
-  val table2 = table1.addTable(new Table("table2"))
+  val model = new MysqlModel
+  val table1 = model.addTable(new MysqlTable("table1"))
+  val table2 = table1.addTable(new MysqlTable("table2"))
   storage.syncModel(model)
 
   test("set") {

@@ -1,6 +1,5 @@
 package com.wajam.mry.storage
 
-
 /**
  * Storage operations transactions with ACID properties
  */

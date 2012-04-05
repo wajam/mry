@@ -34,7 +34,7 @@ trait Block {
     for (operation <- this.operations) operation.reset()
   }
 
-  def execute(context: ExecutionContext) {
+  def execute(context: ExecutionContext, commit:Boolean = false) {
     for (operation <- this.operations) {
       operation.execute(context)
 
@@ -43,5 +43,7 @@ trait Block {
         return
       }
     }
+
+    if (commit) context.commit()
   }
 }

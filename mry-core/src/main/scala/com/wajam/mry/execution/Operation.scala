@@ -8,7 +8,7 @@ abstract class Operation(var source: OperationSource) extends Executable {
 
 object Operation {
 
-  class Return(source: OperationSource, from: Seq[Variable]) extends Operation(source) {
+  class Return(source: OperationSource, from: Seq[Variable]) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execReturn(context, from)
     }
@@ -16,7 +16,7 @@ object Operation {
     def reset() {}
   }
 
-  class From(source: OperationSource, into: Variable, keys: Object*) extends Operation(source) {
+  class From(source: OperationSource, into: Variable, keys: Object*) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execFrom(context, into, keys: _*)
     }
@@ -24,7 +24,7 @@ object Operation {
     def reset() {}
   }
 
-  class Get(source: OperationSource, into: Variable, keys: Object*) extends Operation(source) {
+  class Get(source: OperationSource, into: Variable, keys: Object*) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execGet(context, into, keys: _*)
     }
@@ -32,7 +32,7 @@ object Operation {
     def reset() {}
   }
 
-  class Set(source: OperationSource, into: Variable, value: Object, keys: Object*) extends Operation(source) {
+  class Set(source: OperationSource, into: Variable, value: Object, keys: Object*) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execSet(context, into, value, keys: _*)
     }

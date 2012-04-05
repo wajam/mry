@@ -1,24 +1,20 @@
 package com.wajam.mry
 
 import com.wajam.nrv.service.{Action, Service}
-import com.wajam.nrv.cluster.Cluster
 import execution.Transaction
 import storage.Storage
 
 /**
  * MRY database
  */
-class Database(var cluster: Cluster, var serviceName: String = "database") {
-  val dbService = new Service(serviceName)
+class Database(var serviceName: String = "database") extends Service(serviceName) {
   var storages = Map[String, Storage]()
 
-  cluster.addService(dbService)
-
-  private val remoteExecute = dbService.bind(path = "/execute/:token/write", action = new Action(req => {
+  private val remoteExecute = this.bind(new Action("/execute/:token/write", req => {
   }))
 
   def execute(transaction: Transaction) {
-    remoteExecute.call("token"->1234)()
+    remoteExecute.call("token"->1234, "trx" -> transaction)()
   }
 
   def registerStorage(storage:Storage) {
