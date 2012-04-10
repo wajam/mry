@@ -9,12 +9,12 @@ import com.wajam.nrv.service.Resolver
  */
 class ExecutionContext(var storages: Map[String, Storage]) {
   var dryMode:Boolean = false
+  var isMutation:Boolean = false
   var timestamp = Timestamp.now
   var tokens: List[Long] = List()
 
   var storageTransactions = Map[Storage, StorageTransaction]()
   var returnValues: Seq[Value] = Seq()
-
 
   def getToken(data:String) = Resolver.hashData(data)
 
@@ -29,7 +29,7 @@ class ExecutionContext(var storages: Map[String, Storage]) {
       this.tokens :+= token
   }
 
-  def getStorage(name: String) = this.storages(name)
+  def getStorage(name: String) = this.storages.getOrElse(name, throw new ExecutionException("No such storage %s".format(name)))
 
   def getStorageTransaction(storage: Storage): StorageTransaction = {
     if (!this.dryMode) {

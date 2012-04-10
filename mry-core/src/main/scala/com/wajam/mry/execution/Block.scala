@@ -21,6 +21,7 @@ trait Block {
 
   def defineVariable(): Variable = {
     val variable = new Variable(this, this.varSeq)
+    this.variables :+= variable
     this.varSeq += 1
     variable
   }

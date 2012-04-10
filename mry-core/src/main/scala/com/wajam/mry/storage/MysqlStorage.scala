@@ -307,30 +307,34 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
 
       }
     }
+  }
 
-    class TableValue(table: MysqlTable, prefixKeys: Seq[String] = Seq()) extends Value {
-      override def execGet(context: ExecutionContext, into: Variable, keys: Object*) {
-        // TODO: get with no keys = multiple row
+  class TableValue(table: MysqlTable, prefixKeys: Seq[String] = Seq()) extends Value {
+    override def execGet(context: ExecutionContext, into: Variable, keys: Object*) {
+      // TODO: get with no keys = multiple row
 
-        val key = param[StringValue](keys, 0).strValue
-        val keysSeq = prefixKeys ++ Seq(key)
-        val token = context.getToken(keysSeq(0))
+      val key = param[StringValue](keys, 0).strValue
+      val keysSeq = prefixKeys ++ Seq(key)
+      val token = context.getToken(keysSeq(0))
 
-        into.value = new RecordValue(context, table, token, keysSeq)
-      }
+      into.value = new RecordValue(context, table, token, keysSeq)
+    }
 
-      override def execSet(context: ExecutionContext, into: Variable, value: Object, keys: Object*) {
+    override def execSet(context: ExecutionContext, into: Variable, value: Object, keys: Object*) {
+      val key = param[StringValue](keys, 0).strValue
+      val mapVal = param[MapValue](value)
+      val keysSeq = prefixKeys ++ Seq(key)
+
+      val token = context.getToken(keysSeq(0))
+      context.useToken(token)
+      context.isMutation = true
+
+      if (!context.dryMode) {
         val transaction = context.getStorageTransaction(MysqlStorage.this).asInstanceOf[MysqlTransaction]
-        val key = param[StringValue](keys, 0).strValue
-        val mapVal = param[MapValue](value)
-        val keysSeq = prefixKeys ++ Seq(key)
-        val token = context.getToken(keysSeq(0))
-
         transaction.set(table, token, keysSeq, new transaction.Record(mapVal))
       }
     }
 
-    // TODO: change to MapValue
     class RecordValue(context: ExecutionContext, table: MysqlTable, token:Long, prefixKeys: Seq[String]) extends Value {
       val transaction = context.getStorageTransaction(MysqlStorage.this).asInstanceOf[MysqlTransaction]
 
@@ -363,7 +367,6 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
         }
       }
     }
-
   }
 
 }

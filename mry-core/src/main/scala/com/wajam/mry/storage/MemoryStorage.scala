@@ -37,6 +37,7 @@ class MemoryStorage(name: String) extends Storage(name) {
     override def execSet(context: ExecutionContext, into: Variable, value: Object, keys: Object*) {
       val key = param[StringValue](keys, 0).strValue
       context.useToken(key)
+      context.isMutation = true
 
       if (!context.dryMode) {
         val transaction = context.getStorageTransaction(MemoryStorage.this).asInstanceOf[MemoryTransaction]

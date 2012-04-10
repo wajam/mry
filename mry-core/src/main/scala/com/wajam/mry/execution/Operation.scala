@@ -3,7 +3,7 @@ package com.wajam.mry.execution
 /**
  * Represents an operation executed within a transaction
  */
-abstract class Operation(var source: OperationSource) extends Executable {
+abstract class Operation(var source: OperationSource) extends Executable with Serializable {
 }
 
 object Operation {
