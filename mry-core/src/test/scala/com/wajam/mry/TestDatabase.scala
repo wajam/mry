@@ -1,7 +1,7 @@
 package com.wajam.mry
 
 import execution.Operation.From
-import execution.{Operation, Transaction}
+import execution.{Value, Operation, Transaction}
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import com.wajam.nrv.cluster._
@@ -10,6 +10,7 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import com.wajam.nrv.codec.JavaSerializeCodec
 import com.wajam.nrv.data.OutRequest
 import storage.MemoryStorage
+import com.wajam.nrv.utils.Sync
 
 @RunWith(classOf[JUnitRunner])
 class TestDatabase extends FunSuite with BeforeAndAfterAll {
@@ -29,18 +30,24 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
 
     driver.execute((driver, oneInstance) => {
       val db = oneInstance.data.asInstanceOf[Database]
-      db.execute(new Transaction(b => {
-        b.from("memory").set("value1", "key1")
-      }))
 
-      val ret = db.execute(new Transaction(b => {
-        b.ret(b.from("memory").get("key1"))
-      }))
+      for (i <- 0 to 10) {
+        val sync = new Sync[Seq[Value]]
+        db.execute(b => {
+          b.from("memory").set("value%d".format(i), "key%d".format(i))
+        })
 
-      assert(ret.size == 1)
-      assert(ret(0).equalsValue("value1"))
+        db.execute(b => {
+          b.returns(b.from("memory").get("key%d".format(i)))
+        }, sync.send(_, _))
 
-    }, 1, 1)
+        sync.then(ret => {
+          assert(ret != null)
+          assert(ret.size == 1)
+          assert(ret(0).equalsValue("value%d".format(i)))
+        }, 3000)
+      }
+    }, 1, 6)
   }
 
   override protected def afterAll() {

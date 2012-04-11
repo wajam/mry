@@ -19,7 +19,11 @@ class Database(var serviceName: String = "database") extends Service(serviceName
     context
   }
 
-  def execute(transaction: Transaction):Seq[Value] = {
+  def execute(blockCreator:(Block with OperationApi)=>Unit) { this.execute(blockCreator, null) }
+
+  def execute(blockCreator:(Block with OperationApi)=>Unit, ret:((Seq[Value], Exception)=>Unit)) { this.execute(new Transaction(blockCreator), ret) }
+
+  def execute(transaction: Transaction, ret:((Seq[Value], Exception)=>Unit)) {
     val context = this.analyseTransaction(transaction)
 
     // TODO: support multiple token on read transactions
@@ -29,30 +33,21 @@ class Database(var serviceName: String = "database") extends Service(serviceName
     // TODO: split write and read transactions so that write gets through the consistency manager
     // TODO: support for protocol translator
 
-    // make sure we don't have any non serializable value
+    // reset transaction before sending it
     transaction.reset()
 
-    // TODO: replace by future?
-    var ret:Seq[Value] = null
-    val notif = new java.lang.Object
-    remoteExecuteToken.call("token"->context.tokens(0), "trx" -> transaction)(resp => {
-      ret = resp("values").asInstanceOf[Seq[Value]]
+    remoteExecuteToken.call(Map("token"->context.tokens(0), "trx" -> transaction), resp => {
+      if (ret != null) {
+        var exception:Exception = null
+        if (resp.contains("error") && resp("error") != "")
+          exception = new ExecutionException(resp("error").asInstanceOf[String])
 
-      notif.synchronized {
-       notif.notify()
+        ret(resp("values").asInstanceOf[Seq[Value]], exception)
       }
     })
-
-    notif.synchronized {
-      notif.wait(10000)
-    }
-
-    ret
   }
 
   private val remoteExecuteToken = this.bind(new Action("/execute/:token", req => {
-
-    println("Got call")
     var error:String = ""
     var values:Seq[Value] = null
 

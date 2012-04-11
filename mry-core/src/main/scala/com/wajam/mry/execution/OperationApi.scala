@@ -14,6 +14,10 @@ trait OperationApi extends OperationSource {
     sourceBlock.addOperation(new Return(this, from))
   }
 
+  def returns(from: Variable*) {
+    sourceBlock.addOperation(new Return(this, from))
+  }
+
   def from(keys: Object*): Variable = {
     this.fromInto(this.sourceBlock.defineVariable(), keys: _*)
   }
