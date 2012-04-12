@@ -39,7 +39,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
 
         db.execute(b => {
           b.returns(b.from("memory").get("key%d".format(i)))
-        }, sync.send(_, _))
+        }, sync.done(_, _))
 
         sync.then(ret => {
           assert(ret != null)

@@ -2,27 +2,30 @@ package com.wajam.mry.execution
 
 import com.wajam.mry.storage.{Storage, StorageTransaction => StorageTransaction}
 import com.wajam.nrv.service.Resolver
+import com.wajam.nrv.Logging
 
 /**
  * Execution context, used to store different information when a transaction
  * is executed.
  */
-class ExecutionContext(var storages: Map[String, Storage]) {
-  var dryMode:Boolean = false
-  var isMutation:Boolean = false
+class ExecutionContext(var storages: Map[String, Storage]) extends Logging {
+  var dryMode: Boolean = false
+  var isMutation: Boolean = false
   var timestamp = Timestamp.now
   var tokens: List[Long] = List()
 
   var storageTransactions = Map[Storage, StorageTransaction]()
   var returnValues: Seq[Value] = Seq()
 
-  def getToken(data:String) = Resolver.hashData(data)
+  def getToken(data: String) = Resolver.hashData(data)
 
-  def hasToken(data:String) = this.tokens.contains(this.getToken(data))
+  def hasToken(data: String) = this.tokens.contains(this.getToken(data))
 
-  def hasToken(token:Long) = this.tokens.contains(token)
+  def hasToken(token: Long) = this.tokens.contains(token)
 
-  def useToken(data:String) { this.useToken(this.getToken(data)) }
+  def useToken(data: String) {
+    this.useToken(this.getToken(data))
+  }
 
   def useToken(token: Long) {
     if (!this.hasToken(token))
