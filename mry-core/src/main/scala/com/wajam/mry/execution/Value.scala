@@ -22,6 +22,13 @@ class MapValue(var mapValue: Map[String, Value]) extends Value with Serializable
   }
 }
 
+class ListValue(var listValue: List[Value]) extends Value with Serializable {
+
+  def apply(index:Int) = {
+    listValue(index)
+  }
+}
+
 class StringValue(var strValue: String) extends Value with Serializable {
   override def toString = strValue
 
@@ -33,5 +40,15 @@ class StringValue(var strValue: String) extends Value with Serializable {
   }
 }
 
+class IntValue(var intValue: Long) extends Value with Serializable {
+  override def toString = String.valueOf(intValue)
+
+  override def equalsValue(that: Value): Boolean = {
+    that match {
+      case i:IntValue => i.intValue == i.intValue
+      case _ => false
+    }
+  }
+}
 
 

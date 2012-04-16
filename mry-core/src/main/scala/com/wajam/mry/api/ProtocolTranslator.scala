@@ -1,13 +1,18 @@
 package com.wajam.mry.api
 
-import com.wajam.mry.execution.Transaction
+import com.wajam.mry.execution.{Value, Transaction}
+
 
 /**
  * MysqlTransaction translators, used to translate protocol specific transactions to
  * mry objects
  */
-trait ProtocolTranslator[T] {
-  def translateTransaction(transaction: T): Transaction
+trait ProtocolTranslator {
+  def encodeValue(value: Value): Array[Byte]
 
-  def translateReturn(transaction: Transaction): T
+  def decodeValue(data: Array[Byte]): Value
+
+  def encodeTransaction(transaction: Transaction): Array[Byte]
+
+  def decodeTransaction(data: Array[Byte]): Transaction
 }

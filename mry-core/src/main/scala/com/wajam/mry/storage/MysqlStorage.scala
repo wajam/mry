@@ -4,7 +4,7 @@ import com.mchange.v2.c3p0.ComboPooledDataSource
 import com.wajam.nrv.Logging
 import java.sql.{PreparedStatement, ResultSet, SQLException, Connection}
 import com.wajam.mry.execution._
-import com.wajam.nrv.codec.JavaSerializeCodec
+import com.wajam.mry.api.protobuf.ProtobufTranslator
 
 /**
  * MySQL backed storage
@@ -13,8 +13,7 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
   val datasource = new ComboPooledDataSource()
   var model = new MysqlModel
 
-  // TODO: change for a static serializer
-  val valueSerializer = new JavaSerializeCodec
+  val valueSerializer = new ProtobufTranslator
 
   datasource.setDriverClass("com.mysql.jdbc.Driver")
   datasource.setJdbcUrl(String.format("jdbc:mysql://%s/%s?zeroDateTimeBehavior=convertToNull", host, database))
@@ -225,7 +224,7 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
       }
     }
 
-    def set(table: MysqlTable, token:Long, keys: Seq[String], record: Record) {
+    def set(table: MysqlTable, token: Long, keys: Seq[String], record: Record) {
       assert(keys.length == table.depth)
 
       val fullTableName = table.depthName("_")
@@ -243,7 +242,7 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
       }
     }
 
-    def get(table: MysqlTable, token:Long, keys: Seq[String]): Option[Record] = {
+    def get(table: MysqlTable, token: Long, keys: Seq[String]): Option[Record] = {
       assert(keys.length == table.depth)
 
       val fullTableName = table.depthName("_")
@@ -281,13 +280,13 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
       record
     }
 
-    class Record(var value: MapValue = new MapValue(Map()), var key: String = "", var token:Long = 0, var timestamp: Timestamp = Timestamp(0)) {
+    class Record(var value: MapValue = new MapValue(Map()), var key: String = "", var token: Long = 0, var timestamp: Timestamp = Timestamp(0)) {
       def serializeValue: Array[Byte] = {
-        valueSerializer.encodeAny(value)
+        valueSerializer.encodeValue(value)
       }
 
       def unserializeValue(bytes: Array[Byte]) {
-        this.value = valueSerializer.decodeAny(bytes).asInstanceOf[MapValue]
+        this.value = valueSerializer.decodeValue(bytes).asInstanceOf[MapValue]
       }
     }
 
@@ -335,7 +334,7 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
       }
     }
 
-    class RecordValue(context: ExecutionContext, table: MysqlTable, token:Long, prefixKeys: Seq[String]) extends Value {
+    class RecordValue(context: ExecutionContext, table: MysqlTable, token: Long, prefixKeys: Seq[String]) extends Value {
       val transaction = context.getStorageTransaction(MysqlStorage.this).asInstanceOf[MysqlTransaction]
 
       override def serializableValue = this.innerValue
@@ -367,6 +366,7 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
         }
       }
     }
+
   }
 
 }

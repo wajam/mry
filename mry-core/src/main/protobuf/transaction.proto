@@ -34,13 +34,14 @@ message PTransactionVariable {
 
 message PTransactionValue {
     enum Type {
-        INT = 1;
-        BOOL = 2;
-        DOUBLE = 3;
-        STRING = 4;
-        BYTES = 5;
-        ARRAY = 6;
-        MAP = 7;
+        NULL = 1;
+        INT = 2;
+        BOOL = 3;
+        DOUBLE = 4;
+        STRING = 5;
+        BYTES = 6;
+        ARRAY = 7;
+        MAP = 8;
     }
 
     required Type type = 1;
@@ -94,18 +95,3 @@ message PTransactionOperation {
 }
 
 
-/*
-message JobRow {
-	required uint64 timestamp = 1;
-	required PTransactionValue data = 2;
-	required string key1 = 3;
-	optional string key2 = 4;
-	optional string key3 = 5;
-	optional string key4 = 6;
-}
-
-message JobRowMutation {
-	required JobRow new = 1;
-	optional JobRow old = 2;
-}
-*/
