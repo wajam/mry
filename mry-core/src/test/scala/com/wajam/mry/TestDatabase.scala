@@ -41,7 +41,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
           b.returns(b.from("memory").get("key%d".format(i)))
         }, sync.done(_, _))
 
-        sync.then(ret => {
+        sync.thenWait(ret => {
           assert(ret != null)
           assert(ret.size == 1)
           assert(ret(0).equalsValue("value%d".format(i)))

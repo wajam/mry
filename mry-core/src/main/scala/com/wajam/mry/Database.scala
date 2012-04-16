@@ -47,7 +47,7 @@ class Database(var serviceName: String = "database") extends Service(serviceName
     })
   }
 
-  private val remoteExecuteToken = this.bind(new Action("/execute/:token", req => {
+  private val remoteExecuteToken = this.registerAction(new Action("/execute/:token", req => {
     var error:String = ""
     var values:Seq[Value] = null
 
