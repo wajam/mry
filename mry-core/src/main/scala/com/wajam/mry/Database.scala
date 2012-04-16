@@ -21,9 +21,9 @@ class Database(var serviceName: String = "database") extends Service(serviceName
 
   def execute(blockCreator:(Block with OperationApi)=>Unit) { this.execute(blockCreator, null) }
 
-  def execute(blockCreator:(Block with OperationApi)=>Unit, ret:((Seq[Value], Exception)=>Unit)) { this.execute(new Transaction(blockCreator), ret) }
+  def execute(blockCreator:(Block with OperationApi)=>Unit, ret:((Seq[Value], Option[Exception])=>Unit)) { this.execute(new Transaction(blockCreator), ret) }
 
-  def execute(transaction: Transaction, ret:((Seq[Value], Exception)=>Unit)) {
+  def execute(transaction: Transaction, ret:((Seq[Value], Option[Exception])=>Unit)) {
     val context = this.analyseTransaction(transaction)
 
     // TODO: support multiple token on read transactions
@@ -36,19 +36,14 @@ class Database(var serviceName: String = "database") extends Service(serviceName
     // reset transaction before sending it
     transaction.reset()
 
-    remoteExecuteToken.call(Map("token"->context.tokens(0), "trx" -> transaction), resp => {
+    remoteExecuteToken.call(Map("token"->context.tokens(0), "trx" -> transaction), (resp, exception) => {
       if (ret != null) {
-        var exception:Exception = null
-        if (resp.contains("error") && resp("error") != "")
-          exception = new ExecutionException(resp("error").asInstanceOf[String])
-
         ret(resp("values").asInstanceOf[Seq[Value]], exception)
       }
     })
   }
 
   private val remoteExecuteToken = this.registerAction(new Action("/execute/:token", req => {
-    var error:String = ""
     var values:Seq[Value] = null
 
     var context = new ExecutionContext(storages)
@@ -61,13 +56,12 @@ class Database(var serviceName: String = "database") extends Service(serviceName
 
     } catch {
       case e:Exception => {
-        error = e.getMessage
         context.rollback()
+        throw e
       }
     }
 
     req.reply(
-      "error" -> error,
       "values" -> values
     )
   }))
