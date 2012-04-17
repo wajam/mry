@@ -1,14 +1,11 @@
 package com.wajam.mry
 
-import execution.Operation.From
-import execution.{Value, Operation, Transaction}
+import execution.Value
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import com.wajam.nrv.cluster._
 import com.wajam.mry.execution.Implicits._
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
-import com.wajam.nrv.codec.JavaSerializeCodec
-import com.wajam.nrv.data.OutRequest
 import storage.MemoryStorage
 import com.wajam.nrv.utils.Sync
 
@@ -31,7 +28,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
     driver.execute((driver, oneInstance) => {
       val db = oneInstance.data.asInstanceOf[Database]
 
-      for (i <- 0 to 10) {
+      for (i <- 0 to 50) {
         val sync = new Sync[Seq[Value]]
         db.execute(b => {
           b.from("memory").set("value%d".format(i), "key%d".format(i))

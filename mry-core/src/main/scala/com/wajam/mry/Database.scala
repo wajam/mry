@@ -3,7 +3,7 @@ package com.wajam.mry
 import com.wajam.nrv.service.{Action, Service}
 import execution._
 import storage.Storage
-import com.wajam.nrv.data.OutRequest
+import com.wajam.nrv.data.OutMessage
 
 /**
  * MRY database
