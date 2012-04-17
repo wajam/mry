@@ -28,7 +28,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
     driver.execute((driver, oneInstance) => {
       val db = oneInstance.data.asInstanceOf[Database]
 
-      for (i <- 0 to 50) {
+      for (i <- 0 to 100) {
         val sync = new Sync[Seq[Value]]
         db.execute(b => {
           b.from("memory").set("value%d".format(i), "key%d".format(i))
@@ -42,7 +42,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
           assert(ret != null)
           assert(ret.size == 1)
           assert(ret(0).equalsValue("value%d".format(i)))
-        }, 3000)
+        }, 1000)
       }
     }, 1, 6)
   }
