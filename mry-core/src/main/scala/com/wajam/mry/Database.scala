@@ -36,9 +36,9 @@ class Database(var serviceName: String = "database") extends Service(serviceName
     // reset transaction before sending it
     transaction.reset()
 
-    remoteExecuteToken.call(Map("token"->context.tokens(0), "trx" -> transaction), (resp, exception) => {
+    remoteExecuteToken.call(Map("token"->context.tokens(0), "trx" -> transaction), onReply = (resp, exception) => {
       if (ret != null) {
-        ret(resp("values").asInstanceOf[Seq[Value]], exception)
+        ret(resp.parameters("values").asInstanceOf[Seq[Value]], exception)
       }
     })
   }
@@ -49,7 +49,7 @@ class Database(var serviceName: String = "database") extends Service(serviceName
     var context = new ExecutionContext(storages)
 
     try {
-      val transaction = req("trx").asInstanceOf[Transaction]
+      val transaction = req.parameters("trx").asInstanceOf[Transaction]
       transaction.execute(context)
       values = context.returnValues
       context.commit()
@@ -62,7 +62,7 @@ class Database(var serviceName: String = "database") extends Service(serviceName
     }
 
     req.reply(
-      "values" -> values
+      Seq("values" -> values)
     )
   }))
 
