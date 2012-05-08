@@ -4,11 +4,12 @@ import com.wajam.nrv.service.{Action, Service}
 import execution._
 import storage.Storage
 import com.wajam.nrv.data.OutMessage
+import com.wajam.nrv.Logging
 
 /**
  * MRY database
  */
-class Database(var serviceName: String = "database") extends Service(serviceName) {
+class Database(var serviceName: String = "database") extends Service(serviceName) with Logging {
   var storages = Map[String, Storage]()
 
   def analyseTransaction(transaction:Transaction):ExecutionContext = {
@@ -24,23 +25,34 @@ class Database(var serviceName: String = "database") extends Service(serviceName
   def execute(blockCreator:(Block with OperationApi)=>Unit, ret:((Seq[Value], Option[Exception])=>Unit)) { this.execute(new Transaction(blockCreator), ret) }
 
   def execute(transaction: Transaction, ret:((Seq[Value], Option[Exception])=>Unit)) {
-    val context = this.analyseTransaction(transaction)
+    try {
 
-    // TODO: support multiple token on read transactions
-    if (context.tokens.size != 1)
-      throw new ExecutionException("Only single destination transaction are supported right now.")
+      val context = this.analyseTransaction(transaction)
 
-    // TODO: split write and read transactions so that write gets through the consistency manager
-    // TODO: support for protocol translator
+      // TODO: support multiple token on read transactions
+      if (context.tokens.size != 1)
+        throw new ExecutionException("Only single destination transaction are supported right now.")
 
-    // reset transaction before sending it
-    transaction.reset()
+      // TODO: split write and read transactions so that write gets through the consistency manager
+      // TODO: support for protocol translator
 
-    remoteExecuteToken.call(Map("token"->context.tokens(0), "trx" -> transaction), onReply = (resp, exception) => {
-      if (ret != null) {
-        ret(resp.parameters("values").asInstanceOf[Seq[Value]], exception)
-      }
-    })
+      // reset transaction before sending it
+      transaction.reset()
+
+      remoteExecuteToken.call(Map("token"->context.tokens(0), "trx" -> transaction), onReply = (resp, exception) => {
+        if (ret != null) {
+          ret(resp.parameters("values").asInstanceOf[Seq[Value]], exception)
+        }
+      })
+
+    } catch {
+      case ex:Exception =>
+        debug("Got an exception executing transaction", ex)
+
+        if (ret != null) {
+          ret(null, Some(ex))
+        }
+    }
   }
 
   private val remoteExecuteToken = this.registerAction(new Action("/execute/:token", req => {

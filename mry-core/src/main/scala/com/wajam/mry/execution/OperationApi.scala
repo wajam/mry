@@ -4,7 +4,7 @@ import com.wajam.mry.execution.Operation.{Return, Set, Get, From}
 
 
 /**
- * Description
+ * Trait that makes it possible to execute operation on an object
  */
 
 trait OperationApi extends OperationSource {

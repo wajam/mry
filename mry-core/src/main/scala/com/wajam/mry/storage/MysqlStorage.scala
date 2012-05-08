@@ -48,7 +48,8 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
     }
 
     for (table <- mysqlTables) {
-      this.dropTable(table)
+      if (modelTables.contains(table))
+        this.dropTable(table)
     }
   }
 
@@ -314,9 +315,13 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
 
       val key = param[StringValue](keys, 0).strValue
       val keysSeq = prefixKeys ++ Seq(key)
-      val token = context.getToken(keysSeq(0))
 
-      into.value = new RecordValue(context, table, token, keysSeq)
+      val token = context.getToken(keysSeq(0))
+      context.useToken(token)
+
+      if (!context.dryMode) {
+        into.value = new RecordValue(context, table, token, keysSeq)
+      }
     }
 
     override def execSet(context: ExecutionContext, into: Variable, value: Object, keys: Object*) {
