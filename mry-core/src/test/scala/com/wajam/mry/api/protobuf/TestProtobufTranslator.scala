@@ -43,7 +43,7 @@ class TestProtobufTranslator extends FunSuite {
         fail("Didn't unserialize to map")
     }
 
-    bytes = translator.encodeValue(List[Value]("value1", "value2", "value3"))
+    bytes = translator.encodeValue(Seq[Value]("value1", "value2", "value3"))
     value = translator.decodeValue(bytes)
     value match {
       case lv: ListValue =>

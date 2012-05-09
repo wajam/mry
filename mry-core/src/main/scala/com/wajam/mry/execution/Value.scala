@@ -22,7 +22,7 @@ class MapValue(var mapValue: Map[String, Value]) extends Value with Serializable
   }
 }
 
-class ListValue(var listValue: List[Value]) extends Value with Serializable {
+class ListValue(var listValue: Seq[Value]) extends Value with Serializable {
 
   def apply(index:Int) = {
     listValue(index)

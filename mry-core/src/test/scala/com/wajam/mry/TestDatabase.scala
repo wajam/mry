@@ -15,7 +15,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
     val cluster = new Cluster(new Node("127.0.0.1", Map("nrv" -> (50000 + 10 * n), "mry" -> (50001 + 10 * n))), manager)
 
     val db = new Database("mry")
-    cluster.addService(db)
+    cluster.registerService(db)
     db.registerStorage(new MemoryStorage("memory"))
     db.addMember((n * 500), cluster.localNode)
 

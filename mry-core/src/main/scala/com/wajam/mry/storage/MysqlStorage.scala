@@ -48,7 +48,7 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
     }
 
     for (table <- mysqlTables) {
-      if (modelTables.contains(table))
+      if (!modelTables.contains(table))
         this.dropTable(table)
     }
   }
