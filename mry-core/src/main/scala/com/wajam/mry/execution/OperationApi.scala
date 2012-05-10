@@ -36,12 +36,12 @@ trait OperationApi extends OperationSource {
     into
   }
 
-  def set(value: Object, keys: Object*): Variable = {
-    this.setInto(this.sourceBlock.defineVariable(), value, keys: _*)
+  def set(data: Object*): Variable = {
+    this.setInto(this.sourceBlock.defineVariable(), data: _*)
   }
 
-  def setInto(into: Variable, value: Object, keys: Object*): Variable = {
-    sourceBlock.addOperation(new Set(this, into, value, keys: _*))
+  def setInto(into: Variable, data: Object*): Variable = {
+    sourceBlock.addOperation(new Set(this, into, data: _*))
     into
   }
 }

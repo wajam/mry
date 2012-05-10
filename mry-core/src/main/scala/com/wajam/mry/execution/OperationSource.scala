@@ -24,7 +24,7 @@ trait OperationSource {
     if (params.size <= position)
       throw new InvalidParameter("Excepted parameter at position %d".format(position))
 
-    val param = params(0).value
+    val param = params(position).value
     if (!params.isInstanceOf[T])
       throw new InvalidParameter("Excepted parameter at position %d to be of instance %s".format(position, classManifest[T].erasure.getName))
 
@@ -43,8 +43,8 @@ trait OperationSource {
     getProxiedSource.execGet(context, into, keys: _*)
   }
 
-  def execSet(context: ExecutionContext, into: Variable, value: Object, keys: Object*) {
-    getProxiedSource.execSet(context, into, value, keys: _*)
+  def execSet(context: ExecutionContext, into: Variable, data: Object*) {
+    getProxiedSource.execSet(context, into, data: _*)
   }
 
   class InvalidParameter(reason: String) extends Exception("%s: %s".format(getClass.toString, reason))

@@ -31,7 +31,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
       for (i <- 0 to 100) {
         val sync = new Sync[Seq[Value]]
         db.execute(b => {
-          b.from("memory").set("value%d".format(i), "key%d".format(i))
+          b.from("memory").set("key%d".format(i), "value%d".format(i))
         })
 
         db.execute(b => {

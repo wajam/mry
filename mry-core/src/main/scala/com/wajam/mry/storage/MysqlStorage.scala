@@ -324,9 +324,9 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
       }
     }
 
-    override def execSet(context: ExecutionContext, into: Variable, value: Object, keys: Object*) {
-      val key = param[StringValue](keys, 0).strValue
-      val mapVal = param[MapValue](value)
+    override def execSet(context: ExecutionContext, into: Variable, data: Object*) {
+      val key = param[StringValue](data, 0).strValue
+      val mapVal = param[MapValue](data, 1)
       val keysSeq = prefixKeys ++ Seq(key)
 
       val token = context.getToken(keysSeq(0))

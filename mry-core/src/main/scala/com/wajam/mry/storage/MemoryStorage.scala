@@ -34,8 +34,10 @@ class MemoryStorage(name: String) extends Storage(name) {
   }
 
   class StorageValue extends Value {
-    override def execSet(context: ExecutionContext, into: Variable, value: Object, keys: Object*) {
-      val key = param[StringValue](keys, 0).strValue
+    override def execSet(context: ExecutionContext, into: Variable, data: Object*) {
+      val key = param[StringValue](data, 0).strValue
+      val value = param[Value](data, 1)
+
       context.useToken(key)
       context.isMutation = true
 

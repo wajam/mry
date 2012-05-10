@@ -25,7 +25,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll {
     val context = new ExecutionContext(storages)
     val storage = transac.from("mysql")
     val table = storage.from("table1")
-    table.set(Map("mapk" -> toVal("value1")), "key1")
+    table.set("key1", Map("mapk" -> toVal("value1")))
     val v = table.get("key1")
     transac.ret(v)
     transac.execute(context)
@@ -45,7 +45,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll {
     val storage = transac.from("mysql")
     val table = storage.from("table1")
     val v = table.get("key1")
-    table.set(Map("mapk" -> toVal("value2")), "key2")
+    table.set("key2", Map("mapk" -> toVal("value2")))
     transac.ret(v)
     transac.execute(context)
 
@@ -77,7 +77,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll {
     val record1 = table1.get("key1")
 
     val table2 = record1.from("table2")
-    table2.set(Map("mapk" -> toVal("value1")), "key1.2")
+    table2.set("key1.2", Map("mapk" -> toVal("value1")))
 
     val record2 = table2.get("key1.2")
 

@@ -32,9 +32,9 @@ object Operation {
     def reset() {}
   }
 
-  class Set(source: OperationSource, into: Variable, value: Object, keys: Object*) extends Operation(source) with Serializable {
+  class Set(source: OperationSource, into: Variable, data: Object*) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
-      source.execSet(context, into, value, keys: _*)
+      source.execSet(context, into, data: _*)
     }
 
     def reset() {}

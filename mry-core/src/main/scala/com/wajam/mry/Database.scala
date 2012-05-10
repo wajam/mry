@@ -3,7 +3,6 @@ package com.wajam.mry
 import com.wajam.nrv.service.{Action, Service}
 import execution._
 import storage.Storage
-import com.wajam.nrv.data.OutMessage
 import com.wajam.nrv.Logging
 
 /**
@@ -12,7 +11,7 @@ import com.wajam.nrv.Logging
 class Database(var serviceName: String = "database") extends Service(serviceName) with Logging {
   var storages = Map[String, Storage]()
 
-  def analyseTransaction(transaction:Transaction):ExecutionContext = {
+  def analyseTransaction(transaction: Transaction): ExecutionContext = {
     val context = new ExecutionContext(storages)
     context.dryMode = true
     context.timestamp = Timestamp.now
@@ -20,11 +19,24 @@ class Database(var serviceName: String = "database") extends Service(serviceName
     context
   }
 
-  def execute(blockCreator:(Block with OperationApi)=>Unit) { this.execute(blockCreator, null) }
+  def execute(blockCreator: (Block with OperationApi) => Unit) {
+    this.execute(blockCreator, null)
+  }
 
-  def execute(blockCreator:(Block with OperationApi)=>Unit, ret:((Seq[Value], Option[Exception])=>Unit)) { this.execute(new Transaction(blockCreator), ret) }
+  def execute(blockCreator: (Block with OperationApi) => Unit, ret: ((Seq[Value], Option[Exception]) => Unit)) {
+    try {
+      this.execute(new Transaction(blockCreator), ret)
+    } catch {
+      case ex: Exception =>
+        debug("Got an exception executing transaction", ex)
 
-  def execute(transaction: Transaction, ret:((Seq[Value], Option[Exception])=>Unit)) {
+        if (ret != null) {
+          ret(null, Some(ex))
+        }
+    }
+  }
+
+  def execute(transaction: Transaction, ret: ((Seq[Value], Option[Exception]) => Unit)) {
     try {
 
       val context = this.analyseTransaction(transaction)
@@ -39,14 +51,14 @@ class Database(var serviceName: String = "database") extends Service(serviceName
       // reset transaction before sending it
       transaction.reset()
 
-      remoteExecuteToken.call(Map("token"->context.tokens(0), "trx" -> transaction), onReply = (resp, exception) => {
+      remoteExecuteToken.call(Map("token" -> context.tokens(0), "trx" -> transaction), onReply = (resp, exception) => {
         if (ret != null) {
           ret(resp.parameters("values").asInstanceOf[Seq[Value]], exception)
         }
       })
 
     } catch {
-      case ex:Exception =>
+      case ex: Exception =>
         debug("Got an exception executing transaction", ex)
 
         if (ret != null) {
@@ -56,7 +68,7 @@ class Database(var serviceName: String = "database") extends Service(serviceName
   }
 
   private val remoteExecuteToken = this.registerAction(new Action("/execute/:token", req => {
-    var values:Seq[Value] = null
+    var values: Seq[Value] = null
 
     var context = new ExecutionContext(storages)
 
@@ -67,7 +79,7 @@ class Database(var serviceName: String = "database") extends Service(serviceName
       context.commit()
 
     } catch {
-      case e:Exception => {
+      case e: Exception => {
         context.rollback()
         throw e
       }
@@ -79,9 +91,9 @@ class Database(var serviceName: String = "database") extends Service(serviceName
   }))
 
 
-  def registerStorage(storage:Storage) {
+  def registerStorage(storage: Storage) {
     this.storages += (storage.name -> storage)
   }
 
-  def getStorage(name:String) = this.storages.get(name).get
+  def getStorage(name: String) = this.storages.get(name).get
 }
