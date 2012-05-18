@@ -51,9 +51,12 @@ class Database(var serviceName: String = "database") extends Service(serviceName
       // reset transaction before sending it
       transaction.reset()
 
-      remoteExecuteToken.call(Map("token" -> context.tokens(0), "trx" -> transaction), onReply = (resp, exception) => {
+      remoteExecuteToken.call(Map("token" -> context.tokens(0), "trx" -> transaction), onReply = (resp, optException) => {
         if (ret != null) {
-          ret(resp.parameters("values").asInstanceOf[Seq[Value]], exception)
+          if (optException.isEmpty)
+            ret(resp.parameters("values").asInstanceOf[Seq[Value]], None)
+          else
+            ret(Seq(), optException)
         }
       })
 
