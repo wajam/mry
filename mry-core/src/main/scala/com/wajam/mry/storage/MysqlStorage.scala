@@ -152,7 +152,7 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
 
       keyList += "k%d".format(i)
     }
-    sql += " `d` blob NOT NULL, " +
+    sql += " `d` blob NULL, " +
       " PRIMARY KEY (`ts`,`tk`," + keyList + "), " +
       "	UNIQUE KEY `revkey` (`tk`, " + keyList + ",`ts`) " +
       ") ENGINE=InnoDB  DEFAULT CHARSET=utf8;"
@@ -225,7 +225,7 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
       }
     }
 
-    def set(table: MysqlTable, token: Long, keys: Seq[String], record: Record) {
+    def set(table: MysqlTable, token: Long, keys: Seq[String], optRecord: Option[Record]) {
       assert(keys.length == table.depth)
 
       val fullTableName = table.depthName("_")
@@ -236,7 +236,13 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
 
       var results: SqlResults = null
       try {
-        results = executeSql(connection, true, sql, (Seq(this.context.timestamp.value) ++ Seq(token) ++ keys ++ Seq(record.serializeValue)): _*)
+        // if none, it's a delete
+        val value = optRecord match {
+          case Some(r) => r.serializeValue
+          case None => null
+        }
+
+        results = executeSql(connection, true, sql, (Seq(this.context.timestamp.value) ++ Seq(token) ++ keys ++ Seq(value)): _*)
       } finally {
         if (results != null)
           results.close()
@@ -247,14 +253,27 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
       assert(keys.length == table.depth)
 
       val fullTableName = table.depthName("_")
-      val projKeys = (for (i <- 1 to table.depth) yield "k%d".format(i)).mkString(",")
-      val whereKeys = (for (i <- 1 to table.depth) yield "k%d = ?".format(i)).mkString(" AND ")
+      val projKeys = (for (i <- 1 to table.depth) yield "o.k%d".format(i)).mkString(",")
+      val outerWhereKeys = (for (i <- 1 to table.depth) yield "o.k%d = ?".format(i)).mkString(" AND ")
+      val innerWhereKeys = (for (i <- 1 to table.depth) yield "i.k%d = ?".format(i)).mkString(" AND ")
 
-      val sql = "SELECT ts, tk, %s, d FROM `%s` WHERE `ts` <= ? AND `tk` = ? AND %s ORDER BY `ts` DESC LIMIT 0,1".format(projKeys, fullTableName, whereKeys)
+      val sql = """
+        SELECT o.ts, o.tk, %1$s, d
+        FROM `%2$s` AS o
+        WHERE o.`tk` = ?
+        AND %3$s
+        AND o.`ts` = (  SELECT MAX(ts)
+                        FROM `%2$s` AS i
+                        WHERE i.`ts` <= ?
+                        AND i.`tk` = ?
+                        AND %4$s)
+        AND o.d IS NOT NULL;
+                """.format(projKeys, fullTableName, outerWhereKeys, innerWhereKeys)
+
 
       var results: SqlResults = null
       try {
-        results = executeSql(connection, false, sql, (Seq(this.context.timestamp.value) ++ Seq(token) ++ keys): _*)
+        results = executeSql(connection, false, sql, (Seq(token) ++ keys ++ Seq(this.context.timestamp.value) ++ Seq(token) ++ keys): _*)
         if (results.resultset.next()) {
           return Some(readRecord(results.resultset, table.depth))
         }
@@ -335,20 +354,33 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
 
       if (!context.dryMode) {
         val transaction = context.getStorageTransaction(MysqlStorage.this).asInstanceOf[MysqlTransaction]
-        transaction.set(table, token, keysSeq, new transaction.Record(mapVal))
+        transaction.set(table, token, keysSeq, Some(new transaction.Record(mapVal)))
+      }
+    }
+
+    override def execDelete(context: ExecutionContext, into: Variable, data: Object*) {
+      val key = param[StringValue](data, 0).strValue
+      val keysSeq = prefixKeys ++ Seq(key)
+
+      val token = context.getToken(keysSeq(0))
+      context.useToken(token)
+      context.isMutation = true
+
+      if (!context.dryMode) {
+        val transaction = context.getStorageTransaction(MysqlStorage.this).asInstanceOf[MysqlTransaction]
+        transaction.set(table, token, keysSeq, None)
       }
     }
 
     class RecordValue(context: ExecutionContext, table: MysqlTable, token: Long, prefixKeys: Seq[String]) extends Value {
       val transaction = context.getStorageTransaction(MysqlStorage.this).asInstanceOf[MysqlTransaction]
 
-      override def serializableValue = this.innerValue
+      val record = context.dryMode match {
+        case false => transaction.get(table, token, prefixKeys)
+        case true => None
+      }
 
-      override def proxiedSource: Option[OperationSource] = Some(this.innerValue)
-
-      lazy val record = transaction.get(table, token, prefixKeys)
-
-      lazy val innerValue = {
+      val innerValue = {
         this.record match {
           case Some(r) =>
             r.value
@@ -357,9 +389,15 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
         }
       }
 
+      // Serialized version of this record is the inner map or null
+      override def serializableValue = this.innerValue
+
+      // Operations are executed on record data (map or null)
+      override def proxiedSource: Option[OperationSource] = Some(this.innerValue)
+
       override def execFrom(context: ExecutionContext, into: Variable, keys: Object*) {
-        var tableName = param[StringValue](keys, 0).strValue
-        var optTable = table.getTable(tableName)
+        val tableName = param[StringValue](keys, 0).strValue
+        val optTable = table.getTable(tableName)
 
         optTable match {
           case Some(t) =>

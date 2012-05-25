@@ -40,4 +40,10 @@ object Operation {
     def reset() {}
   }
 
-}
+  class Delete(source: OperationSource, into: Variable, data: Object*) extends Operation(source) with Serializable {
+    def execute(context: ExecutionContext) {
+      source.execDelete(context, into, data: _*)
+    }
+
+    def reset() {}
+  }}

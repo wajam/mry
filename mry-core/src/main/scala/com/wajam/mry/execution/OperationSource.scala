@@ -47,6 +47,10 @@ trait OperationSource {
     getProxiedSource.execSet(context, into, data: _*)
   }
 
+  def execDelete(context: ExecutionContext, into: Variable, keys: Object*) {
+    getProxiedSource.execDelete(context, into, keys: _*)
+  }
+
   class InvalidParameter(reason: String) extends Exception("%s: %s".format(getClass.toString, reason))
 
   class UnsupportedExecutionSource extends Exception(getClass.toString)

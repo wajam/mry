@@ -46,4 +46,49 @@ class TestMemory extends FunSuite {
     assert(v1.value.isInstanceOf[NullValue])
     assert(v2.value.equalsValue("value3"))
   }
+
+  test("delete item shouldn't exist") {
+    var context = new ExecutionContext(Map("memory" -> storage))
+    var t = new Transaction()
+
+    var store = t.from("memory")
+    store.set("key1", "value1")
+    var v = store.get("key1")
+    t.execute(context)
+    context.commit()
+
+    t = new Transaction()
+    context = new ExecutionContext(Map("memory" -> storage))
+    store = t.from("memory")
+    v = store.delete("key1")
+    store.set("key2", "value2")
+    store.set("key3", "value3")
+    store.delete("key3")
+    t.execute(context)
+    context.commit()
+
+    t = new Transaction()
+    context = new ExecutionContext(Map("memory" -> storage))
+    store = t.from("memory")
+    store.set("key4", "value4")
+    store.delete("key4")
+    t.execute(context)
+    context.rollback()
+
+    t = new Transaction()
+    context = new ExecutionContext(Map("memory" -> storage))
+    store = t.from("memory")
+    var v1 = store.get("key1")
+    var v2 = store.get("key2")
+    var v3 = store.get("key3")
+    var v4 = store.get("key4")
+    t.ret(v1, v2, v3, v4)
+    t.execute(context)
+    context.commit()
+
+    assert(v1.value.isInstanceOf[NullValue])
+    assert(v2.value.equalsValue("value2"))
+    assert(v3.value.isInstanceOf[NullValue])
+    assert(v4.value.isInstanceOf[NullValue])
+  }
 }

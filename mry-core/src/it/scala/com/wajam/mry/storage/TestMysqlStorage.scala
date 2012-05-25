@@ -93,6 +93,36 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll {
     }
   }
 
+  test("delete") {
+    var transac = new Transaction()
+    var context = new ExecutionContext(storages)
+    var storage = transac.from("mysql")
+    var table = storage.from("table1")
+    table.set("key1", Map("k" -> "value1"))
+    table.set("key2", Map("k" -> "value2"))
+    table.set("key3", Map("k" -> "value3"))
+    table.delete("key1")
+    transac.execute(context)
+    context.commit()
+
+
+    transac = new Transaction()
+    context = new ExecutionContext(storages)
+    storage = transac.from("mysql")
+    table = storage.from("table1")
+    table.delete("key2")
+    val v1 = table.get("key1")
+    val v2 = table.get("key2")
+    val v3 = table.get("key3")
+    transac.ret(v1, v2, v3)
+    transac.execute(context)
+    context.commit()
+
+    assert(context.returnValues(0).equalsValue(new NullValue))
+    assert(context.returnValues(1).equalsValue(new NullValue))
+    assert(!context.returnValues(2).equalsValue(new NullValue))
+  }
+
   override protected def afterAll() {
     storage.close()
   }

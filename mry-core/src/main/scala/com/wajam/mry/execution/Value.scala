@@ -9,10 +9,16 @@ trait Value extends Object with OperationSource {
   def serializableValue:Value = this
 
   def equalsValue(that: Value): Boolean = this == that
+
+  def isNull = this.equalsValue(NullValue.NULL_VALUE)
 }
 
 class NullValue() extends Value with Serializable {
   override def equalsValue(that: Value): Boolean = this.isInstanceOf[NullValue]
+}
+
+object NullValue {
+  val NULL_VALUE = new NullValue()
 }
 
 class MapValue(var mapValue: Map[String, Value]) extends Value with Serializable {

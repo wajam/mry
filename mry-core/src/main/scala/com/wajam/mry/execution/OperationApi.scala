@@ -1,6 +1,6 @@
 package com.wajam.mry.execution
 
-import com.wajam.mry.execution.Operation.{Return, Set, Get, From}
+import com.wajam.mry.execution.Operation._
 
 
 /**
@@ -42,6 +42,15 @@ trait OperationApi extends OperationSource {
 
   def setInto(into: Variable, data: Object*): Variable = {
     sourceBlock.addOperation(new Set(this, into, data: _*))
+    into
+  }
+
+  def delete(data: Object*): Variable = {
+    this.deleteInto(this.sourceBlock.defineVariable(), data: _*)
+  }
+
+  def deleteInto(into: Variable, data: Object*): Variable = {
+    sourceBlock.addOperation(new Delete(this, into, data: _*))
     into
   }
 }

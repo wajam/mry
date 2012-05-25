@@ -64,6 +64,8 @@ object Implicits {
         return v
       case v: Seq[Any] =>
         return v
+      case v: Value =>
+        v
     }
   }
 

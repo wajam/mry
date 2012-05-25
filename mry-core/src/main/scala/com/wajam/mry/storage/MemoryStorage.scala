@@ -34,6 +34,20 @@ class MemoryStorage(name: String) extends Storage(name) {
   }
 
   class StorageValue extends Value {
+    override def execGet(context: ExecutionContext, into: Variable, keys: Object*) {
+      val key = param[StringValue](keys, 0).strValue
+      context.useToken(key)
+
+      if (!context.dryMode) {
+        val transaction = context.getStorageTransaction(MemoryStorage.this).asInstanceOf[MemoryTransaction]
+        val value = transaction.data.getOrElse(key, globData.get(key))
+        value match {
+          case Some(v) => into.value = v
+          case None => into.value = new NullValue
+        }
+      }
+    }
+
     override def execSet(context: ExecutionContext, into: Variable, data: Object*) {
       val key = param[StringValue](data, 0).strValue
       val value = param[Value](data, 1)
@@ -47,17 +61,15 @@ class MemoryStorage(name: String) extends Storage(name) {
       }
     }
 
-    override def execGet(context: ExecutionContext, into: Variable, keys: Object*) {
-      val key = param[StringValue](keys, 0).strValue
+    override def execDelete(context: ExecutionContext, into: Variable, data: Object*) {
+      val key = param[StringValue](data, 0).strValue
+
       context.useToken(key)
+      context.isMutation = true
 
       if (!context.dryMode) {
         val transaction = context.getStorageTransaction(MemoryStorage.this).asInstanceOf[MemoryTransaction]
-        val value = transaction.data.getOrElse(key, globData.get(key))
-        value match {
-          case Some(v) => into.value = v
-          case None => into.value = new NullValue
-        }
+        transaction.data += (key -> None)
       }
     }
   }
