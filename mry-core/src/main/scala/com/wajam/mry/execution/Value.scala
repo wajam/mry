@@ -19,6 +19,7 @@ class NullValue() extends Value with Serializable {
 
 object NullValue {
   val NULL_VALUE = new NullValue()
+  def apply() = NULL_VALUE
 }
 
 class MapValue(var mapValue: Map[String, Value]) extends Value with Serializable {
