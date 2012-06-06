@@ -11,7 +11,7 @@ class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table
   val transaction = context.getStorageTransaction(storage).asInstanceOf[MysqlTransaction]
 
   val record = context.dryMode match {
-    case false => transaction.get(table, token, prefixKeys)
+    case false => transaction.get(table, token, context.timestamp, prefixKeys)
     case true => None
   }
 

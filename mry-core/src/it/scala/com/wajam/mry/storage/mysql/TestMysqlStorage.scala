@@ -168,29 +168,29 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll with BeforeAndAft
 
     assert(table1Timeline.size == 6)
     assert(table1Timeline(0).keys(0) == "key1", table1Timeline(0).keys(0))
-    assert(table1Timeline(0).newValue.isNull)
+    assert(table1Timeline(0).newValue.isEmpty)
     assert(table1Timeline(1).keys(0) == "key2", table1Timeline(0).keys(0))
     table1Timeline(1).newValue match {
-      case m: MapValue => assert("value2.0".equalsValue(m.mapValue("k")))
+      case Some(m: MapValue) => assert("value2.0".equalsValue(m.mapValue("k")))
     }
     assert(table1Timeline(2).keys(0) == "key3", table1Timeline(0).keys(0))
     table1Timeline(2).newValue match {
-      case m: MapValue => assert("value3".equalsValue(m.mapValue("k")))
+      case Some(m: MapValue) => assert("value3".equalsValue(m.mapValue("k")))
     }
     assert(table1Timeline(3).keys(0) == "key5", table1Timeline(0).keys(0))
     table1Timeline(3).newValue match {
-      case m: MapValue => assert("value5".equalsValue(m.mapValue("k")))
+      case Some(m: MapValue) => assert("value5".equalsValue(m.mapValue("k")))
     }
     assert(table1Timeline(4).keys(0) == "key2", table1Timeline(0).keys(0))
     table1Timeline(4).newValue match {
-      case m: MapValue => assert("value2.1".equalsValue(m.mapValue("k")))
+      case Some(m: MapValue) => assert("value2.1".equalsValue(m.mapValue("k")))
     }
     table1Timeline(4).oldValue match {
       case Some(m: MapValue) => assert("value2.0".equalsValue(m.mapValue("k")))
       case None => fail()
     }
     assert(table1Timeline(5).keys(0) == "key3", table1Timeline(0).keys(0))
-    table1Timeline(5).newValue.equalsValue(NullValue())
+    assert(table1Timeline(5).newValue.isEmpty)
     table1Timeline(5).oldValue match {
       case Some(m: MapValue) => assert("value3".equalsValue(m.mapValue("k")))
       case None => fail()

@@ -17,6 +17,8 @@ object mryBuild extends Build {
 
   var commonDeps = Seq(
     "com.wajam" %% "nrv-core" % "0.1-SNAPSHOT",
+    "com.wajam" %% "spnl-core" % "0.1-SNAPSHOT",
+    "com.wajam" %% "scn-core" % "0.1-SNAPSHOT",
     "com.google.protobuf" % "protobuf-java" % "2.4.1",
     "c3p0" % "c3p0" % "0.9.1.2",
     "mysql" % "mysql-connector-java" % "5.1.6",

@@ -3,7 +3,13 @@ package com.wajam.mry.execution
 /**
  * Timestamp used to represent mutation time on storage
  */
-class Timestamp(var value: Long) {
+class Timestamp(var value: Long) extends Serializable {
+  override def toString: String = value.toString
+
+  override def equals(obj: Any): Boolean = obj match {
+    case t:Timestamp => t.value == value
+    case _ => false
+  }
 }
 
 object Timestamp {

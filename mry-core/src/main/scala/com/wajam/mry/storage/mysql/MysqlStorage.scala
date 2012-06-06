@@ -21,7 +21,9 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
   datasource.setUser(username)
   datasource.setPassword(password)
 
-  def getStorageTransaction(context: ExecutionContext) = new MysqlTransaction(this, context)
+  def getStorageTransaction(context: ExecutionContext) = this.getStorageTransaction
+
+  def getStorageTransaction = new MysqlTransaction(this)
 
   def getStorageValue(context: ExecutionContext): Value = this
 
@@ -203,8 +205,8 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
   }
 
   override def execFrom(context: ExecutionContext, into: Variable, keys: Object*) {
-    var tableName = param[StringValue](keys, 0).strValue
-    var optTable = model.getTable(tableName)
+    val tableName = param[StringValue](keys, 0).strValue
+    val optTable = model.getTable(tableName)
 
     optTable match {
       case Some(t) =>

@@ -31,7 +31,10 @@ class TableValue(storage: MysqlStorage, table: Table, prefixKeys: Seq[String] = 
 
     if (!context.dryMode) {
       val transaction = context.getStorageTransaction(storage).asInstanceOf[MysqlTransaction]
-      transaction.set(table, token, keysSeq, Some(new transaction.Record(mapVal)))
+
+      val record = new Record
+      record.value = mapVal
+      transaction.set(table, token, context.timestamp, keysSeq, Some(record))
     }
   }
 
@@ -45,7 +48,7 @@ class TableValue(storage: MysqlStorage, table: Table, prefixKeys: Seq[String] = 
 
     if (!context.dryMode) {
       val transaction = context.getStorageTransaction(storage).asInstanceOf[MysqlTransaction]
-      transaction.set(table, token, keysSeq, None)
+      transaction.set(table, token, context.timestamp, keysSeq, None)
     }
   }
 
