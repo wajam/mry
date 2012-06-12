@@ -6,11 +6,12 @@ import java.sql.{PreparedStatement, ResultSet, SQLException, Connection}
 import com.wajam.mry.execution._
 import com.wajam.mry.api.protobuf.ProtobufTranslator
 import com.wajam.mry.storage._
+import com.yammer.metrics.scala.Instrumented
 
 /**
  * MySQL backed storage
  */
-class MysqlStorage(name: String, host: String, database: String, username: String, password: String) extends Storage(name) with Logging with Value {
+class MysqlStorage(name: String, host: String, database: String, username: String, password: String) extends Storage(name) with Logging with Value with Instrumented {
   val datasource = new ComboPooledDataSource()
   var model = new Model
 

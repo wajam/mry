@@ -5,30 +5,42 @@ import java.sql.ResultSet
 import scala.collection.mutable
 import com.wajam.mry.execution._
 import com.wajam.mry.api.ProtocolTranslator
+import com.yammer.metrics.scala.Instrumented
 
 /**
  * Mysql storage transaction
  */
-class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction {
+class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with Instrumented {
+  private val metricTimeline = metrics.timer("mysql-timeline")
+  private val metricSet = metrics.timer("mysql-set")
+  private val metricGet = metrics.timer("mysql-get")
+  private val metricDelete = metrics.timer("mysql-delete")
+  private val metricCommit = metrics.timer("mysql-commit")
+  private val metricRollback = metrics.timer("mysql-rollback")
+
   val connection = storage.getConnection
   connection.setAutoCommit(false)
 
   def rollback() {
     if (this.connection != null) {
-      try {
-        this.connection.rollback()
-      } finally {
-        this.connection.close()
+      this.metricRollback.time {
+        try {
+          this.connection.rollback()
+        } finally {
+          this.connection.close()
+        }
       }
     }
   }
 
   def commit() {
     if (this.connection != null) {
-      try {
-        this.connection.commit()
-      } finally {
-        this.connection.close()
+      this.metricCommit.time {
+        try {
+          this.connection.commit()
+        } finally {
+          this.connection.close()
+        }
       }
     }
   }
@@ -44,13 +56,20 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction {
 
     var results: storage.SqlResults = null
     try {
-      // if none, it's a delete
-      val value = optRecord match {
-        case Some(r) => r.serializeValue(storage.valueSerializer)
-        case None => null
+      if (optRecord.isDefined) {
+        // there is a value, we set it
+        val value = optRecord.get.serializeValue(storage.valueSerializer)
+        this.metricSet.time {
+          results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ keys ++ Seq(value)): _*)
+        }
+
+      } else {
+        // no value, it's a delete
+        this.metricDelete.time {
+          results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ keys ++ Seq(null)): _*)
+        }
       }
 
-      results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ keys ++ Seq(value)): _*)
     } finally {
       if (results != null)
         results.close()
@@ -79,7 +98,10 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction {
 
     var results: storage.SqlResults = null
     try {
-      results = storage.executeSql(connection, false, sql, (Seq(token) ++ keys ++ Seq(timestamp.value) ++ Seq(token) ++ keys): _*)
+      this.metricGet.time {
+        results = storage.executeSql(connection, false, sql, (Seq(token) ++ keys ++ Seq(timestamp.value) ++ Seq(token) ++ keys): _*)
+      }
+
       if (results.resultset.next()) {
         val record = new Record
         record.load(storage.valueSerializer, results.resultset, table.depth)
@@ -99,17 +121,6 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction {
     val whereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = c.k%1$d".format(i)).mkString(" AND ")
     val fullTableName = table.depthName("_")
 
-    /*
-    val sql = """
-        SELECT c.tk, c.ts, c.d, l.ts, l.d, %1$s
-        FROM `%2$s` AS c LEFT JOIN `%2$s` l ON (c.tk = l.tk AND c.k1 = l.k1 AND l.ts < c.ts)
-        WHERE (l.ts IS NULL OR l.ts = (SELECT MAX(i.ts) FROM `%2$s` AS i WHERE i.tk = c.tk AND %3$s AND i.ts < c.ts))
-        AND c.ts >= %4$d
-        ORDER BY c.ts ASC
-        LIMIT 0,%5$d
-              """.format(projKeys, fullTableName, whereKeys, fromTimestamp.value, count)
-    */
-
     val sql = """
                 SELECT c.tk, c.ts, c.d, l.ts, l.d, %1$s
                 FROM `%2$s` AS c
@@ -117,17 +128,19 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction {
                 WHERE c.ts >= %4$d
                 ORDER BY c.ts ASC
                 LIMIT 0, %5$d;
-                """.format(projKeys, fullTableName, whereKeys, fromTimestamp.value, count)
+              """.format(projKeys, fullTableName, whereKeys, fromTimestamp.value, count)
 
     var ret = mutable.LinkedList[MutationRecord]()
     var results: storage.SqlResults = null
     try {
-      results = storage.executeSql(connection, false, sql)
+      this.metricTimeline.time {
+        results = storage.executeSql(connection, false, sql)
 
-      while (results.resultset.next()) {
-        val mut = new MutationRecord
-        mut.load(storage.valueSerializer, results.resultset, table.depth)
-        ret :+= mut
+        while (results.resultset.next()) {
+          val mut = new MutationRecord
+          mut.load(storage.valueSerializer, results.resultset, table.depth)
+          ret :+= mut
+        }
       }
 
     } finally {

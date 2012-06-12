@@ -4,12 +4,15 @@ import com.wajam.nrv.service.{Action, Service}
 import execution._
 import storage.Storage
 import com.wajam.nrv.Logging
+import com.yammer.metrics.scala.Instrumented
 
 /**
  * MRY database
  */
-class Database(var serviceName: String = "database") extends Service(serviceName) with Logging {
+class Database(var serviceName: String = "database") extends Service(serviceName) with Logging with Instrumented {
   var storages = Map[String, Storage]()
+
+  private val metricExecuteLocal = metrics.timer("execute-local")
 
   def analyseTransaction(transaction: Transaction): ExecutionContext = {
     val context = new ExecutionContext(storages)
@@ -71,26 +74,28 @@ class Database(var serviceName: String = "database") extends Service(serviceName
   }
 
   private val remoteExecuteToken = this.registerAction(new Action("/execute/:token", req => {
-    var values: Seq[Value] = null
+    this.metricExecuteLocal.time {
+      var values: Seq[Value] = null
 
-    var context = new ExecutionContext(storages)
+      var context = new ExecutionContext(storages)
 
-    try {
-      val transaction = req.parameters("trx").asInstanceOf[Transaction]
-      transaction.execute(context)
-      values = context.returnValues
-      context.commit()
+      try {
+        val transaction = req.parameters("trx").asInstanceOf[Transaction]
+        transaction.execute(context)
+        values = context.returnValues
+        context.commit()
 
-    } catch {
-      case e: Exception => {
-        context.rollback()
-        throw e
+      } catch {
+        case e: Exception => {
+          context.rollback()
+          throw e
+        }
       }
-    }
 
-    req.reply(
-      Seq("values" -> values)
-    )
+      req.reply(
+        Seq("values" -> values)
+      )
+    }
   }))
 
 
