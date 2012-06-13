@@ -1,11 +1,9 @@
 package com.wajam.mry.execution
 
-import sbt.complete.Parser.Value
-
 /**
  * MysqlTransaction (block of operations) executed on storage
  */
-class Transaction(blockCreator:(Block with OperationApi)=>Unit = null) extends Block with OperationApi with OperationSource with Serializable {
+class Transaction(blockCreator: (Block with OperationApi) => Unit = null) extends Block with OperationApi with OperationSource with Serializable {
   var id: Int = 0
 
   def sourceBlock = this
