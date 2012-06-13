@@ -1,10 +1,10 @@
 package com.wajam.mry
 
-import com.wajam.nrv.service.{Action, Service}
 import execution._
 import storage.Storage
 import com.wajam.nrv.Logging
 import com.yammer.metrics.scala.Instrumented
+import com.wajam.nrv.service.{Resolver, Action, Service}
 
 /**
  * MRY database
@@ -42,18 +42,15 @@ class Database(var serviceName: String = "database") extends Service(serviceName
   def execute(transaction: Transaction, ret: ((Seq[Value], Option[Exception]) => Unit)) {
     try {
 
+      // get token
       val context = this.analyseTransaction(transaction)
-
-      // TODO: support multiple token on read transactions
       if (context.tokens.size != 1)
         throw new ExecutionException("Only single destination transaction are supported right now.")
-
-      // TODO: split write and read transactions so that write gets through the consistency manager
-      // TODO: support for protocol translator
 
       // reset transaction before sending it
       transaction.reset()
 
+      // send transaction to node in charge of that token
       remoteExecuteToken.call(Map("token" -> context.tokens(0), "trx" -> transaction), onReply = (resp, optException) => {
         if (ret != null) {
           if (optException.isEmpty)
@@ -73,11 +70,18 @@ class Database(var serviceName: String = "database") extends Service(serviceName
     }
   }
 
+  def registerStorage(storage: Storage) {
+    this.storages += (storage.name -> storage)
+  }
+
+  def getStorage(name: String) = this.storages.get(name).get
+
+
   private val remoteExecuteToken = this.registerAction(new Action("/execute/:token", req => {
     this.metricExecuteLocal.time {
       var values: Seq[Value] = null
-
-      var context = new ExecutionContext(storages)
+      val context = new ExecutionContext(storages)
+      context.cluster = Database.this.cluster
 
       try {
         val transaction = req.parameters("trx").asInstanceOf[Transaction]
@@ -98,10 +102,5 @@ class Database(var serviceName: String = "database") extends Service(serviceName
     }
   }))
 
-
-  def registerStorage(storage: Storage) {
-    this.storages += (storage.name -> storage)
-  }
-
-  def getStorage(name: String) = this.storages.get(name).get
+  remoteExecuteToken.applySupport(resolver = Some(new Resolver(tokenExtractor = Resolver.TOKEN_PARAM("token"))))
 }

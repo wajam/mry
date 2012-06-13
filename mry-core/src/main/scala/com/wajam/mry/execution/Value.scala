@@ -52,7 +52,7 @@ class IntValue(var intValue: Long) extends Value with Serializable {
 
   override def equalsValue(that: Value): Boolean = {
     that match {
-      case i:IntValue => i.intValue == i.intValue
+      case i:IntValue => i.intValue == this.intValue
       case _ => false
     }
   }

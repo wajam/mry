@@ -3,6 +3,7 @@ package com.wajam.mry.execution
 import com.wajam.mry.storage.{Storage, StorageTransaction => StorageTransaction}
 import com.wajam.nrv.service.Resolver
 import com.wajam.nrv.Logging
+import com.wajam.nrv.cluster.Cluster
 
 /**
  * Execution context, used to store different information when a transaction
@@ -13,6 +14,7 @@ class ExecutionContext(var storages: Map[String, Storage]) extends Logging {
   var isMutation: Boolean = false
   var timestamp = Timestamp.now
   var tokens: List[Long] = List()
+  var cluster: Cluster = null
 
   var storageTransactions = Map[Storage, StorageTransaction]()
   var returnValues: Seq[Value] = Seq()
@@ -55,6 +57,24 @@ class ExecutionContext(var storages: Map[String, Storage]) extends Logging {
   def rollback() {
     for ((s, t) <- storageTransactions) {
       t.rollback()
+    }
+  }
+
+  class ContextValue extends NullValue {
+    override def execGet(context: ExecutionContext, into: Variable, keys: Object*) {
+      val key = param[StringValue](keys, 0)
+
+      key.strValue match {
+        case "tokens" =>
+          into.value = new ListValue(for (token <- context.tokens) yield new IntValue(token))
+
+        case "local_node" =>
+          if (context.cluster != null)
+            into.value = new StringValue(context.cluster.localNode.uniqueKey)
+
+        case _ =>
+          throw new ExecutionException("Only 'tokens' can be get from transaction block")
+      }
     }
   }
 }
