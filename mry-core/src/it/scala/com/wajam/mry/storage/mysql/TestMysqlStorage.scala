@@ -96,6 +96,37 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll with BeforeAndAft
     }
   }
 
+  test("shouldn't be able to get multiple rows on first depth table") {
+    intercept[InvalidParameter] {
+      val Seq(records) = exec(t => {
+        t.ret(t.from("mysql").from("table1").get())
+      })
+    }
+  }
+
+  test("should be able to get multiple rows on second depth table") {
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", Map("k" -> "value1"))
+      table.set("key2", Map("k" -> "value2"))
+      table.set("key3", Map("k" -> "value3"))
+      table.delete("key1")
+      table.get("key3").from("table2").set("key3.1", Map("k" -> "value3.1"))
+      table.get("key3").from("table2").set("key3.2", Map("k" -> "value3.2"))
+    }, commit = true)
+
+
+    val Seq(records1, records2) = exec(t => {
+      val rec1 = t.from("mysql").from("table1").get("key1").from("table2").get()
+      val rec2 = t.from("mysql").from("table1").get("key3").from("table2").get()
+      t.ret(rec1, rec2)
+    })
+
+    assert(records1.asInstanceOf[ListValue].listValue.size == 0)
+    assert(records2.asInstanceOf[ListValue].listValue.size == 2)
+  }
+
   test("should support delete") {
     exec(t => {
       val storage = t.from("mysql")

@@ -71,19 +71,6 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
 
   def getConnection = datasource.getConnection
 
-  class SqlResults {
-    var statement: PreparedStatement = null
-    var resultset: ResultSet = null
-
-    def close() {
-      if (statement != null)
-        statement.close()
-
-      if (resultset != null)
-        resultset.close()
-    }
-  }
-
   @throws(classOf[SQLException])
   def executeSql(connection: Connection, update: Boolean, sql: String, params: Any*): SqlResults = {
     val results = new SqlResults
@@ -220,3 +207,18 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
   }
 
 }
+
+class SqlResults {
+  var statement: PreparedStatement = null
+  var resultset: ResultSet = null
+
+  def close() {
+    if (statement != null)
+      statement.close()
+
+    if (resultset != null)
+      resultset.close()
+  }
+}
+
+

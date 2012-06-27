@@ -1,22 +1,29 @@
 package com.wajam.mry.storage.mysql
 
 import com.wajam.mry.execution._
-import com.wajam.mry.storage.StorageException
+import com.wajam.mry.storage.{StorageTransaction, StorageException}
 
 
 /**
  * MRY value representing a mysql record
  */
-class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table, token: Long, prefixKeys: Seq[String]) extends Value {
-  val transaction = context.getStorageTransaction(storage).asInstanceOf[MysqlTransaction]
+class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table, token: Long,
+                  prefixKeys: Seq[String], var optTransaction:Option[MysqlTransaction] = None,
+                  var optRecord:Option[Record] = None) extends Value {
 
-  val record = context.dryMode match {
-    case false => transaction.get(table, token, context.timestamp, prefixKeys)
-    case true => None
+  if (optTransaction.isEmpty) {
+    if (!context.dryMode) {
+      optTransaction = Some(context.getStorageTransaction(storage).asInstanceOf[MysqlTransaction])
+    }
+  }
+
+
+  if (optRecord.isEmpty && !context.dryMode) {
+    optRecord = optTransaction.get.get(table, token, context.timestamp, prefixKeys)
   }
 
   val innerValue = {
-    this.record match {
+    this.optRecord match {
       case Some(r) =>
         r.value
       case None =>

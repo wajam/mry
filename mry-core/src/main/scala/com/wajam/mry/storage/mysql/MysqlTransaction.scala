@@ -54,7 +54,7 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
 
     val sql = "INSERT INTO `%s` (`ts`,`tk`,%s,`d`) VALUES (?,?,%s,?) ON DUPLICATE KEY UPDATE d=VALUES(d)".format(fullTableName, sqlKeys, sqlValues)
 
-    var results: storage.SqlResults = null
+    var results: SqlResults = null
     try {
       if (optRecord.isDefined) {
         // there is a value, we set it
@@ -76,13 +76,13 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
     }
   }
 
-  def get(table: Table, token: Long, timestamp: Timestamp, keys: Seq[String]): Option[Record] = {
-    assert(keys.length == table.depth)
+  def getMultiple(table: Table, token: Long, timestamp: Timestamp, keys: Seq[String]): RecordIterator = {
+    assert(keys.length >= 1)
 
     val fullTableName = table.depthName("_")
     val projKeys = (for (i <- 1 to table.depth) yield "o.k%d".format(i)).mkString(",")
-    val outerWhereKeys = (for (i <- 1 to table.depth) yield "o.k%d = ?".format(i)).mkString(" AND ")
-    val innerWhereKeys = (for (i <- 1 to table.depth) yield "i.k%d = ?".format(i)).mkString(" AND ")
+    val outerWhereKeys = (for (i <- 1 to keys.length) yield "o.k%d = ?".format(i)).mkString(" AND ")
+    val innerWhereKeys = (for (i <- 1 to keys.length) yield "i.k%d = ?".format(i)).mkString(" AND ")
 
     val sql = """
         SELECT o.ts, o.tk, %1$s, d
@@ -96,24 +96,32 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
               """.format(projKeys, fullTableName, outerWhereKeys, innerWhereKeys)
 
 
-    var results: storage.SqlResults = null
+    var results: SqlResults = null
     try {
       this.metricGet.time {
         results = storage.executeSql(connection, false, sql, (Seq(token) ++ keys ++ Seq(timestamp.value) ++ Seq(token) ++ keys): _*)
       }
 
-      if (results.resultset.next()) {
-        val record = new Record
-        record.load(storage.valueSerializer, results.resultset, table.depth)
-        return Some(record)
-      }
+      new RecordIterator(storage, results, table)
 
-    } finally {
-      if (results != null)
-        results.close()
+    } catch {
+      case e: Exception =>
+        if (results != null)
+          results.close()
+        null
     }
+  }
 
-    None
+  def get(table: Table, token: Long, timestamp: Timestamp, keys: Seq[String]): Option[Record] = {
+    assert(keys.length == table.depth)
+
+    val iter = getMultiple(table, token, timestamp, keys)
+
+    if (iter.next()) {
+      Some(iter.record)
+    } else {
+      None
+    }
   }
 
   def getTimeline(table: Table, fromTimestamp: Timestamp, count: Int): Seq[MutationRecord] = {
@@ -131,7 +139,7 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
               """.format(projKeys, fullTableName, whereKeys, fromTimestamp.value, count)
 
     var ret = mutable.LinkedList[MutationRecord]()
-    var results: storage.SqlResults = null
+    var results: SqlResults = null
     try {
       this.metricTimeline.time {
         results = storage.executeSql(connection, false, sql)
@@ -205,6 +213,27 @@ class MutationRecord {
     else
       None
   }
+}
+
+class RecordIterator(storage:MysqlStorage, results: SqlResults, table: Table) {
+  private var hasNext = false
+
+  def next(): Boolean = {
+    this.hasNext = results.resultset.next()
+    this.hasNext
+  }
+
+  def record: Record = {
+    if (hasNext) {
+      val record = new Record
+      record.load(storage.valueSerializer, results.resultset, table.depth)
+      record
+    } else {
+      null
+    }
+  }
+
+  def close() = results.close()
 }
 
 

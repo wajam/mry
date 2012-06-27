@@ -70,28 +70,37 @@ message PTransactionObject {
 }
 
 message PTransactionOperation {
-	optional group Set = 1 {
-		required PTransactionVariable destination = 1;
-		required PTransactionObject key = 2;
-		required PTransactionObject value = 3;
-	};
-	optional group Get = 2 {
-		required PTransactionVariable source = 1;
-		required PTransactionObject key = 2;
-		required PTransactionVariable destination = 3;
-	};
-	optional group Get_table = 3 {
-		required PTransactionObject table_name = 1;
-		required PTransactionVariable destination = 2;
-		optional PTransactionVariable source = 3;
-	};
-	optional group Return = 4 {
-		repeated PTransactionObject data = 1;
-	};
-	optional group GetAll = 5 {
-		required PTransactionVariable source = 1;
-		required PTransactionVariable destination = 2;
-	};
+	optional PTransactionOperationSet Set = 1;
+	optional PTransactionOperationGet Get = 2;
+	optional PTransactionOperationGetTable GetTable = 3;
+	optional PTransactionOperationReturn Return = 4;
+    optional PTransactionOperationGetAll GetAll = 5;
 }
 
+message PTransactionOperationSet {
+    required PTransactionVariable destination = 1;
+    required PTransactionObject key = 2;
+    required PTransactionObject value = 3;
+};
+
+message PTransactionOperationGet {
+    required PTransactionVariable source = 1;
+    required PTransactionObject key = 2;
+    required PTransactionVariable destination = 3;
+};
+
+message PTransactionOperationGetTable {
+    required PTransactionObject table_name = 1;
+    required PTransactionVariable destination = 2;
+    optional PTransactionVariable source = 3;
+};
+
+message PTransactionOperationReturn {
+    repeated PTransactionObject data = 1;
+};
+
+message PTransactionOperationGetAll {
+    required PTransactionVariable source = 1;
+    required PTransactionVariable destination = 2;
+};
 
