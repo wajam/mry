@@ -28,7 +28,7 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
 
   def getStorageValue(context: ExecutionContext): Value = this
 
-  def syncModel(model: Model) {
+  def syncModel(model: Model, deleteOld: Boolean = false) {
     this.model = model
 
     val mysqlTables = this.getTables
@@ -51,9 +51,11 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
       sync(table)
     }
 
-    for (table <- mysqlTables) {
-      if (!modelTables.contains(table))
-        this.dropTable(table)
+    if (deleteOld) {
+      for (table <- mysqlTables) {
+        if (!modelTables.contains(table))
+          this.dropTable(table)
+      }
     }
   }
 
