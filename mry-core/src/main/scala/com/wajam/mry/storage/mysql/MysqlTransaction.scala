@@ -82,7 +82,7 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
     val fullTableName = table.depthName("_")
     val projKeys = (for (i <- 1 to table.depth) yield "o.k%d".format(i)).mkString(",")
     val outerWhereKeys = (for (i <- 1 to keys.length) yield "o.k%d = ?".format(i)).mkString(" AND ")
-    val innerWhereKeys = (for (i <- 1 to keys.length) yield "i.k%d = ?".format(i)).mkString(" AND ")
+    val innerWhereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = o.k%1$d".format(i)).mkString(" AND ")
 
     val sql = """
         SELECT o.ts, o.tk, %1$s, d
@@ -99,7 +99,7 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
     var results: SqlResults = null
     try {
       this.metricGet.time {
-        results = storage.executeSql(connection, false, sql, (Seq(token) ++ keys ++ Seq(timestamp.value) ++ Seq(token) ++ keys): _*)
+        results = storage.executeSql(connection, false, sql, (Seq(token) ++ keys ++ Seq(timestamp.value) ++ Seq(token)): _*)
       }
 
       new RecordIterator(storage, results, table)
