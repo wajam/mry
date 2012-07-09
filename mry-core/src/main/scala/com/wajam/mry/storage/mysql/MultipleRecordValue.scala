@@ -39,5 +39,5 @@ class MultipleRecordValue(storage: MysqlStorage, context: ExecutionContext, tabl
   }
 
   // Serialized version of this record is the inner map or null
-  override def serializableValue = this.innerValue
+  override def serializableValue = this.innerValue.serializableValue
 }

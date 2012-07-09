@@ -34,6 +34,11 @@ class ListValue(var listValue: Seq[Value]) extends Value with Serializable {
   def apply(index:Int) = {
     listValue(index)
   }
+
+  override def serializableValue: Value = {
+    val newList = for (oldValue <- listValue) yield oldValue.serializableValue
+    new ListValue(newList)
+  }
 }
 
 class StringValue(var strValue: String) extends Value with Serializable {
