@@ -116,15 +116,23 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll with BeforeAndAft
       table.get("key3").from("table2").set("key3.2", Map("k" -> "value3.2"))
     }, commit = true)
 
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.get("key2").from("table2").set("key2.1", Map("k" -> "value2.1"))
+      table.get("key3").from("table2").set("key3.3", Map("k" -> "value3.3"))
+    }, commit = true)
 
-    val Seq(records1, records2) = exec(t => {
+    val Seq(records1, records2, records3) = exec(t => {
       val rec1 = t.from("mysql").from("table1").get("key1").from("table2").get()
-      val rec2 = t.from("mysql").from("table1").get("key3").from("table2").get()
-      t.ret(rec1, rec2)
+      val rec2 = t.from("mysql").from("table1").get("key2").from("table2").get()
+      val rec3 = t.from("mysql").from("table1").get("key3").from("table2").get()
+      t.ret(rec1, rec2, rec3)
     })
 
     assert(records1.asInstanceOf[ListValue].listValue.size == 0)
-    assert(records2.asInstanceOf[ListValue].listValue.size == 2)
+    assert(records2.asInstanceOf[ListValue].listValue.size == 1)
+    assert(records3.asInstanceOf[ListValue].listValue.size == 3)
   }
 
   test("should support delete") {
