@@ -27,6 +27,11 @@ class MapValue(var mapValue: Map[String, Value]) extends Value with Serializable
   def apply(key:String) = {
     mapValue.getOrElse(key, new NullValue)
   }
+
+  override def serializableValue: Value = {
+    val newMap = for ((k, v) <- mapValue) yield (k -> v.serializableValue)
+    new MapValue(newMap)
+  }
 }
 
 class ListValue(var listValue: Seq[Value]) extends Value with Serializable {

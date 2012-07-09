@@ -14,13 +14,19 @@ class TestValue extends FunSuite {
   }
 
   test("list value should return a list of serializable values when serializing it") {
-    class NonSerializable(var intVal: Long) extends IntValue(intVal) {
-      override def serializableValue: Value = new IntValue(intVal)
-    }
+    val list = new ListValue(Seq(new NonSerializableInt(1), new NonSerializableInt(2)))
+    assert(list.listValue(0).isInstanceOf[NonSerializableInt])
+    assert(!list.serializableValue.asInstanceOf[ListValue].listValue(0).isInstanceOf[NonSerializableInt])
+  }
 
-    val list = new ListValue(Seq(new NonSerializable(1), new NonSerializable(2)))
+  test("map value should return a map of serializable values when serializing it") {
+    val map = new MapValue(Map("test" -> new NonSerializableInt(1)))
+    assert(map.mapValue("test").isInstanceOf[NonSerializableInt])
+    assert(!map.serializableValue.asInstanceOf[MapValue].mapValue("test").isInstanceOf[NonSerializableInt])
+  }
 
-    assert(list.listValue(0).isInstanceOf[NonSerializable])
-    assert(!list.serializableValue.asInstanceOf[ListValue].listValue(0).isInstanceOf[NonSerializable])
+
+  class NonSerializableInt(var intVal: Long) extends IntValue(intVal) {
+    override def serializableValue: Value = new IntValue(intVal)
   }
 }
