@@ -136,15 +136,9 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
       "`ts` bigint(20) NOT NULL AUTO_INCREMENT, " +
       "`tk` bigint(20) NOT NULL, "
 
-    var keyList = ""
-    for (i <- 1 to table.depth) {
-      sql += " k%d varchar(128) NOT NULL, ".format(i)
+    sql += ((for (i <- 1 to table.depth) yield " k%d varchar(128) NOT NULL ".format(i)) ++ (for (i <- 1 to table.depth) yield " g%d varchar(128) NOT NULL ".format(i))).mkString(",") + ","
 
-      if (keyList != "")
-        keyList += ","
-
-      keyList += "k%d".format(i)
-    }
+    val keyList = (for (i <- 1 to table.depth) yield "k%d".format(i)).mkString(",")
     sql += " `d` blob NULL, " +
       " PRIMARY KEY (`ts`,`tk`," + keyList + "), " +
       "	UNIQUE KEY `revkey` (`tk`, " + keyList + ",`ts`) " +
