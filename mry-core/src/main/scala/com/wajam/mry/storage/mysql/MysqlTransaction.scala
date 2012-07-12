@@ -12,12 +12,14 @@ import com.yammer.metrics.scala.Instrumented
  */
 class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with Instrumented {
   private val metricTimeline = metrics.timer("mysql-timeline")
-  private val metricTopCollectible = metrics.timer("mysql-topcollectible")
+  private val metricTopMostVersions = metrics.timer("mysql-topmostversions")
   private val metricSet = metrics.timer("mysql-set")
   private val metricGet = metrics.timer("mysql-get")
   private val metricDelete = metrics.timer("mysql-delete")
   private val metricCommit = metrics.timer("mysql-commit")
   private val metricRollback = metrics.timer("mysql-rollback")
+  private val metricTruncateVersions = metrics.timer("mysql-truncateversions")
+  private val metricCount = metrics.timer("mysql-count")
 
   val connection = storage.getConnection
   connection.setAutoCommit(false)
@@ -181,28 +183,28 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
     ret
   }
 
-  def getTopGarbageCollectible(table: Table, minGeneration: Int, count: Int): Seq[GenerationRecord] = {
-    val projKeys = (for (i <- 1 to table.depth) yield "t.k%d".format(i)).mkString(",")
+  def getTopMostVersions(table: Table, count: Int): Seq[VersionRecord] = {
+    val projKeys = (for (i <- 1 to table.depth) yield "t.k%1$d".format(i)).mkString(",")
     val fullTableName = table.depthName("_")
 
     val sql =
       """
-         SELECT t.tk, %1$s, COUNT(*) AS nb
+         SELECT t.tk, COUNT(*) AS nb, %1$s
          FROM `%2$s` AS t
          GROUP BY %1$s
-         HAVING COUNT(*) >= %3$d
+         HAVING COUNT(*) > %3$d
          LIMIT 0, %4$d
-      """.format(projKeys, fullTableName, minGeneration, count)
+      """.format(projKeys, fullTableName, table.maxVersions, count)
 
 
-    var ret = mutable.LinkedList[GenerationRecord]()
+    var ret = mutable.LinkedList[VersionRecord]()
     var results: SqlResults = null
     try {
-      this.metricTimeline.time {
+      this.metricTopMostVersions.time {
         results = storage.executeSql(connection, false, sql)
 
         while (results.resultset.next()) {
-          val gen = new GenerationRecord
+          val gen = new VersionRecord
           gen.load(results.resultset, table.depth)
           ret :+= gen
         }
@@ -214,6 +216,57 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
     }
 
     ret
+  }
+
+  def truncateVersions(table: Table, token: Long, accessPath: AccessPath, count: Int) {
+    val fullTableName = table.depthName("_")
+    val whereKeys = (for (i <- 1 to table.depth) yield "k%1$d = ?".format(i)).mkString(" AND ")
+    val keysValue = accessPath.keys
+
+    val sql = """
+                DELETE FROM `%1$s`
+                WHERE tk = ?
+                AND %2$s
+                ORDER BY ts ASC
+                LIMIT %3$d;
+              """.format(fullTableName, whereKeys, count)
+
+    var results: SqlResults = null
+    try {
+      this.metricTruncateVersions.time {
+        results = storage.executeSql(connection, true, sql, (Seq(token) ++ keysValue): _*)
+      }
+
+    } finally {
+      if (results != null)
+        results.close()
+    }
+  }
+
+  def getSize(table: Table): Long = {
+    val fullTableName = table.depthName("_")
+
+    val sql = """
+                SELECT COUNT(*) AS count
+                FROM %1$s
+              """.format(fullTableName)
+
+    var count: Long = 0
+    var results: SqlResults = null
+    try {
+      this.metricTruncateVersions.time {
+        results = storage.executeSql(connection, false, sql)
+      }
+
+      if (results.resultset.next()) {
+        count = results.resultset.getLong("count")
+      }
+    } finally {
+      if (results != null)
+        results.close()
+    }
+
+    count
   }
 }
 
@@ -310,15 +363,15 @@ class RecordIterator(storage: MysqlStorage, results: SqlResults, table: Table) {
   def close() = results.close()
 }
 
-class GenerationRecord {
+class VersionRecord {
   var token: Long = 0
   var generations: Int = 0
-  var keys: Seq[String] = Seq()
+  var accessPath = new AccessPath()
 
   def load(resultset: ResultSet, depth: Int) {
     this.token = resultset.getLong(1)
     this.generations = resultset.getInt(2)
-    this.keys = for (i <- 1 to depth) yield resultset.getString(2 + i)
+    this.accessPath = new AccessPath(for (i <- 1 to depth) yield new AccessKey(resultset.getString(2 + i)))
   }
 }
 

@@ -26,7 +26,7 @@ trait TableCollection {
   def getTable(name: String): Option[Table] = this.tables.get(name)
 }
 
-class Table(var name: String, var parent: Option[Table] = None) extends TableCollection {
+class Table(var name: String, var parent: Option[Table] = None, var maxVersions:Int = 3) extends TableCollection {
   override def currentTable = Some(this)
 
   def depthName(glue: String): String = {

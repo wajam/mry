@@ -6,6 +6,8 @@ import com.wajam.mry.execution.Implicits._
 import com.wajam.mry.execution._
 import com.wajam.mry.storage.{StorageException, Storage}
 import org.scalatest.{BeforeAndAfterEach, FunSuite, BeforeAndAfterAll}
+import collection.mutable
+import util.Random
 
 /**
  * Test MySQL storage
@@ -24,6 +26,10 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll with BeforeAndAft
 
     mysqlStorage.nuke()
     mysqlStorage.syncModel(model)
+  }
+
+  override protected def afterEach() {
+    mysqlStorage.close()
   }
 
   def exec(cb: (Transaction => Unit), commit: Boolean = true): Seq[Value] = {
@@ -313,7 +319,53 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll with BeforeAndAft
     // TODO: test second level
   }
 
-  override protected def afterAll() {
-    mysqlStorage.close()
+  test("garbage collections should truncate versions and keep enough versions") {
+    val counts = mutable.Map[String, (Int, Int)]()
+    val rand = new Random(3234234)
+
+    for (i <- 0 to 2000) {
+      val k = rand.nextInt(100).toString
+      var (c, v) = counts.getOrElse(k, (0, rand.nextInt(1000)))
+
+      exec(t => {
+        val storage = t.from("mysql")
+        val table = storage.from("table1")
+        table.set(k, Map("k" -> v))
+      }, commit = true)
+
+      if (rand.nextInt(10) == 5) {
+        val trx = this.mysqlStorage.getStorageTransaction
+        val records = trx.getTopMostVersions(table1, rand.nextInt(10))
+
+        val beforeSize = trx.getSize(table1)
+        var expectedDelete = 0
+        for (record <- records) {
+          val toDelete = (record.generations - table1.maxVersions)
+          expectedDelete += toDelete
+          trx.truncateVersions(table1, record.token, record.accessPath, toDelete)
+        }
+        c = table1.maxVersions
+        val afterSize = trx.getSize(table1)
+
+        assert((beforeSize - expectedDelete) == afterSize, "after %d > before %d, deleted %d".format(afterSize, beforeSize, expectedDelete))
+        trx.commit()
+      }
+
+      counts += (k -> (c, v))
+    }
+
+    for ((k, (c, v)) <- counts) {
+      val Seq(rec1) = exec(t => {
+        val storage = t.from("mysql")
+        val table = storage.from("table1")
+        t.ret(table.get(k))
+      }, commit = true)
+
+      val curVal = rec1.asInstanceOf[MapValue].mapValue("k")
+      assert(curVal.equalsValue(v), "%s!=%s".format(rec1, v))
+    }
+  }
+
+  test("make sure junit doesn't get stuck") {
   }
 }
