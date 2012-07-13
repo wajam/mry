@@ -13,5 +13,7 @@ abstract class Storage(var name: String) {
 
   def nuke()
 
-  def close()
+  def start()
+
+  def stop()
 }

@@ -5,7 +5,7 @@ import org.junit.runner.RunWith
 import com.wajam.mry.execution.Implicits._
 import com.wajam.mry.execution._
 import com.wajam.mry.storage.{StorageException, Storage}
-import org.scalatest.{BeforeAndAfterEach, FunSuite, BeforeAndAfterAll}
+import org.scalatest.{BeforeAndAfterEach, FunSuite}
 import collection.mutable
 import util.Random
 
@@ -13,7 +13,7 @@ import util.Random
  * Test MySQL storage
  */
 @RunWith(classOf[JUnitRunner])
-class TestMysqlStorage extends FunSuite with BeforeAndAfterAll with BeforeAndAfterEach {
+class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   var mysqlStorage: MysqlStorage = null
   var storages: Map[String, Storage] = null
   val model = new Model
@@ -21,15 +21,22 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll with BeforeAndAft
   val table2 = table1.addTable(new Table("table2"))
 
   override def beforeEach() {
-    mysqlStorage = new MysqlStorage("mysql", "localhost", "mry", "mry", "mry")
-    storages = Map(("mysql" -> mysqlStorage))
+    this.mysqlStorage = newStorageInstance()
+  }
 
-    mysqlStorage.nuke()
-    mysqlStorage.syncModel(model)
+  def newStorageInstance() = {
+    val storage = new MysqlStorage("mysql", "localhost", "mry", "mry", "mry", garbageCollection = false)
+    storages = Map(("mysql" -> storage))
+
+    storage.nuke()
+    storage.syncModel(model)
+    storage.start()
+
+    storage
   }
 
   override protected def afterEach() {
-    mysqlStorage.close()
+    mysqlStorage.stop()
   }
 
   def exec(cb: (Transaction => Unit), commit: Boolean = true): Seq[Value] = {
@@ -320,12 +327,12 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll with BeforeAndAft
   }
 
   test("garbage collections should truncate versions and keep enough versions") {
-    val counts = mutable.Map[String, (Int, Int)]()
+    val values = mutable.Map[String, Int]()
     val rand = new Random(3234234)
 
     for (i <- 0 to 2000) {
       val k = rand.nextInt(100).toString
-      var (c, v) = counts.getOrElse(k, (0, rand.nextInt(1000)))
+      var v = values.getOrElse(k, rand.nextInt(1000))
 
       exec(t => {
         val storage = t.from("mysql")
@@ -334,27 +341,23 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll with BeforeAndAft
       }, commit = true)
 
       if (rand.nextInt(10) == 5) {
-        val trx = this.mysqlStorage.getStorageTransaction
-        val records = trx.getTopMostVersions(table1, rand.nextInt(10))
-
+        var trx = mysqlStorage.getStorageTransaction
         val beforeSize = trx.getSize(table1)
-        var expectedDelete = 0
-        for (record <- records) {
-          val toDelete = (record.generations - table1.maxVersions)
-          expectedDelete += toDelete
-          trx.truncateVersions(table1, record.token, record.accessPath, toDelete)
-        }
-        c = table1.maxVersions
-        val afterSize = trx.getSize(table1)
+        trx.rollback()
 
-        assert((beforeSize - expectedDelete) == afterSize, "after %d > before %d, deleted %d".format(afterSize, beforeSize, expectedDelete))
-        trx.commit()
+        val collected = mysqlStorage.GarbageCollector.collect(rand.nextInt(10))
+
+        trx = mysqlStorage.getStorageTransaction
+        val afterSize = trx.getSize(table1)
+        trx.rollback()
+
+        assert((beforeSize - collected) == afterSize, "after %d > before %d, deleted %d".format(afterSize, beforeSize, collected))
       }
 
-      counts += (k -> (c, v))
+      values += (k -> v)
     }
 
-    for ((k, (c, v)) <- counts) {
+    for ((k, v) <- values) {
       val Seq(rec1) = exec(t => {
         val storage = t.from("mysql")
         val table = storage.from("table1")

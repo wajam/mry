@@ -7,13 +7,15 @@ import com.wajam.mry.execution._
 import com.wajam.mry.api.protobuf.ProtobufTranslator
 import com.wajam.mry.storage._
 import com.yammer.metrics.scala.Instrumented
+import java.util.concurrent.atomic.AtomicBoolean
+import collection.mutable
 
 /**
  * MySQL backed storage
  */
-class MysqlStorage(name: String, host: String, database: String, username: String, password: String) extends Storage(name) with Logging with Value with Instrumented {
+class MysqlStorage(name: String, host: String, database: String, username: String, password: String, garbageCollection: Boolean = true) extends Storage(name) with Logging with Value with Instrumented {
   val datasource = new ComboPooledDataSource()
-  var model = new Model
+  var model: Model = null
 
   val valueSerializer = new ProtobufTranslator
 
@@ -22,6 +24,9 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
   datasource.setUser(username)
   datasource.setPassword(password)
 
+  val gcThread = new Thread(GarbageCollector)
+
+
   def getStorageTransaction(context: ExecutionContext) = this.getStorageTransaction
 
   def getStorageTransaction = new MysqlTransaction(this)
@@ -29,34 +34,31 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
   def getStorageValue(context: ExecutionContext): Value = this
 
   def syncModel(model: Model, deleteOld: Boolean = false) {
+    assert(this.model == null, "Cannot sync model more than once")
+
     this.model = model
 
     val mysqlTables = this.getTables
-    var modelTables = Map[String, Boolean]()
+    var modelTablesNameMap = Map[String, Boolean]()
 
-    def sync(table: Table) {
+    val allTables = model.allHierarchyTables
+    for (table <- allTables) {
       val fullName = table.depthName("_")
-      modelTables += (fullName -> true)
+      modelTablesNameMap += (fullName -> true)
 
       if (!mysqlTables.contains(fullName)) {
         createTable(table, fullName)
       }
-
-      for ((name, table) <- table.tables) {
-        sync(table)
-      }
-    }
-
-    for ((name, table) <- model.tables) {
-      sync(table)
     }
 
     if (deleteOld) {
       for (table <- mysqlTables) {
-        if (!modelTables.contains(table))
+        if (!modelTablesNameMap.contains(table))
           this.dropTable(table)
       }
     }
+
+    GarbageCollector.init()
   }
 
   def nuke() {
@@ -67,8 +69,17 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
     }
   }
 
-  def close() {
+  def start() {
+    assert(this.model != null, "No model has been synced")
+
+    if (garbageCollection) {
+      GarbageCollector.start()
+    }
+  }
+
+  def stop() {
     this.datasource.close()
+    GarbageCollector.stop()
   }
 
   def getConnection = datasource.getConnection
@@ -199,6 +210,105 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
       case None =>
         throw new StorageException("Non existing table %s".format(tableName))
 
+    }
+  }
+
+  object GarbageCollector extends Runnable {
+    val VERSIONS_BATCH_COUNT: Int = 100
+
+    val running = new AtomicBoolean(true)
+    var lastTokens: mutable.Map[Table, Long] = null
+    var versionsCache: mutable.Map[Table, mutable.Queue[VersionRecord]] = null
+    var allTables: Seq[Table] = null
+
+    def init() {
+      this.lastTokens = mutable.Map[Table, Long]()
+      this.versionsCache = mutable.Map()
+      this.allTables = model.allHierarchyTables
+
+      // init maps
+      for (table <- allTables) {
+        lastTokens += (table -> 0)
+        versionsCache += (table -> mutable.Queue())
+      }
+    }
+
+    def start() {
+      new Thread(this).start()
+    }
+
+    def run() {
+      while (running.get()) {
+        // TODO: 10 should be replaced by total insert per second
+        this.collect(10)
+        Thread.sleep(1000)
+      }
+    }
+
+    def stop() {
+      this.running.set(false)
+    }
+
+    /**
+     * Garbage collect at least specified versions (if any can be collected)
+     * Not thread safe! Call from 1 thread at the time!
+     *
+     * @param toCollect Number of versions to collect
+     * @return Collected versions
+     */
+    def collect(toCollect: Int): Int = {
+      var trx: MysqlTransaction = null
+      var collectedTotal = 0
+
+      try {
+        trx = getStorageTransaction
+        val collectPerTable = (toCollect / allTables.size) + 1
+
+        for (table <- allTables) {
+          var lastToken = lastTokens(table)
+          val versions = versionsCache(table)
+
+          // no more versions in cache, fetch new batch
+          if (versions.size == 0) {
+            val fetched = trx.getTopMostVersions(table, lastToken, VERSIONS_BATCH_COUNT)
+            versions ++= fetched
+
+            // didn't fetch anything, no more versions after this token. rewind to beginning
+            if (fetched == 0)
+              lastToken = 0
+          }
+
+          var collectedVersions = 0
+          while (versions.size > 0 && collectedVersions < collectPerTable) {
+            val version = versions.dequeue()
+            val toDelete = (version.generations - table.maxVersions)
+
+            trx.truncateVersions(table, version.token, version.accessPath, toDelete)
+
+            collectedVersions += toDelete
+            lastToken = version.token
+          }
+
+          // TODO: metrics
+
+          lastTokens += (table -> lastToken)
+          collectedTotal += collectedVersions
+        }
+
+        trx.commit()
+      } catch {
+        case e: Exception =>
+          try {
+            if (trx != null)
+              trx.rollback()
+          } catch {
+            case _ =>
+          }
+
+          error("Catched an exception in garbage collector!", e)
+      }
+
+      collectedTotal
     }
   }
 

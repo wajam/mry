@@ -19,7 +19,7 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
   private val metricCommit = metrics.timer("mysql-commit")
   private val metricRollback = metrics.timer("mysql-rollback")
   private val metricTruncateVersions = metrics.timer("mysql-truncateversions")
-  private val metricCount = metrics.timer("mysql-count")
+  private val metricSize = metrics.timer("mysql-count")
 
   val connection = storage.getConnection
   connection.setAutoCommit(false)
@@ -183,7 +183,7 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
     ret
   }
 
-  def getTopMostVersions(table: Table, count: Int): Seq[VersionRecord] = {
+  def getTopMostVersions(table: Table, fromToken: Long, count: Int): Seq[VersionRecord] = {
     val projKeys = (for (i <- 1 to table.depth) yield "t.k%1$d".format(i)).mkString(",")
     val fullTableName = table.depthName("_")
 
@@ -191,10 +191,11 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
       """
          SELECT t.tk, COUNT(*) AS nb, %1$s
          FROM `%2$s` AS t
+         WHERE t.tk >= %3$d
          GROUP BY %1$s
-         HAVING COUNT(*) > %3$d
-         LIMIT 0, %4$d
-      """.format(projKeys, fullTableName, table.maxVersions, count)
+         HAVING COUNT(*) > %4$d
+         LIMIT 0, %5$d
+      """.format(projKeys, fullTableName, fromToken, table.maxVersions, count)
 
 
     var ret = mutable.LinkedList[VersionRecord]()
@@ -218,7 +219,7 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
     ret
   }
 
-  def truncateVersions(table: Table, token: Long, accessPath: AccessPath, count: Int) {
+  def truncateVersions(table: Table, token: Long, accessPath: AccessPath, count: Int, maxTimestamp: Timestamp = Timestamp.MAX) {
     val fullTableName = table.depthName("_")
     val whereKeys = (for (i <- 1 to table.depth) yield "k%1$d = ?".format(i)).mkString(" AND ")
     val keysValue = accessPath.keys
@@ -227,9 +228,10 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
                 DELETE FROM `%1$s`
                 WHERE tk = ?
                 AND %2$s
+                AND ts < %3$d
                 ORDER BY ts ASC
-                LIMIT %3$d;
-              """.format(fullTableName, whereKeys, count)
+                LIMIT %4$d;
+              """.format(fullTableName, whereKeys, maxTimestamp.value, count)
 
     var results: SqlResults = null
     try {
@@ -248,13 +250,13 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
 
     val sql = """
                 SELECT COUNT(*) AS count
-                FROM %1$s
+                FROM `%1$s`
               """.format(fullTableName)
 
     var count: Long = 0
     var results: SqlResults = null
     try {
-      this.metricTruncateVersions.time {
+      this.metricSize.time {
         results = storage.executeSql(connection, false, sql)
       }
 
