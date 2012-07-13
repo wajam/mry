@@ -7,35 +7,35 @@ import com.wajam.mry.execution._
 import com.wajam.mry.api.protobuf.ProtobufTranslator
 import com.wajam.mry.storage._
 import com.yammer.metrics.scala.Instrumented
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.{AtomicInteger, AtomicBoolean}
 import collection.mutable
+import java.util.concurrent.{TimeUnit, ScheduledThreadPoolExecutor}
 
 /**
  * MySQL backed storage
  */
 class MysqlStorage(name: String, host: String, database: String, username: String, password: String, garbageCollection: Boolean = true) extends Storage(name) with Logging with Value with Instrumented {
-  val datasource = new ComboPooledDataSource()
-  var model: Model = null
-
+  var model: Model = new Model
+  var mutationsCount = new AtomicInteger(0)
   val valueSerializer = new ProtobufTranslator
 
+  val datasource = new ComboPooledDataSource()
   datasource.setDriverClass("com.mysql.jdbc.Driver")
   datasource.setJdbcUrl(String.format("jdbc:mysql://%s/%s?zeroDateTimeBehavior=convertToNull", host, database))
   datasource.setUser(username)
   datasource.setPassword(password)
 
-  val gcThread = new Thread(GarbageCollector)
-
-
   def getStorageTransaction(context: ExecutionContext) = this.getStorageTransaction
 
   def getStorageTransaction = new MysqlTransaction(this)
 
+  def returnTransaction(trx: MysqlTransaction) {
+    this.mutationsCount.getAndAdd(trx.mutationsCount)
+  }
+
   def getStorageValue(context: ExecutionContext): Value = this
 
   def syncModel(model: Model, deleteOld: Boolean = false) {
-    assert(this.model == null, "Cannot sync model more than once")
-
     this.model = model
 
     val mysqlTables = this.getTables
@@ -57,9 +57,9 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
           this.dropTable(table)
       }
     }
-
-    GarbageCollector.init()
   }
+
+  def getConnection = datasource.getConnection
 
   def nuke() {
     val tables = this.getTables
@@ -78,11 +78,9 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
   }
 
   def stop() {
+    GarbageCollector.kill()
     this.datasource.close()
-    GarbageCollector.stop()
   }
-
-  def getConnection = datasource.getConnection
 
   @throws(classOf[SQLException])
   def executeSql(connection: Connection, update: Boolean, sql: String, params: Any*): SqlResults = {
@@ -213,40 +211,60 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
     }
   }
 
-  object GarbageCollector extends Runnable {
-    val VERSIONS_BATCH_COUNT: Int = 100
+  object GarbageCollector extends Instrumented {
+    private val metricCollect = metrics.timer("gc-collect")
+    private val metricCollected = metrics.counter("gc-collected")
 
-    val running = new AtomicBoolean(true)
-    var lastTokens: mutable.Map[Table, Long] = null
-    var versionsCache: mutable.Map[Table, mutable.Queue[VersionRecord]] = null
-    var allTables: Seq[Table] = null
+    val VERSIONS_BATCH_COUNT = 100
+    val MIN_COLLECTION = 10
 
-    def init() {
-      this.lastTokens = mutable.Map[Table, Long]()
-      this.versionsCache = mutable.Map()
-      this.allTables = model.allHierarchyTables
+    val killed = new AtomicBoolean(false)
+    val active = new AtomicBoolean(true)
+    var lastTokens = mutable.Map[Table, Long]()
+    var versionsCache = mutable.Map[Table, mutable.Queue[VersionRecord]]()
+    var allTables: Seq[Table] = model.allHierarchyTables
 
-      // init maps
-      for (table <- allTables) {
-        lastTokens += (table -> 0)
-        versionsCache += (table -> mutable.Queue())
+    var lastCollectMutationsCount = 0
+    var lastCollected = 0 // always force first collection
+    var nbEmptyCollect = 0 // succeeding empty garbage collection
+
+    val scheduledExecutor = new ScheduledThreadPoolExecutor(1)
+    scheduledExecutor.scheduleWithFixedDelay(new Runnable {
+      def run() {
+        if (killed.get()) {
+          info("Garbage collector shouldn't be running anymore. Stopping!")
+          throw new InterruptedException()
+        }
+
+        if (active.get()) {
+          val curCount = mutationsCount.get()
+          val mutationsDiff = curCount - lastCollectMutationsCount
+          lastCollectMutationsCount = curCount
+
+          if (mutationsDiff > 0 || lastCollected > 0 || nbEmptyCollect < 5) {
+            val toCollect = math.min(mutationsDiff, MIN_COLLECTION)
+            lastCollected = collect(toCollect)
+
+            if (lastCollected == 0)
+              nbEmptyCollect += 1
+            else
+              nbEmptyCollect = 0
+          }
+        }
       }
-    }
+    }, 1000, 1000, TimeUnit.MILLISECONDS)
 
     def start() {
-      new Thread(this).start()
-    }
-
-    def run() {
-      while (running.get()) {
-        // TODO: 10 should be replaced by total insert per second
-        this.collect(10)
-        Thread.sleep(1000)
-      }
+      this.active.set(true)
     }
 
     def stop() {
-      this.running.set(false)
+      this.active.set(false)
+    }
+
+    def kill() {
+      this.stop()
+      killed.set(true)
     }
 
     /**
@@ -257,57 +275,63 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
      * @return Collected versions
      */
     def collect(toCollect: Int): Int = {
+      debug("GCing iteration starting, need {} to be collected", toCollect)
+
       var trx: MysqlTransaction = null
       var collectedTotal = 0
 
-      try {
-        trx = getStorageTransaction
-        val collectPerTable = (toCollect / allTables.size) + 1
+      metricCollect.time({
+        try {
+          trx = getStorageTransaction
+          val collectPerTable = (toCollect / allTables.size) + 1
 
-        for (table <- allTables) {
-          var lastToken = lastTokens(table)
-          val versions = versionsCache(table)
+          for (table <- allTables) {
+            var lastToken = lastTokens.getOrElse(table, 0l)
+            val versions: mutable.Queue[VersionRecord] = versionsCache.getOrElse(table, mutable.Queue())
 
-          // no more versions in cache, fetch new batch
-          if (versions.size == 0) {
-            val fetched = trx.getTopMostVersions(table, lastToken, VERSIONS_BATCH_COUNT)
-            versions ++= fetched
+            // no more versions in cache, fetch new batch
+            if (versions.size == 0) {
+              val fetched = trx.getTopMostVersions(table, lastToken, VERSIONS_BATCH_COUNT)
+              versions ++= fetched
 
-            // didn't fetch anything, no more versions after this token. rewind to beginning
-            if (fetched == 0)
-              lastToken = 0
+              // didn't fetch anything, no more versions after this token. rewind to beginning
+              if (fetched.size == 0)
+                lastToken = 0
+            }
+
+            var collectedVersions = 0
+            while (versions.size > 0 && collectedVersions < collectPerTable) {
+              val version = versions.dequeue()
+              val toDelete = (version.generations - table.maxVersions)
+
+              trx.truncateVersions(table, version.token, version.accessPath, toDelete)
+
+              collectedVersions += toDelete
+              lastToken = version.token
+            }
+
+            lastTokens += (table -> lastToken)
+            versionsCache += (table -> versions)
+            collectedTotal += collectedVersions
           }
 
-          var collectedVersions = 0
-          while (versions.size > 0 && collectedVersions < collectPerTable) {
-            val version = versions.dequeue()
-            val toDelete = (version.generations - table.maxVersions)
 
-            trx.truncateVersions(table, version.token, version.accessPath, toDelete)
+          metricCollected += collectedTotal
+          trx.commit()
+        } catch {
+          case e: Exception =>
+            try {
+              if (trx != null)
+                trx.rollback()
+            } catch {
+              case _ =>
+            }
 
-            collectedVersions += toDelete
-            lastToken = version.token
-          }
-
-          // TODO: metrics
-
-          lastTokens += (table -> lastToken)
-          collectedTotal += collectedVersions
+            error("Catched an exception in garbage collector!", e)
         }
+      })
 
-        trx.commit()
-      } catch {
-        case e: Exception =>
-          try {
-            if (trx != null)
-              trx.rollback()
-          } catch {
-            case _ =>
-          }
-
-          error("Catched an exception in garbage collector!", e)
-      }
-
+      info("GCing iteration done! Collected {} versions", collectedTotal)
       collectedTotal
     }
   }
@@ -319,11 +343,11 @@ class SqlResults {
   var resultset: ResultSet = null
 
   def close() {
-    if (statement != null)
-      statement.close()
-
     if (resultset != null)
       resultset.close()
+
+    if (statement != null)
+      statement.close()
   }
 }
 

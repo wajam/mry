@@ -21,6 +21,8 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
   private val metricTruncateVersions = metrics.timer("mysql-truncateversions")
   private val metricSize = metrics.timer("mysql-count")
 
+  var mutationsCount = 0
+
   val connection = storage.getConnection
   connection.setAutoCommit(false)
 
@@ -34,6 +36,8 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
         }
       }
     }
+
+    storage.returnTransaction(this)
   }
 
   def commit() {
@@ -46,6 +50,8 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
         }
       }
     }
+
+    storage.returnTransaction(this)
   }
 
   def set(table: Table, token: Long, timestamp: Timestamp, accessPath: AccessPath, optRecord: Option[Record]) {
@@ -76,6 +82,8 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
           results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue ++ gensValue ++ Seq(null)): _*)
         }
       }
+
+      this.mutationsCount += 1
 
     } finally {
       if (results != null)

@@ -326,7 +326,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     // TODO: test second level
   }
 
-  test("garbage collections should truncate versions and keep enough versions") {
+  test("forced garbage collections should truncate versions and keep enough versions") {
     val values = mutable.Map[String, Int]()
     val rand = new Random(3234234)
 
