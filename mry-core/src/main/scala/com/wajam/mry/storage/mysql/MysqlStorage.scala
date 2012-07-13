@@ -217,6 +217,7 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
 
     val VERSIONS_BATCH_COUNT = 100
     val MIN_COLLECTION = 10
+    val GC_DELAY = 1000
 
     val killed = new AtomicBoolean(false)
     val active = new AtomicBoolean(true)
@@ -252,7 +253,7 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
           }
         }
       }
-    }, 1000, 1000, TimeUnit.MILLISECONDS)
+    }, GC_DELAY, GC_DELAY, TimeUnit.MILLISECONDS)
 
     def start() {
       this.active.set(true)
