@@ -4,40 +4,57 @@ import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 import com.wajam.mry.execution.Implicits._
 import com.wajam.mry.execution._
-import com.wajam.mry.storage.Storage
-import org.scalatest.{BeforeAndAfterEach, FunSuite, BeforeAndAfterAll}
+import com.wajam.mry.storage.{StorageException, Storage}
+import org.scalatest.{BeforeAndAfterEach, FunSuite}
+import collection.mutable
+import util.Random
 
 /**
  * Test MySQL storage
  */
 @RunWith(classOf[JUnitRunner])
-class TestMysqlStorage extends FunSuite with BeforeAndAfterAll with BeforeAndAfterEach {
-  var mysqlStorage:MysqlStorage = null
-  var storages:Map[String, Storage] = null
+class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
+  var mysqlStorage: MysqlStorage = null
+  var storages: Map[String, Storage] = null
   val model = new Model
   val table1 = model.addTable(new Table("table1"))
   val table2 = table1.addTable(new Table("table2"))
+  val table3 = model.addTable(new Table("table3"))
 
   override def beforeEach() {
-    mysqlStorage = new MysqlStorage("mysql", "localhost", "mry", "mry", "mry")
-    storages = Map(("mysql" -> mysqlStorage))
+    this.mysqlStorage = newStorageInstance()
+  }
 
-    mysqlStorage.nuke()
-    mysqlStorage.syncModel(model)
+  def newStorageInstance() = {
+    val storage = new MysqlStorage("mysql", "localhost", "mry", "mry", "mry", garbageCollection = false)
+    storages = Map(("mysql" -> storage))
+
+    storage.nuke()
+    storage.syncModel(model)
+    storage.start()
+
+    storage
+  }
+
+  override protected def afterEach() {
+    mysqlStorage.stop()
   }
 
   def exec(cb: (Transaction => Unit), commit: Boolean = true): Seq[Value] = {
-    val transac = new Transaction()
     val context = new ExecutionContext(storages)
-    cb(transac)
-    transac.execute(context)
 
-    if (commit)
-      context.commit()
-    else
-      context.rollback()
+    try {
+      val transac = new Transaction()
+      cb(transac)
+      transac.execute(context)
 
-    context.returnValues
+      context.returnValues
+    } finally {
+      if (commit)
+        context.commit()
+      else
+        context.rollback()
+    }
   }
 
   test("should get committed record") {
@@ -80,8 +97,9 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll with BeforeAndAft
     val Seq(record1, record2) = exec(t => {
       val storage = t.from("mysql")
       val table1 = storage.from("table1")
-      val record1 = table1.get("key1")
+      table1.set("key1", Map("k1" -> "value1"))
 
+      val record1 = table1.get("key1")
       val table2 = record1.from("table2")
       table2.set("key1.2", Map("mapk" -> toVal("value1")))
 
@@ -123,16 +141,23 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll with BeforeAndAft
       table.get("key3").from("table2").set("key3.3", Map("k" -> "value3.3"))
     }, commit = true)
 
-    val Seq(records1, records2, records3) = exec(t => {
-      val rec1 = t.from("mysql").from("table1").get("key1").from("table2").get()
-      val rec2 = t.from("mysql").from("table1").get("key2").from("table2").get()
-      val rec3 = t.from("mysql").from("table1").get("key3").from("table2").get()
-      t.ret(rec1, rec2, rec3)
+
+    // shouldn't be able to get a record on second hiearchy if first hierarchy record doesn't exist
+    intercept[StorageException] {
+      exec(t => {
+        val rec1 = t.from("mysql").from("table1").get("key1").from("table2").get()
+        t.ret(rec1)
+      })
+    }
+
+    val Seq(records1, records2) = exec(t => {
+      val rec1 = t.from("mysql").from("table1").get("key2").from("table2").get()
+      val rec2 = t.from("mysql").from("table1").get("key3").from("table2").get()
+      t.ret(rec1, rec2)
     })
 
-    assert(records1.asInstanceOf[ListValue].listValue.size == 0)
-    assert(records2.asInstanceOf[ListValue].listValue.size == 1)
-    assert(records3.asInstanceOf[ListValue].listValue.size == 3)
+    assert(records1.asInstanceOf[ListValue].listValue.size == 1)
+    assert(records2.asInstanceOf[ListValue].listValue.size == 3)
   }
 
   test("should support delete") {
@@ -168,7 +193,63 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll with BeforeAndAft
     assert(!v5.equalsValue(new NullValue))
   }
 
-  ignore("deleting parent should delete children") {
+  test("deletion should be a tombstone record") {
+    val transac = new MysqlTransaction(mysqlStorage)
+    val initRec = new Record(Map("test" -> 1234))
+    val path = new AccessPath(Seq(new AccessKey("test1", Some(1))))
+    transac.set(table1, 1, Timestamp.now, path, Some(initRec))
+
+    val rec1 = transac.get(table1, 1, Timestamp.now, path)
+    assert(rec1.get.value.asInstanceOf[MapValue]("test").equalsValue(1234))
+
+    transac.set(table1, 1, Timestamp.now, path, None)
+
+    val rec2 = transac.get(table1, 1, Timestamp.now, path)
+    assert(rec2.isEmpty)
+
+    val rec3 = transac.get(table1, 1, Timestamp.now, path, includeDeleted = true)
+    assert(rec3.isDefined)
+    assert(rec3.get.value.isNull)
+
+    transac.commit()
+  }
+
+  test("deleting parent should delete children") {
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("k1", Map("k" -> "value1@1"))
+      table.get("k1").from("table2").set("k1.1", Map("k" -> "value1.1@1"))
+      table.set("k2", Map("k" -> "value1@1"))
+      table.get("k2").from("table2").set("k2.1", Map("k" -> "value2.1@1"))
+      table.delete("k2")
+    })
+
+    val Seq(rec1, rec2) = exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.delete("k1")
+
+      table.set("k1", Map("k" -> "value1@2"))
+      table.set("k2", Map("k" -> "value2@2"))
+
+      val rec1 = table.get("k1").from("table2").get("k1.1")
+      val rec2 = table.get("k2").from("table2").get("k2.1")
+
+      t.ret(rec1, rec2)
+    })
+
+    val Seq(rec3, rec4) = exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      val rec1 = table.get("k1").from("table2").get("k1.1")
+      val rec2 = table.get("k2").from("table2").get("k2.1")
+
+      t.ret(rec1, rec2)
+    })
+    assert(rec3.isNull)
+    assert(rec4.isNull)
+
   }
 
   test("operations should be kept in a history") {
@@ -206,24 +287,24 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll with BeforeAndAft
     val table1Timeline = mysqlStorage.getStorageTransaction(context).getTimeline(table1, fromTimestamp, 100)
 
     assert(table1Timeline.size == 6)
-    assert(table1Timeline(0).keys(0) == "key1", table1Timeline(0).keys(0))
+    assert(table1Timeline(0).accessPath.keys(0) == "key1", table1Timeline(0).accessPath.keys(0))
     assert(table1Timeline(0).newValue.isEmpty)
-    assert(table1Timeline(1).keys(0) == "key2", table1Timeline(0).keys(0))
+    assert(table1Timeline(1).accessPath.keys(0) == "key2", table1Timeline(0).accessPath.keys(0))
     table1Timeline(1).newValue match {
       case Some(m: MapValue) => assert("value2.0".equalsValue(m.mapValue("k")))
       case _ => fail()
     }
-    assert(table1Timeline(2).keys(0) == "key3", table1Timeline(0).keys(0))
+    assert(table1Timeline(2).accessPath.keys(0) == "key3", table1Timeline(0).accessPath.keys(0))
     table1Timeline(2).newValue match {
       case Some(m: MapValue) => assert("value3".equalsValue(m.mapValue("k")))
       case _ => fail()
     }
-    assert(table1Timeline(3).keys(0) == "key5", table1Timeline(0).keys(0))
+    assert(table1Timeline(3).accessPath.keys(0) == "key5", table1Timeline(0).accessPath.keys(0))
     table1Timeline(3).newValue match {
       case Some(m: MapValue) => assert("value5".equalsValue(m.mapValue("k")))
       case _ => fail()
     }
-    assert(table1Timeline(4).keys(0) == "key2", table1Timeline(0).keys(0))
+    assert(table1Timeline(4).accessPath.keys(0) == "key2", table1Timeline(0).accessPath.keys(0))
     table1Timeline(4).newValue match {
       case Some(m: MapValue) => assert("value2.1".equalsValue(m.mapValue("k")))
       case _ => fail()
@@ -232,7 +313,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll with BeforeAndAft
       case Some(m: MapValue) => assert("value2.0".equalsValue(m.mapValue("k")))
       case _ => fail()
     }
-    assert(table1Timeline(5).keys(0) == "key3", table1Timeline(0).keys(0))
+    assert(table1Timeline(5).accessPath.keys(0) == "key3", table1Timeline(0).accessPath.keys(0))
     assert(table1Timeline(5).newValue.isEmpty)
     table1Timeline(5).oldValue match {
       case Some(m: MapValue) => assert("value3".equalsValue(m.mapValue("k")))
@@ -246,7 +327,49 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterAll with BeforeAndAft
     // TODO: test second level
   }
 
-  override protected def afterAll() {
-    mysqlStorage.close()
+  test("forced garbage collections should truncate versions and keep enough versions") {
+    val values = mutable.Map[String, Int]()
+    val rand = new Random(3234234)
+
+    for (i <- 0 to 2000) {
+      val k = rand.nextInt(100).toString
+      var v = values.getOrElse(k, rand.nextInt(1000))
+
+      exec(t => {
+        val storage = t.from("mysql")
+        val table = storage.from("table3")
+        table.set(k, Map("k" -> v))
+      }, commit = true)
+
+      if (rand.nextInt(10) == 5) {
+        var trx = mysqlStorage.getStorageTransaction
+        val beforeSize = trx.getSize(table3)
+        trx.rollback()
+
+        val collected = mysqlStorage.GarbageCollector.collect(rand.nextInt(10))
+
+        trx = mysqlStorage.getStorageTransaction
+        val afterSize = trx.getSize(table3)
+        trx.rollback()
+
+        assert((beforeSize - collected) == afterSize, "after %d > before %d, deleted %d".format(afterSize, beforeSize, collected))
+      }
+
+      values += (k -> v)
+    }
+
+    for ((k, v) <- values) {
+      val Seq(rec1) = exec(t => {
+        val storage = t.from("mysql")
+        val table = storage.from("table3")
+        t.ret(table.get(k))
+      }, commit = true)
+
+      val curVal = rec1.asInstanceOf[MapValue].mapValue("k")
+      assert(curVal.equalsValue(v), "%s!=%s".format(rec1, v))
+    }
+  }
+
+  test("make sure junit doesn't get stuck") {
   }
 }

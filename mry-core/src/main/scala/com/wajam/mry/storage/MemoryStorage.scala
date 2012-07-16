@@ -10,7 +10,9 @@ class MemoryStorage(name: String) extends Storage(name) {
 
   def nuke() {}
 
-  def close() {}
+  def start() {}
+
+  def stop() {}
 
   def getStorageTransaction(context: ExecutionContext) = new MemoryTransaction(context)
 

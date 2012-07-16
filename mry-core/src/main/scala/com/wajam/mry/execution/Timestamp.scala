@@ -17,6 +17,10 @@ object Timestamp {
 
   def now = new Timestamp(System.currentTimeMillis())
 
+  val MAX = new Timestamp(Long.MaxValue)
+
+  val MIN = new Timestamp(0)
+
   implicit def long2timestamp(value: Long) = Timestamp(value)
 
   implicit def timestamp2long(ts: Timestamp) = ts.value

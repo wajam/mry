@@ -7,16 +7,19 @@ import com.wajam.mry.execution._
 import com.wajam.mry.api.protobuf.ProtobufTranslator
 import com.wajam.mry.storage._
 import com.yammer.metrics.scala.Instrumented
+import java.util.concurrent.atomic.{AtomicInteger, AtomicBoolean}
+import collection.mutable
+import java.util.concurrent.{TimeUnit, ScheduledThreadPoolExecutor}
 
 /**
  * MySQL backed storage
  */
-class MysqlStorage(name: String, host: String, database: String, username: String, password: String) extends Storage(name) with Logging with Value with Instrumented {
-  val datasource = new ComboPooledDataSource()
-  var model = new Model
-
+class MysqlStorage(name: String, host: String, database: String, username: String, password: String, garbageCollection: Boolean = true) extends Storage(name) with Logging with Value with Instrumented {
+  var model: Model = new Model
+  var mutationsCount = new AtomicInteger(0)
   val valueSerializer = new ProtobufTranslator
 
+  val datasource = new ComboPooledDataSource()
   datasource.setDriverClass("com.mysql.jdbc.Driver")
   datasource.setJdbcUrl(String.format("jdbc:mysql://%s/%s?zeroDateTimeBehavior=convertToNull", host, database))
   datasource.setUser(username)
@@ -26,38 +29,37 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
 
   def getStorageTransaction = new MysqlTransaction(this)
 
+  def closeStorageTransaction(trx: MysqlTransaction) {
+    this.mutationsCount.getAndAdd(trx.mutationsCount)
+  }
+
   def getStorageValue(context: ExecutionContext): Value = this
 
   def syncModel(model: Model, deleteOld: Boolean = false) {
     this.model = model
 
     val mysqlTables = this.getTables
-    var modelTables = Map[String, Boolean]()
+    var modelTablesNameMap = Map[String, Boolean]()
 
-    def sync(table: Table) {
+    val allTables = model.allHierarchyTables
+    for (table <- allTables) {
       val fullName = table.depthName("_")
-      modelTables += (fullName -> true)
+      modelTablesNameMap += (fullName -> true)
 
       if (!mysqlTables.contains(fullName)) {
         createTable(table, fullName)
       }
-
-      for ((name, table) <- table.tables) {
-        sync(table)
-      }
-    }
-
-    for ((name, table) <- model.tables) {
-      sync(table)
     }
 
     if (deleteOld) {
       for (table <- mysqlTables) {
-        if (!modelTables.contains(table))
+        if (!modelTablesNameMap.contains(table))
           this.dropTable(table)
       }
     }
   }
+
+  def getConnection = datasource.getConnection
 
   def nuke() {
     val tables = this.getTables
@@ -67,11 +69,18 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
     }
   }
 
-  def close() {
-    this.datasource.close()
+  def start() {
+    assert(this.model != null, "No model has been synced")
+
+    if (garbageCollection) {
+      GarbageCollector.start()
+    }
   }
 
-  def getConnection = datasource.getConnection
+  def stop() {
+    GarbageCollector.kill()
+    this.datasource.close()
+  }
 
   @throws(classOf[SQLException])
   def executeSql(connection: Connection, update: Boolean, sql: String, params: Any*): SqlResults = {
@@ -136,15 +145,9 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
       "`ts` bigint(20) NOT NULL AUTO_INCREMENT, " +
       "`tk` bigint(20) NOT NULL, "
 
-    var keyList = ""
-    for (i <- 1 to table.depth) {
-      sql += " k%d varchar(128) NOT NULL, ".format(i)
+    sql += ((for (i <- 1 to table.depth) yield " k%d varchar(128) NOT NULL ".format(i)) ++ (for (i <- 1 to table.depth) yield " g%d varchar(128) NOT NULL ".format(i))).mkString(",") + ","
 
-      if (keyList != "")
-        keyList += ","
-
-      keyList += "k%d".format(i)
-    }
+    val keyList = (for (i <- 1 to table.depth) yield "k%d".format(i)).mkString(",")
     sql += " `d` blob NULL, " +
       " PRIMARY KEY (`ts`,`tk`," + keyList + "), " +
       "	UNIQUE KEY `revkey` (`tk`, " + keyList + ",`ts`) " +
@@ -208,6 +211,122 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
     }
   }
 
+  object GarbageCollector extends Instrumented {
+    private val metricCollect = metrics.timer("gc-collect")
+    private val metricCollected = metrics.counter("gc-collected-records")
+
+    val VERSIONS_BATCH_COUNT = 100
+    val MIN_COLLECTION = 10
+    val GC_DELAY = 1000
+
+    @volatile
+    var active = false
+
+    val lastTokens = mutable.Map[Table, Long]()
+    val versionsCache = mutable.Map[Table, mutable.Queue[VersionRecord]]()
+    val allTables: Seq[Table] = model.allHierarchyTables
+
+    var lastCollectMutationsCount = 0
+    var lastCollected = 0 // always force first collection
+
+    val scheduledExecutor = new ScheduledThreadPoolExecutor(1)
+    val scheduledTask = scheduledExecutor.scheduleWithFixedDelay(new Runnable {
+      def run() {
+        if (active) {
+          val curCount = mutationsCount.get()
+          val mutationsDiff = curCount - lastCollectMutationsCount
+          lastCollectMutationsCount = curCount
+
+          if (mutationsDiff > 0 || lastCollected > 0) {
+            val toCollect = math.min(mutationsDiff, MIN_COLLECTION)
+            lastCollected = collect(toCollect)
+          }
+        }
+      }
+    }, GC_DELAY, GC_DELAY, TimeUnit.MILLISECONDS)
+
+    def start() {
+      this.active = true
+    }
+
+    def stop() {
+      this.active = false
+    }
+
+    private[mysql] def kill() {
+      this.stop()
+      this.scheduledTask.cancel(true)
+    }
+
+    /**
+     * Garbage collect at least specified versions (if any can be collected)
+     * Not thread safe! Call from 1 thread at the time!
+     *
+     * @param toCollect Number of versions to collect
+     * @return Collected versions
+     */
+    private[mysql] def collect(toCollect: Int): Int = {
+      debug("GCing iteration starting, need {} to be collected", toCollect)
+
+      var trx: MysqlTransaction = null
+      var collectedTotal = 0
+
+      metricCollect.time({
+        try {
+          trx = getStorageTransaction
+          val collectPerTable = (toCollect / allTables.size) + 1
+
+          for (table <- allTables) {
+            var lastToken = lastTokens.getOrElse(table, 0l)
+            val versions: mutable.Queue[VersionRecord] = versionsCache.getOrElse(table, mutable.Queue())
+
+            // no more versions in cache, fetch new batch
+            if (versions.size == 0) {
+              val fetched = trx.getTopMostVersions(table, lastToken, VERSIONS_BATCH_COUNT)
+              versions ++= fetched
+
+              // didn't fetch anything, no more versions after this token. rewind to beginning
+              if (fetched.size == 0)
+                lastToken = 0
+            }
+
+            var collectedVersions = 0
+            while (versions.size > 0 && collectedVersions < collectPerTable) {
+              val version = versions.dequeue()
+              val toDeleteCount = (version.generations - table.maxVersions)
+
+              trx.truncateVersions(table, version.token, version.accessPath, toDeleteCount)
+
+              collectedVersions += toDeleteCount
+              lastToken = version.token
+            }
+
+            lastTokens += (table -> lastToken)
+            versionsCache += (table -> versions)
+            collectedTotal += collectedVersions
+          }
+
+
+          metricCollected += collectedTotal
+          trx.commit()
+        } catch {
+          case e: Exception =>
+            try {
+              if (trx != null)
+                trx.rollback()
+            } catch {
+              case _ =>
+            }
+
+            error("Caught an exception in garbage collector!", e)
+        }
+      })
+
+      debug("GCing iteration done! Collected {} versions", collectedTotal)
+      collectedTotal
+    }
+  }
+
 }
 
 class SqlResults {
@@ -215,11 +334,11 @@ class SqlResults {
   var resultset: ResultSet = null
 
   def close() {
-    if (statement != null)
-      statement.close()
-
     if (resultset != null)
       resultset.close()
+
+    if (statement != null)
+      statement.close()
   }
 }
 
