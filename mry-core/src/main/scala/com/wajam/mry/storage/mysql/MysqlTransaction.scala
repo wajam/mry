@@ -37,7 +37,7 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
       }
     }
 
-    storage.returnTransaction(this)
+    storage.closeStorageTransaction(this)
   }
 
   def commit() {
@@ -51,7 +51,7 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
       }
     }
 
-    storage.returnTransaction(this)
+    storage.closeStorageTransaction(this)
   }
 
   def set(table: Table, token: Long, timestamp: Timestamp, accessPath: AccessPath, optRecord: Option[Record]) {
