@@ -25,7 +25,7 @@ trait OperationSource {
       throw new InvalidParameter("Excepted parameter at position %d".format(position))
 
     val param = params(position).value
-    if (!params.isInstanceOf[T])
+    if (!param.isInstanceOf[T])
       throw new InvalidParameter("Excepted parameter at position %d to be of instance %s".format(position, classManifest[T].erasure.getName))
 
     param.asInstanceOf[T]

@@ -44,13 +44,13 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends Feeder wi
       // filter out already processed records
       if (this.lastElement.isDefined) {
         val (ts, keys) = lastElement.get
-        val foundLastElement = mutations.find(mut => mut.newTimestamp == ts && mut.keys == keys)
+        val foundLastElement = mutations.find(mut => mut.newTimestamp == ts && mut.accessPath.keys == keys)
 
         val before = mutations.size
         if (foundLastElement.isDefined) {
           var found = false
           mutations = mutations.filter(mut => {
-            if (mut.newTimestamp == ts && mut.keys == keys) {
+            if (mut.newTimestamp == ts && mut.accessPath.keys == keys) {
               found = true
               false
             } else {
@@ -78,10 +78,10 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends Feeder wi
   def next(): Option[Map[String, Any]] = {
     if (!mutationsCache.isEmpty) {
       val mr = mutationsCache.dequeue()
-      this.lastElement = Some((mr.newTimestamp, mr.keys))
+      this.lastElement = Some((mr.newTimestamp, mr.accessPath.keys))
 
       Some(Map(
-        "keys" -> mr.keys,
+        "keys" -> mr.accessPath.keys,
         "old_timestamp" -> mr.oldTimestamp,
         "old_value" -> mr.oldValue,
         "new_timestamp" -> mr.newTimestamp,
