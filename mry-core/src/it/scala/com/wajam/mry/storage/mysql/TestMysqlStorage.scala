@@ -19,6 +19,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   val model = new Model
   val table1 = model.addTable(new Table("table1"))
   val table2 = table1.addTable(new Table("table2"))
+  val table3 = model.addTable(new Table("table3"))
 
   override def beforeEach() {
     this.mysqlStorage = newStorageInstance()
@@ -336,19 +337,19 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
 
       exec(t => {
         val storage = t.from("mysql")
-        val table = storage.from("table1")
+        val table = storage.from("table3")
         table.set(k, Map("k" -> v))
       }, commit = true)
 
       if (rand.nextInt(10) == 5) {
         var trx = mysqlStorage.getStorageTransaction
-        val beforeSize = trx.getSize(table1)
+        val beforeSize = trx.getSize(table3)
         trx.rollback()
 
         val collected = mysqlStorage.GarbageCollector.collect(rand.nextInt(10))
 
         trx = mysqlStorage.getStorageTransaction
-        val afterSize = trx.getSize(table1)
+        val afterSize = trx.getSize(table3)
         trx.rollback()
 
         assert((beforeSize - collected) == afterSize, "after %d > before %d, deleted %d".format(afterSize, beforeSize, collected))
@@ -360,7 +361,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     for ((k, v) <- values) {
       val Seq(rec1) = exec(t => {
         val storage = t.from("mysql")
-        val table = storage.from("table1")
+        val table = storage.from("table3")
         t.ret(table.get(k))
       }, commit = true)
 

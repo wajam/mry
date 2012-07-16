@@ -220,7 +220,7 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
     val GC_DELAY = 1000
 
     @volatile
-    var active = true
+    var active = false
 
     val lastTokens = mutable.Map[Table, Long]()
     val versionsCache = mutable.Map[Table, mutable.Queue[VersionRecord]]()
