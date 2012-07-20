@@ -107,6 +107,13 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
         " AND " + (for (i <- 1 to optGensValue.length - 1 if optGensValue(i - 1).isDefined) yield "o.g%d = ?".format(i)).mkString(" AND ")
       else
         ""
+
+    val innerGensValue =
+      if (gensValue.length > 1)
+        gensValue
+      else
+        Seq()
+
     val outerWhereGens =
       if (gensValue.length > 0)
         " AND " + (for (i <- 1 to optGensValue.length if optGensValue(i - 1).isDefined) yield "o.g%d = ?".format(i)).mkString(" AND ")
@@ -131,7 +138,7 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
     var results: SqlResults = null
     try {
       this.metricGet.time {
-        results = storage.executeSql(connection, false, sql, (Seq(token) ++ keysValue ++ gensValue ++ Seq(timestamp.value) ++ Seq(token)): _*)
+        results = storage.executeSql(connection, false, sql, (Seq(token) ++ keysValue ++ gensValue ++ Seq(timestamp.value) ++ Seq(token) ++ innerGensValue): _*)
       }
 
       new RecordIterator(storage, results, table)
