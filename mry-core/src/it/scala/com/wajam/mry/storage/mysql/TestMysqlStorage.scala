@@ -21,6 +21,8 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   val table1_1 = table1.addTable(new Table("table1_1"))
   val table1_1_1 = table1_1.addTable(new Table("table1_1_1"))
   val table2 = model.addTable(new Table("table2"))
+  val table2_1 = table2.addTable(new Table("table2_1"))
+  val table2_1_1 = table2_1.addTable(new Table("table2_1_1"))
 
   override def beforeEach() {
     this.mysqlStorage = newStorageInstance()
@@ -363,42 +365,56 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     val values = mutable.Map[String, Int]()
     val rand = new Random(3234234)
 
-    for (i <- 0 to 2000) {
+    for (i <- 0 to 1000) {
       val k = rand.nextInt(100).toString
-      var v = values.getOrElse(k, rand.nextInt(1000))
+      val v = values.getOrElse(k, rand.nextInt(1000))
 
       exec(t => {
         val storage = t.from("mysql")
-        val table = storage.from("table2")
-        table.set(k, Map("k" -> v))
+        storage.from("table2").set(k, Map("k" -> v))
+        storage.from("table2").get(k).from("table2_1").set(k, Map("k" -> v))
+        storage.from("table2").get(k).from("table2_1").get(k).from("table2_1_1").set(k, Map("k" -> v))
       }, commit = true)
 
       if (rand.nextInt(10) == 5) {
         var trx = mysqlStorage.getStorageTransaction
-        val beforeSize = trx.getSize(table2)
+        val beforeSizeTable2 = trx.getSize(table2)
+        val beforeSizeTable2_1 = trx.getSize(table2_1)
+        val beforeSizeTable2_1_1 = trx.getSize(table2_1_1)
+        val totalBeforeSize = beforeSizeTable2 + beforeSizeTable2_1 + beforeSizeTable2_1_1
         trx.rollback()
 
         val collected = mysqlStorage.GarbageCollector.collect(rand.nextInt(10))
 
         trx = mysqlStorage.getStorageTransaction
-        val afterSize = trx.getSize(table2)
+        val afterSizeTable2 = trx.getSize(table2)
+        val afterSizeTable2_1 = trx.getSize(table2_1)
+        val afterSizeTable2_1_1 = trx.getSize(table2_1_1)
+        val totalAfterSize = afterSizeTable2 + afterSizeTable2_1 + afterSizeTable2_1_1
         trx.rollback()
 
-        assert((beforeSize - collected) == afterSize, "after %d > before %d, deleted %d".format(afterSize, beforeSize, collected))
+        assert((totalBeforeSize - collected) == totalAfterSize, "after %d > before %d, deleted %d".format(afterSizeTable2, beforeSizeTable2, collected))
       }
 
       values += (k -> v)
     }
 
     for ((k, v) <- values) {
-      val Seq(rec1) = exec(t => {
+      val Seq(rec1, rec2, rec3) = exec(t => {
         val storage = t.from("mysql")
-        val table = storage.from("table2")
-        t.ret(table.get(k))
+        val rec1 = storage.from("table2").get(k)
+        val rec2 = storage.from("table2").get(k).from("table2_1").get(k)
+        val rec3 = storage.from("table2").get(k).from("table2_1").get(k).from("table2_1_1").get(k)
+        t.ret(rec1, rec2, rec3)
       }, commit = true)
 
-      val curVal = rec1.asInstanceOf[MapValue].mapValue("k")
-      assert(curVal.equalsValue(v), "%s!=%s".format(rec1, v))
+      val val1 = rec1.asInstanceOf[MapValue].mapValue("k")
+      val val2 = rec2.asInstanceOf[MapValue].mapValue("k")
+      val val3 = rec2.asInstanceOf[MapValue].mapValue("k")
+
+      assert(val1.equalsValue(v), "%s!=%s".format(rec1, v))
+      assert(val2.equalsValue(v), "%s!=%s".format(rec2, v))
+      assert(val3.equalsValue(v), "%s!=%s".format(rec3, v))
     }
   }
 

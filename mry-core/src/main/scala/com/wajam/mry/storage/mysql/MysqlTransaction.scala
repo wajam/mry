@@ -65,6 +65,14 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
     val sqlGens = (for (i <- 1 to gensValue.length) yield "g%d".format(i)).mkString(",")
     val sqlGensUpdate = (for (i <- 1 to gensValue.length) yield "g%1$d = VALUES(g%1$d)".format(i)).mkString(",")
     val sqlValues = (for (i <- 1 to table.depth * 2) yield "?").mkString(",")
+
+
+    /* Generated SQL looks like:
+     *
+     *   INSERT INTO `table1_table1_1_table1_1_1` (`ts`,`tk`,k1,k2,k3,g1,g2,g3,`d`)
+     *   VALUES (1343138009222, 2517541033, 'k1', 'k1.2', 'k1.2.1', 1, 1, 1, '...BLOB BYTES...')
+     *   ON DUPLICATE KEY UPDATE d=VALUES(d), g1 = VALUES(g1), g2 = VALUES(g2), g3 = VALUES(g3)', with params
+     */
     val sql = "INSERT INTO `%s` (`ts`,`tk`,%s,%s,`d`) VALUES (?,?,%s,?) ON DUPLICATE KEY UPDATE d=VALUES(d), %s".format(fullTableName, sqlKeys, sqlGens, sqlValues, sqlGensUpdate)
 
     var results: SqlResults = null
@@ -109,6 +117,18 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
       else
         ""
 
+    /* Generated SQL looks like:
+     *
+     *   SELECT o.ts, o.tk, d, o.k1, o.g1,o.k2, o.g2,o.k3, o.g3
+     *   FROM `table1_table1_1_table1_1_1` AS o
+     *   WHERE o.`tk` = 2517541033
+     *   AND o.k1 = 'k1' AND o.k2 = 'k2'
+     *   AND o.g1 = 1 AND o.g2 = 1
+     *   AND o.`ts` = (  SELECT MAX(ts)
+     *                   FROM `table1_table1_1_table1_1_1` AS i
+     *                   WHERE i.`ts` <= ? AND i.`tk` = 2517541033 AND i.k1 = o.k1 AND i.k2 = o.k2 AND i.k3 = o.k3)
+     *   AND o.d IS NOT NULL
+     */
     var sql = """
         SELECT o.ts, o.tk, d, %1$s
         FROM `%2$s` AS o
@@ -156,6 +176,24 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
     val whereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = c.k%1$d AND i.g%1$d = c.g%1$d".format(i)).mkString(" AND ")
     val fullTableName = table.depthName("_")
 
+    /* Generated SQL looks like:
+     *
+     *   SELECT c.tk, c.ts, c.d, l.ts, l.d, c.k1, c.g1,c.k2, c.g2,c.k3, c.g3
+     *   FROM `table1_table1_1_table1_1_1` AS c
+     *   LEFT JOIN `table1_table1_1_table1_1_1` l
+     *      ON (c.tk = l.tk AND c.k1 = l.k1
+     *          AND l.ts = ( SELECT MAX(i.ts)
+     *                       FROM `table1_table1_1_table1_1_1` AS i
+     *                       WHERE i.tk = c.tk AND i.k1 = c.k1
+     *                       AND i.g1 = c.g1 AND i.k2 = c.k2
+     *                       AND i.g2 = c.g2 AND i.k3 = c.k3
+     *                       AND i.g3 = c.g3 AND i.ts < c.ts
+     *                     )
+     *   )
+     *   WHERE c.ts >= 1343135748256
+     *   ORDER BY c.ts ASC
+     *   LIMIT 0, 100;
+     */
     val sql = """
                 SELECT c.tk, c.ts, c.d, l.ts, l.d, %1$s
                 FROM `%2$s` AS c
@@ -190,6 +228,16 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
     val projKeys = (for (i <- 1 to table.depth) yield "t.k%1$d".format(i)).mkString(",")
     val fullTableName = table.depthName("_")
 
+    /*
+     * Generated SQL looks like:
+     *
+     *    SELECT t.tk, COUNT(*) AS nb, t.k1,t.k2,t.k3
+     *    FROM `table1_table1_1_table1_1_1` AS t
+     *    WHERE t.tk >= 0
+     *    GROUP BY t.k1,t.k2,t.k3
+     *    HAVING COUNT(*) > 3
+     *    LIMIT 0, 100
+     */
     val sql =
       """
          SELECT t.tk, COUNT(*) AS nb, %1$s
@@ -227,6 +275,16 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
     val whereKeys = (for (i <- 1 to table.depth) yield "k%1$d = ?".format(i)).mkString(" AND ")
     val keysValue = accessPath.keys
 
+    /*
+     * Generated SQL looks like:
+     *
+     *     DELETE FROM `table2_table2_1_table2_1_1`
+     *     WHERE tk = ?
+     *     AND k1 = ? AND k2 = ? AND k3 = ?
+     *     AND ts < 9223372036854775807
+     *     ORDER BY ts ASC
+     *     LIMIT 2;
+     */
     val sql = """
                 DELETE FROM `%1$s`
                 WHERE tk = ?
@@ -251,6 +309,12 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
   def getSize(table: Table): Long = {
     val fullTableName = table.depthName("_")
 
+    /*
+     * Generated SQL looks like:
+     *
+     *     SELECT COUNT(*) AS count
+     *     FROM `table2_1_1`
+     */
     val sql = """
                 SELECT COUNT(*) AS count
                 FROM `%1$s`
