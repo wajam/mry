@@ -7,7 +7,7 @@ import com.wajam.mry.execution._
 import com.wajam.mry.api.protobuf.ProtobufTranslator
 import com.wajam.mry.storage._
 import com.yammer.metrics.scala.Instrumented
-import java.util.concurrent.atomic.{AtomicInteger, AtomicBoolean}
+import java.util.concurrent.atomic.AtomicInteger
 import collection.mutable
 import java.util.concurrent.{TimeUnit, ScheduledThreadPoolExecutor}
 
@@ -87,6 +87,8 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
     val results = new SqlResults
 
     try {
+      trace("Executing SQL '{}', with params {}", sql, params)
+
       results.statement = connection.prepareStatement(sql)
 
       var p = 0

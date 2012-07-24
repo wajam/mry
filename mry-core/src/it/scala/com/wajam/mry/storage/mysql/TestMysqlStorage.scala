@@ -18,8 +18,9 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   var storages: Map[String, Storage] = null
   val model = new Model
   val table1 = model.addTable(new Table("table1"))
-  val table2 = table1.addTable(new Table("table2"))
-  val table3 = model.addTable(new Table("table3"))
+  val table1_1 = table1.addTable(new Table("table1_1"))
+  val table1_1_1 = table1_1.addTable(new Table("table1_1_1"))
+  val table2 = model.addTable(new Table("table2"))
 
   override def beforeEach() {
     this.mysqlStorage = newStorageInstance()
@@ -94,24 +95,24 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   }
 
   test("should support multi hierarchy table") {
-    val Seq(record1, record2) = exec(t => {
+    val Seq(record1, record2, record3) = exec(t => {
       val storage = t.from("mysql")
       val table1 = storage.from("table1")
       table1.set("key1", Map("k1" -> "value1"))
 
       val record1 = table1.get("key1")
-      val table2 = record1.from("table2")
-      table2.set("key1.2", Map("mapk" -> toVal("value1")))
+      val table1_1 = record1.from("table1_1")
+      table1_1.set("key1.2", Map("mapk" -> "value1"))
+      val record2 = table1_1.get("key1.2")
 
-      val record2 = table2.get("key1.2")
+      table1_1.get("key1.2").from("table1_1_1").set("key1.2.1", Map("k" -> "v1.2.1"))
+      val record3 = table1_1.get("key1.2").from("table1_1_1").get("key1.2.1")
 
-      t.ret(record1, record2)
+      t.ret(record1, record2, record3)
     }, commit = true)
 
-    record2.value.serializableValue match {
-      case m: MapValue =>
-        assert(m("mapk").equalsValue("value1"))
-    }
+    assert(record2.asInstanceOf[MapValue].mapValue("mapk").equalsValue("value1"))
+    assert(record3.asInstanceOf[MapValue].mapValue("k").equalsValue("v1.2.1"))
   }
 
   test("shouldn't be able to get multiple rows on first depth table") {
@@ -122,7 +123,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     }
   }
 
-  test("should be able to get multiple rows on second depth table") {
+  test("should be able to get multiple rows on second and third depth table") {
     exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
@@ -130,34 +131,52 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       table.set("key2", Map("k" -> "value2"))
       table.set("key3", Map("k" -> "value3"))
       table.delete("key1")
-      table.get("key3").from("table2").set("key3.1", Map("k" -> "value3.1"))
-      table.get("key3").from("table2").set("key3.2", Map("k" -> "value3.2"))
+      table.get("key3").from("table1_1").set("key3.1", Map("k" -> "value3.1"))
+      table.get("key3").from("table1_1").set("key3.2", Map("k" -> "value3.2"))
+      table.get("key3").from("table1_1").get("key3.1").from("table1_1_1").set("key3.1.1", Map("k" -> "value3.1.1"))
+      table.get("key3").from("table1_1").get("key3.1").from("table1_1_1").set("key3.1.2", Map("k" -> "value3.1.2"))
+      table.get("key3").from("table1_1").get("key3.2").from("table1_1_1").set("key3.3.1", Map("k" -> "value3.3.1"))
     }, commit = true)
 
     exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
-      table.get("key2").from("table2").set("key2.1", Map("k" -> "value2.1"))
-      table.get("key3").from("table2").set("key3.3", Map("k" -> "value3.3"))
+      table.get("key2").from("table1_1").set("key2.1", Map("k" -> "value2.1"))
+      table.get("key3").from("table1_1").set("key3.3", Map("k" -> "value3.3"))
     }, commit = true)
 
 
     // shouldn't be able to get a record on second hiearchy if first hierarchy record doesn't exist
     intercept[StorageException] {
       exec(t => {
-        val rec1 = t.from("mysql").from("table1").get("key1").from("table2").get()
+        val rec1 = t.from("mysql").from("table1").get("key1").from("table1_1").get()
+        t.ret(rec1)
+      })
+    }
+
+    // shouldn't be able to get a record on third hiearchy if second hierarchy record doesn't exist
+    intercept[StorageException] {
+      exec(t => {
+        val rec1 = t.from("mysql").from("table1").get("key3").from("table1_1").get("key3.4").from("table1_1_1").get()
         t.ret(rec1)
       })
     }
 
     val Seq(records1, records2) = exec(t => {
-      val rec1 = t.from("mysql").from("table1").get("key2").from("table2").get()
-      val rec2 = t.from("mysql").from("table1").get("key3").from("table2").get()
+      val rec1 = t.from("mysql").from("table1").get("key2").from("table1_1").get()
+      val rec2 = t.from("mysql").from("table1").get("key3").from("table1_1").get()
       t.ret(rec1, rec2)
     })
 
     assert(records1.asInstanceOf[ListValue].listValue.size == 1)
     assert(records2.asInstanceOf[ListValue].listValue.size == 3)
+
+    val Seq(records3) = exec(t => {
+      val rec1 = t.from("mysql").from("table1").get("key3").from("table1_1").get("key3.1").from("table1_1_1").get()
+      t.ret(rec1)
+    })
+
+    assert(records3.asInstanceOf[ListValue].listValue.size == 2)
   }
 
   test("should support delete") {
@@ -168,9 +187,9 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       table.set("key2", Map("k" -> "value2"))
       table.set("key3", Map("k" -> "value3"))
       table.delete("key1")
-      table.get("key3").from("table2").set("key3.1", Map("k" -> "value3.1"))
-      table.get("key3").from("table2").set("key3.2", Map("k" -> "value3.2"))
-      table.get("key3").from("table2").delete("key3.1")
+      table.get("key3").from("table1_1").set("key3.1", Map("k" -> "value3.1"))
+      table.get("key3").from("table1_1").set("key3.2", Map("k" -> "value3.2"))
+      table.get("key3").from("table1_1").delete("key3.1")
     }, commit = true)
 
 
@@ -181,8 +200,8 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       val v1 = table.get("key1")
       val v2 = table.get("key2")
       val v3 = table.get("key3")
-      val v4 = table.get("key3").from("table2").get("key3.1")
-      val v5 = table.get("key3").from("table2").get("key3.2")
+      val v4 = table.get("key3").from("table1_1").get("key3.1")
+      val v5 = table.get("key3").from("table1_1").get("key3.2")
       t.ret(v1, v2, v3, v4, v5)
     }, commit = true)
 
@@ -219,13 +238,14 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       val storage = t.from("mysql")
       val table = storage.from("table1")
       table.set("k1", Map("k" -> "value1@1"))
-      table.get("k1").from("table2").set("k1.1", Map("k" -> "value1.1@1"))
+      table.get("k1").from("table1_1").set("k1.1", Map("k" -> "value1.1@1"))
+      table.get("k1").from("table1_1").get("k1.1").from("table1_1_1").set("k1.1.1", Map("k" -> "value1.1.1@1"))
       table.set("k2", Map("k" -> "value1@1"))
-      table.get("k2").from("table2").set("k2.1", Map("k" -> "value2.1@1"))
+      table.get("k2").from("table1_1").set("k2.1", Map("k" -> "value2.1@1"))
       table.delete("k2")
     })
 
-    val Seq(rec1, rec2) = exec(t => {
+    val Seq(rec1, rec2, rec3) = exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
       table.delete("k1")
@@ -233,22 +253,29 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       table.set("k1", Map("k" -> "value1@2"))
       table.set("k2", Map("k" -> "value2@2"))
 
-      val rec1 = table.get("k1").from("table2").get("k1.1")
-      val rec2 = table.get("k2").from("table2").get("k2.1")
+      val rec1 = table.get("k1").from("table1_1").get("k1.1")
+      val rec2 = table.get("k2").from("table1_1").get("k2.1")
 
-      t.ret(rec1, rec2)
+      table.get("k1").from("table1_1").set("k1.1", Map("k" -> "value1.1@2"))
+      val rec3 = table.get("k1").from("table1_1").get("k1.1").from("table1_1_1").get("k1.1.1")
+
+      t.ret(rec1, rec2, rec3)
     })
 
-    val Seq(rec3, rec4) = exec(t => {
+    assert(rec1.isNull)
+    assert(rec2.isNull)
+    assert(rec3.isNull)
+
+    val Seq(rec4, rec5) = exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
-      val rec1 = table.get("k1").from("table2").get("k1.1")
-      val rec2 = table.get("k2").from("table2").get("k2.1")
+      val rec4 = table.get("k1").from("table1_1").get("k1.1")
+      val rec5 = table.get("k2").from("table1_1").get("k2.1")
 
-      t.ret(rec1, rec2)
+      t.ret(rec4, rec5)
     })
-    assert(rec3.isNull)
-    assert(rec4.isNull)
+    assert(rec4.asInstanceOf[MapValue]("k").equalsValue("value1.1@2"))
+    assert(rec5.isNull)
 
   }
 
@@ -262,16 +289,18 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       table.set("key2", Map("k" -> "value2.0"))
       table.set("key3", Map("k" -> "value3"))
       table.delete("key1")
-      table.get("key3").from("table2").set("key3.1", Map("k" -> "value3.1"))
-      table.get("key3").from("table2").set("key3.2", Map("k" -> "value3.2"))
-      table.get("key3").from("table2").delete("key3.1")
+      table.get("key3").from("table1_1").set("key3.1", Map("k" -> "value3.1"))
+      table.get("key3").from("table1_1").set("key3.2", Map("k" -> "value3.2"))
+      table.get("key3").from("table1_1").delete("key3.1")
+      table.get("key3").from("table1_1").get("key3.2").from("table1_1_1").set("key3.2.1", Map("k" -> "value3.2.1"))
     }, commit = true)
 
     exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
       table.set("key4", Map("k" -> "value4"))
-      table.get("key2").from("table2").set("key2.1", Map("k" -> "value2.1"))
+      table.get("key2").from("table1_1").set("key2.1", Map("k" -> "value2.1"))
+      table.get("key2").from("table1_1").get("key2.1").from("table1_1_1").set("key2.1.1", Map("k" -> "value2.1.1"))
     }, commit = false)
 
     exec(t => {
@@ -279,7 +308,8 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       val table = storage.from("table1")
       table.set("key5", Map("k" -> "value5"))
       table.set("key2", Map("k" -> "value2.1"))
-      table.get("key2").from("table2").set("key2.2", Map("k" -> "value2.1"))
+      table.get("key2").from("table1_1").set("key2.2", Map("k" -> "value2.1"))
+      table.get("key2").from("table1_1").get("key2.2").from("table1_1_1").set("key2.2.1", Map("k" -> "value2.2.1"))
       table.delete("key3")
     }, commit = true)
 
@@ -321,10 +351,11 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     }
 
 
-    val table2Timeline = mysqlStorage.getStorageTransaction(context).getTimeline(table2, fromTimestamp, 100)
-    assert(table2Timeline.size == 3, table2Timeline.size)
+    val table1_1Timeline = mysqlStorage.getStorageTransaction(context).getTimeline(table1_1, fromTimestamp, 100)
+    assert(table1_1Timeline.size == 3, table1_1Timeline.size)
 
-    // TODO: test second level
+    val table1_1_1Timeline = mysqlStorage.getStorageTransaction(context).getTimeline(table1_1_1, fromTimestamp, 100)
+    assert(table1_1_1Timeline.size == 2, table1_1_1Timeline.size)
   }
 
   test("forced garbage collections should truncate versions and keep enough versions") {
@@ -337,19 +368,19 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
 
       exec(t => {
         val storage = t.from("mysql")
-        val table = storage.from("table3")
+        val table = storage.from("table2")
         table.set(k, Map("k" -> v))
       }, commit = true)
 
       if (rand.nextInt(10) == 5) {
         var trx = mysqlStorage.getStorageTransaction
-        val beforeSize = trx.getSize(table3)
+        val beforeSize = trx.getSize(table2)
         trx.rollback()
 
         val collected = mysqlStorage.GarbageCollector.collect(rand.nextInt(10))
 
         trx = mysqlStorage.getStorageTransaction
-        val afterSize = trx.getSize(table3)
+        val afterSize = trx.getSize(table2)
         trx.rollback()
 
         assert((beforeSize - collected) == afterSize, "after %d > before %d, deleted %d".format(afterSize, beforeSize, collected))
@@ -361,7 +392,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     for ((k, v) <- values) {
       val Seq(rec1) = exec(t => {
         val storage = t.from("mysql")
-        val table = storage.from("table3")
+        val table = storage.from("table2")
         t.ret(table.get(k))
       }, commit = true)
 

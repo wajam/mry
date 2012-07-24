@@ -102,24 +102,12 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
     val projKeys = (for (i <- 1 to table.depth) yield "o.k%1$d, o.g%1$d".format(i)).mkString(",")
     val outerWhereKeys = (for (i <- 1 to accessPath.parts.length) yield "o.k%d = ?".format(i)).mkString(" AND ")
     val innerWhereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = o.k%1$d".format(i)).mkString(" AND ")
-    val innerWhereGens =
-      if (gensValue.length > 1)
-        " AND " + (for (i <- 1 to optGensValue.length - 1 if optGensValue(i - 1).isDefined) yield "o.g%d = ?".format(i)).mkString(" AND ")
-      else
-        ""
-
-    val innerGensValue =
-      if (gensValue.length > 1)
-        gensValue
-      else
-        Seq()
 
     val outerWhereGens =
       if (gensValue.length > 0)
         " AND " + (for (i <- 1 to optGensValue.length if optGensValue(i - 1).isDefined) yield "o.g%d = ?".format(i)).mkString(" AND ")
       else
         ""
-
 
     var sql = """
         SELECT o.ts, o.tk, d, %1$s
@@ -129,8 +117,8 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
         %4$s
         AND o.`ts` = (  SELECT MAX(ts)
                         FROM `%2$s` AS i
-                        WHERE i.`ts` <= ? AND i.`tk` = ? AND %5$s %6$s)
-              """.format(projKeys, fullTableName, outerWhereKeys, outerWhereGens, innerWhereKeys, innerWhereGens)
+                        WHERE i.`ts` <= ? AND i.`tk` = ? AND %5$s)
+              """.format(projKeys, fullTableName, outerWhereKeys, outerWhereGens, innerWhereKeys)
 
     if (!includeDeleted)
       sql += " AND o.d IS NOT NULL "
@@ -138,7 +126,7 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
     var results: SqlResults = null
     try {
       this.metricGet.time {
-        results = storage.executeSql(connection, false, sql, (Seq(token) ++ keysValue ++ gensValue ++ Seq(timestamp.value) ++ Seq(token) ++ innerGensValue): _*)
+        results = storage.executeSql(connection, false, sql, (Seq(token) ++ keysValue ++ gensValue ++ Seq(timestamp.value) ++ Seq(token)): _*)
       }
 
       new RecordIterator(storage, results, table)
@@ -147,7 +135,7 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
       case e: Exception =>
         if (results != null)
           results.close()
-        null
+        throw e
     }
   }
 
