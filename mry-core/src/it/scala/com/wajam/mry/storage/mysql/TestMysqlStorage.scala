@@ -98,20 +98,21 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     val Seq(record1, record2, record3) = exec(t => {
       val storage = t.from("mysql")
       val table1 = storage.from("table1")
-      table1.set("key1", Map("k1" -> "value1"))
+      table1.set("k1", Map("k" -> "v1"))
 
-      val record1 = table1.get("key1")
+      val record1 = table1.get("k1")
       val table1_1 = record1.from("table1_1")
-      table1_1.set("key1.2", Map("mapk" -> "value1"))
-      val record2 = table1_1.get("key1.2")
+      table1_1.set("k1.2", Map("k" -> "v1.2"))
+      val record2 = table1_1.get("k1.2")
 
-      table1_1.get("key1.2").from("table1_1_1").set("key1.2.1", Map("k" -> "v1.2.1"))
-      val record3 = table1_1.get("key1.2").from("table1_1_1").get("key1.2.1")
+      table1_1.get("k1.2").from("table1_1_1").set("k1.2.1", Map("k" -> "v1.2.1"))
+      val record3 = table1_1.get("k1.2").from("table1_1_1").get("k1.2.1")
 
       t.ret(record1, record2, record3)
     }, commit = true)
 
-    assert(record2.asInstanceOf[MapValue].mapValue("mapk").equalsValue("value1"))
+    assert(record1.asInstanceOf[MapValue].mapValue("k").equalsValue("v1"))
+    assert(record2.asInstanceOf[MapValue].mapValue("k").equalsValue("v1.2"))
     assert(record3.asInstanceOf[MapValue].mapValue("k").equalsValue("v1.2.1"))
   }
 
