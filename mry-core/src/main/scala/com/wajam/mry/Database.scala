@@ -102,5 +102,9 @@ class Database(var serviceName: String = "database") extends Service(serviceName
     }
   }))
 
-  remoteExecuteToken.applySupport(resolver = Some(new Resolver(tokenExtractor = Resolver.TOKEN_PARAM("token"))))
+  remoteExecuteToken.applySupport(resolver = Some(Database.tokenResolver))
+}
+
+object Database {
+  val tokenResolver = new Resolver(tokenExtractor = Resolver.TOKEN_PARAM("token"))
 }
