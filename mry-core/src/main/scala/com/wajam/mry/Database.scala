@@ -51,7 +51,7 @@ class Database(var serviceName: String = "database") extends Service(serviceName
       transaction.reset()
 
       // send transaction to node in charge of that token
-      remoteExecuteToken.call(Map("token" -> context.tokens(0), "trx" -> transaction), onReply = (resp, optException) => {
+      remoteExecuteToken.call(Map(Database.TOKEN_KEY -> context.tokens(0), "trx" -> transaction), onReply = (resp, optException) => {
         if (ret != null) {
           if (optException.isEmpty)
             ret(resp.parameters("values").asInstanceOf[Seq[Value]], None)
@@ -78,7 +78,7 @@ class Database(var serviceName: String = "database") extends Service(serviceName
   def getStorage(name: String) = this.storages.get(name).get
 
 
-  private val remoteExecuteToken = this.registerAction(new Action("/execute/:token", req => {
+  private val remoteExecuteToken = this.registerAction(new Action("/execute/:"+Database.TOKEN_KEY, req => {
     this.metricExecuteLocal.time {
       var values: Seq[Value] = null
       val context = new ExecutionContext(storages)
@@ -103,5 +103,10 @@ class Database(var serviceName: String = "database") extends Service(serviceName
     }
   }))
 
-  remoteExecuteToken.applySupport(resolver = Some(new Resolver(tokenExtractor = Resolver.TOKEN_PARAM("token"))))
+  remoteExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
+}
+
+object Database {
+  val TOKEN_KEY = "token"
+  val TOKEN_RESOLVER = new Resolver(tokenExtractor = Resolver.TOKEN_PARAM(TOKEN_KEY))
 }
