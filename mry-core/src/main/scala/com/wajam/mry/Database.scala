@@ -107,5 +107,6 @@ class Database(var serviceName: String = "database") extends Service(serviceName
 }
 
 object Database {
-  val tokenResolver = new Resolver(tokenExtractor = Resolver.TOKEN_PARAM("token"))
+  val tokenKey = "token"
+  val tokenResolver = new Resolver(tokenExtractor = Resolver.TOKEN_PARAM(tokenKey))
 }
