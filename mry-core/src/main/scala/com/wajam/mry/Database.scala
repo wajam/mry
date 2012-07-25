@@ -72,6 +72,7 @@ class Database(var serviceName: String = "database") extends Service(serviceName
 
   def registerStorage(storage: Storage) {
     this.storages += (storage.name -> storage)
+    storage.start()
   }
 
   def getStorage(name: String) = this.storages.get(name).get

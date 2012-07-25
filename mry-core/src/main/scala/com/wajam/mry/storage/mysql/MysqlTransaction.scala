@@ -2,7 +2,7 @@ package com.wajam.mry.storage.mysql
 
 import com.wajam.mry.storage.StorageTransaction
 import java.sql.ResultSet
-import scala.collection.mutable
+import collection.mutable
 import com.wajam.mry.execution._
 import com.wajam.mry.api.ProtocolTranslator
 import com.yammer.metrics.scala.Instrumented
@@ -12,11 +12,16 @@ import com.yammer.metrics.scala.Instrumented
  */
 class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with Instrumented {
   private val metricTimeline = metrics.timer("mysql-timeline")
+  private val metricTopMostVersions = metrics.timer("mysql-topmostversions")
   private val metricSet = metrics.timer("mysql-set")
   private val metricGet = metrics.timer("mysql-get")
   private val metricDelete = metrics.timer("mysql-delete")
   private val metricCommit = metrics.timer("mysql-commit")
   private val metricRollback = metrics.timer("mysql-rollback")
+  private val metricTruncateVersions = metrics.timer("mysql-truncateversions")
+  private val metricSize = metrics.timer("mysql-count")
+
+  var mutationsCount = 0
 
   val connection = storage.getConnection
   connection.setAutoCommit(false)
@@ -31,6 +36,8 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
         }
       }
     }
+
+    storage.closeStorageTransaction(this)
   }
 
   def commit() {
@@ -43,16 +50,30 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
         }
       }
     }
+
+    storage.closeStorageTransaction(this)
   }
 
-  def set(table: Table, token: Long, timestamp: Timestamp, keys: Seq[String], optRecord: Option[Record]) {
-    assert(keys.length == table.depth)
+  def set(table: Table, token: Long, timestamp: Timestamp, accessPath: AccessPath, optRecord: Option[Record]) {
+    assert(accessPath.length == table.depth)
 
+    val keysValue = accessPath.keys
+    val gensValue = accessPath.generations.map(p => p.get)
     val fullTableName = table.depthName("_")
-    val sqlKeys = (for (i <- 1 to table.depth) yield "k%d".format(i)).mkString(",")
-    val sqlValues = (for (i <- 1 to table.depth) yield "?").mkString(",")
 
-    val sql = "INSERT INTO `%s` (`ts`,`tk`,%s,`d`) VALUES (?,?,%s,?) ON DUPLICATE KEY UPDATE d=VALUES(d)".format(fullTableName, sqlKeys, sqlValues)
+    val sqlKeys = (for (i <- 1 to keysValue.length) yield "k%d".format(i)).mkString(",")
+    val sqlGens = (for (i <- 1 to gensValue.length) yield "g%d".format(i)).mkString(",")
+    val sqlGensUpdate = (for (i <- 1 to gensValue.length) yield "g%1$d = VALUES(g%1$d)".format(i)).mkString(",")
+    val sqlValues = (for (i <- 1 to table.depth * 2) yield "?").mkString(",")
+
+
+    /* Generated SQL looks like:
+     *
+     *   INSERT INTO `table1_table1_1_table1_1_1` (`ts`,`tk`,k1,k2,k3,g1,g2,g3,`d`)
+     *   VALUES (1343138009222, 2517541033, 'k1', 'k1.2', 'k1.2.1', 1, 1, 1, '...BLOB BYTES...')
+     *   ON DUPLICATE KEY UPDATE d=VALUES(d), g1 = VALUES(g1), g2 = VALUES(g2), g3 = VALUES(g3)', with params
+     */
+    val sql = "INSERT INTO `%s` (`ts`,`tk`,%s,%s,`d`) VALUES (?,?,%s,?) ON DUPLICATE KEY UPDATE d=VALUES(d), %s".format(fullTableName, sqlKeys, sqlGens, sqlValues, sqlGensUpdate)
 
     var results: SqlResults = null
     try {
@@ -60,15 +81,17 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
         // there is a value, we set it
         val value = optRecord.get.serializeValue(storage.valueSerializer)
         this.metricSet.time {
-          results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ keys ++ Seq(value)): _*)
+          results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue ++ gensValue ++ Seq(value)): _*)
         }
 
       } else {
         // no value, it's a delete
         this.metricDelete.time {
-          results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ keys ++ Seq(null)): _*)
+          results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue ++ gensValue ++ Seq(null)): _*)
         }
       }
+
+      this.mutationsCount += 1
 
     } finally {
       if (results != null)
@@ -76,30 +99,54 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
     }
   }
 
-  def getMultiple(table: Table, token: Long, timestamp: Timestamp, keys: Seq[String]): RecordIterator = {
-    assert(keys.length >= 1)
+  def getMultiple(table: Table, token: Long, timestamp: Timestamp, accessPath: AccessPath, includeDeleted: Boolean = false): RecordIterator = {
+    assert(accessPath.length >= 1)
 
+    val keysValue = accessPath.keys
+    val optGensValue = accessPath.generations
+    val gensValue = for (optGen <- optGensValue if optGen.isDefined) yield optGen.get
     val fullTableName = table.depthName("_")
-    val projKeys = (for (i <- 1 to table.depth) yield "o.k%d".format(i)).mkString(",")
-    val outerWhereKeys = (for (i <- 1 to keys.length) yield "o.k%d = ?".format(i)).mkString(" AND ")
-    val innerWhereKeys = (for (i <- 1 to keys.length) yield "i.k%d = ?".format(i)).mkString(" AND ")
 
-    val sql = """
-        SELECT o.ts, o.tk, %1$s, d
+    val projKeys = (for (i <- 1 to table.depth) yield "o.k%1$d, o.g%1$d".format(i)).mkString(",")
+    val outerWhereKeys = (for (i <- 1 to accessPath.parts.length) yield "o.k%d = ?".format(i)).mkString(" AND ")
+    val innerWhereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = o.k%1$d".format(i)).mkString(" AND ")
+
+    val outerWhereGens =
+      if (gensValue.length > 0)
+        " AND " + (for (i <- 1 to optGensValue.length if optGensValue(i - 1).isDefined) yield "o.g%d = ?".format(i)).mkString(" AND ")
+      else
+        ""
+
+    /* Generated SQL looks like:
+     *
+     *   SELECT o.ts, o.tk, d, o.k1, o.g1,o.k2, o.g2,o.k3, o.g3
+     *   FROM `table1_table1_1_table1_1_1` AS o
+     *   WHERE o.`tk` = 2517541033
+     *   AND o.k1 = 'k1' AND o.k2 = 'k2'
+     *   AND o.g1 = 1 AND o.g2 = 1
+     *   AND o.`ts` = (  SELECT MAX(ts)
+     *                   FROM `table1_table1_1_table1_1_1` AS i
+     *                   WHERE i.`ts` <= ? AND i.`tk` = 2517541033 AND i.k1 = o.k1 AND i.k2 = o.k2 AND i.k3 = o.k3)
+     *   AND o.d IS NOT NULL
+     */
+    var sql = """
+        SELECT o.ts, o.tk, d, %1$s
         FROM `%2$s` AS o
         WHERE o.`tk` = ?
         AND %3$s
+        %4$s
         AND o.`ts` = (  SELECT MAX(ts)
                         FROM `%2$s` AS i
-                        WHERE i.`ts` <= ? AND i.`tk` = ? AND %4$s)
-        AND o.d IS NOT NULL;
-              """.format(projKeys, fullTableName, outerWhereKeys, innerWhereKeys)
+                        WHERE i.`ts` <= ? AND i.`tk` = ? AND %5$s)
+              """.format(projKeys, fullTableName, outerWhereKeys, outerWhereGens, innerWhereKeys)
 
+    if (!includeDeleted)
+      sql += " AND o.d IS NOT NULL "
 
     var results: SqlResults = null
     try {
       this.metricGet.time {
-        results = storage.executeSql(connection, false, sql, (Seq(token) ++ keys ++ Seq(timestamp.value) ++ Seq(token) ++ keys): _*)
+        results = storage.executeSql(connection, false, sql, (Seq(token) ++ keysValue ++ gensValue ++ Seq(timestamp.value) ++ Seq(token)): _*)
       }
 
       new RecordIterator(storage, results, table)
@@ -108,14 +155,14 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
       case e: Exception =>
         if (results != null)
           results.close()
-        null
+        throw e
     }
   }
 
-  def get(table: Table, token: Long, timestamp: Timestamp, keys: Seq[String]): Option[Record] = {
-    assert(keys.length == table.depth)
+  def get(table: Table, token: Long, timestamp: Timestamp, accessPath: AccessPath, includeDeleted: Boolean = false): Option[Record] = {
+    assert(accessPath.length == table.depth)
 
-    val iter = getMultiple(table, token, timestamp, keys)
+    val iter = getMultiple(table, token, timestamp, accessPath, includeDeleted)
 
     if (iter.next()) {
       Some(iter.record)
@@ -125,10 +172,28 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
   }
 
   def getTimeline(table: Table, fromTimestamp: Timestamp, count: Int): Seq[MutationRecord] = {
-    val projKeys = (for (i <- 1 to table.depth) yield "c.k%d".format(i)).mkString(",")
-    val whereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = c.k%1$d".format(i)).mkString(" AND ")
+    val projKeys = (for (i <- 1 to table.depth) yield "c.k%1$d, c.g%1$d".format(i)).mkString(",")
+    val whereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = c.k%1$d AND i.g%1$d = c.g%1$d".format(i)).mkString(" AND ")
     val fullTableName = table.depthName("_")
 
+    /* Generated SQL looks like:
+     *
+     *   SELECT c.tk, c.ts, c.d, l.ts, l.d, c.k1, c.g1,c.k2, c.g2,c.k3, c.g3
+     *   FROM `table1_table1_1_table1_1_1` AS c
+     *   LEFT JOIN `table1_table1_1_table1_1_1` l
+     *      ON (c.tk = l.tk AND c.k1 = l.k1
+     *          AND l.ts = ( SELECT MAX(i.ts)
+     *                       FROM `table1_table1_1_table1_1_1` AS i
+     *                       WHERE i.tk = c.tk AND i.k1 = c.k1
+     *                       AND i.g1 = c.g1 AND i.k2 = c.k2
+     *                       AND i.g2 = c.g2 AND i.k3 = c.k3
+     *                       AND i.g3 = c.g3 AND i.ts < c.ts
+     *                     )
+     *   )
+     *   WHERE c.ts >= 1343135748256
+     *   ORDER BY c.ts ASC
+     *   LIMIT 0, 100;
+     */
     val sql = """
                 SELECT c.tk, c.ts, c.d, l.ts, l.d, %1$s
                 FROM `%2$s` AS c
@@ -158,22 +223,149 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
 
     ret
   }
+
+  def getTopMostVersions(table: Table, fromToken: Long, count: Int): Seq[VersionRecord] = {
+    val projKeys = (for (i <- 1 to table.depth) yield "t.k%1$d".format(i)).mkString(",")
+    val fullTableName = table.depthName("_")
+
+    /*
+     * Generated SQL looks like:
+     *
+     *    SELECT t.tk, COUNT(*) AS nb, t.k1,t.k2,t.k3
+     *    FROM `table1_table1_1_table1_1_1` AS t
+     *    WHERE t.tk >= 0
+     *    GROUP BY t.k1,t.k2,t.k3
+     *    HAVING COUNT(*) > 3
+     *    LIMIT 0, 100
+     */
+    val sql =
+      """
+         SELECT t.tk, COUNT(*) AS nb, %1$s
+         FROM `%2$s` AS t
+         WHERE t.tk >= %3$d
+         GROUP BY %1$s
+         HAVING COUNT(*) > %4$d
+         LIMIT 0, %5$d
+      """.format(projKeys, fullTableName, fromToken, table.maxVersions, count)
+
+
+    var ret = mutable.LinkedList[VersionRecord]()
+    var results: SqlResults = null
+    try {
+      this.metricTopMostVersions.time {
+        results = storage.executeSql(connection, false, sql)
+
+        while (results.resultset.next()) {
+          val gen = new VersionRecord
+          gen.load(results.resultset, table.depth)
+          ret :+= gen
+        }
+      }
+
+    } finally {
+      if (results != null)
+        results.close()
+    }
+
+    ret
+  }
+
+  def truncateVersions(table: Table, token: Long, accessPath: AccessPath, count: Int, maxTimestamp: Timestamp = Timestamp.MAX) {
+    val fullTableName = table.depthName("_")
+    val whereKeys = (for (i <- 1 to table.depth) yield "k%1$d = ?".format(i)).mkString(" AND ")
+    val keysValue = accessPath.keys
+
+    /*
+     * Generated SQL looks like:
+     *
+     *     DELETE FROM `table2_table2_1_table2_1_1`
+     *     WHERE tk = ?
+     *     AND k1 = ? AND k2 = ? AND k3 = ?
+     *     AND ts < 9223372036854775807
+     *     ORDER BY ts ASC
+     *     LIMIT 2;
+     */
+    val sql = """
+                DELETE FROM `%1$s`
+                WHERE tk = ?
+                AND %2$s
+                AND ts < %3$d
+                ORDER BY ts ASC
+                LIMIT %4$d;
+              """.format(fullTableName, whereKeys, maxTimestamp.value, count)
+
+    var results: SqlResults = null
+    try {
+      this.metricTruncateVersions.time {
+        results = storage.executeSql(connection, true, sql, (Seq(token) ++ keysValue): _*)
+      }
+
+    } finally {
+      if (results != null)
+        results.close()
+    }
+  }
+
+  def getSize(table: Table): Long = {
+    val fullTableName = table.depthName("_")
+
+    /*
+     * Generated SQL looks like:
+     *
+     *     SELECT COUNT(*) AS count
+     *     FROM `table2_1_1`
+     */
+    val sql = """
+                SELECT COUNT(*) AS count
+                FROM `%1$s`
+              """.format(fullTableName)
+
+    var count: Long = 0
+    var results: SqlResults = null
+    try {
+      this.metricSize.time {
+        results = storage.executeSql(connection, false, sql)
+      }
+
+      if (results.resultset.next()) {
+        count = results.resultset.getLong("count")
+      }
+    } finally {
+      if (results != null)
+        results.close()
+    }
+
+    count
+  }
 }
 
-class Record(var value: MapValue = new MapValue(Map())) {
-  var key: String = ""
+class AccessKey(var key: String, var generation: Option[Int] = None)
+
+class AccessPath(var parts: Seq[AccessKey] = Seq()) {
+  def last = parts.last
+
+  def length = parts.length
+
+  def keys = parts.map(p => p.key)
+
+  def generations = parts.map(p => p.generation)
+
+  def apply(pos: Int) = this.parts(pos)
+
+  override def toString: String = (for (part <- parts) yield "%s(gen=%s)".format(part.key, part.generation)).mkString("/")
+}
+
+class Record(var value: Value = new MapValue(Map())) {
+  var accessPath = new AccessPath()
   var token: Long = 0
   var timestamp: Timestamp = Timestamp(0)
 
   def load(serializer: ProtocolTranslator, resultset: ResultSet, depth: Int) {
     this.timestamp = Timestamp(resultset.getLong(1))
     this.token = resultset.getLong(2)
+    this.unserializeValue(serializer, resultset.getBytes(3))
 
-    // TODO: set key
-    for (i <- 0 to depth) {
-    }
-
-    this.unserializeValue(serializer, resultset.getBytes(depth + 3))
+    this.accessPath = new AccessPath(for (i <- 1 to depth) yield new AccessKey(resultset.getString(3 + 2 * i - 1), Some(resultset.getInt(3 + 2 * i))))
   }
 
   def serializeValue(serializer: ProtocolTranslator): Array[Byte] = {
@@ -181,13 +373,17 @@ class Record(var value: MapValue = new MapValue(Map())) {
   }
 
   def unserializeValue(serializer: ProtocolTranslator, bytes: Array[Byte]) {
-    this.value = serializer.decodeValue(bytes).asInstanceOf[MapValue]
+    if (bytes != null)
+      this.value = serializer.decodeValue(bytes).asInstanceOf[MapValue]
+    else
+      this.value = NullValue()
   }
 }
 
 class MutationRecord {
   var token: Long = 0
-  var keys: Seq[String] = Seq()
+
+  var accessPath = new AccessPath()
   var newTimestamp: Timestamp = Timestamp(0)
   var newValue: Option[Value] = None
   var oldTimestamp: Option[Timestamp] = None
@@ -204,7 +400,7 @@ class MutationRecord {
       this.oldValue = this.unserializeValue(serializer, resultset.getBytes(5))
     }
 
-    this.keys = for (i <- 1 to depth) yield resultset.getString(5 + i)
+    this.accessPath = new AccessPath(for (i <- 1 to depth) yield new AccessKey(resultset.getString(5 + 2 * i - 1), Some(resultset.getInt(5 + 2 * i))))
   }
 
   def unserializeValue(serializer: ProtocolTranslator, bytes: Array[Byte]): Option[Value] = {
@@ -215,7 +411,7 @@ class MutationRecord {
   }
 }
 
-class RecordIterator(storage:MysqlStorage, results: SqlResults, table: Table) {
+class RecordIterator(storage: MysqlStorage, results: SqlResults, table: Table) {
   private var hasNext = false
 
   def next(): Boolean = {
@@ -236,4 +432,15 @@ class RecordIterator(storage:MysqlStorage, results: SqlResults, table: Table) {
   def close() = results.close()
 }
 
+class VersionRecord {
+  var token: Long = 0
+  var generations: Int = 0
+  var accessPath = new AccessPath()
+
+  def load(resultset: ResultSet, depth: Int) {
+    this.token = resultset.getLong(1)
+    this.generations = resultset.getInt(2)
+    this.accessPath = new AccessPath(for (i <- 1 to depth) yield new AccessKey(resultset.getString(2 + i)))
+  }
+}
 

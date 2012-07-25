@@ -6,12 +6,12 @@ import com.wajam.nrv.Logging
 /**
  * MRY value representing multiple values
  */
-class MultipleRecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table, token: Long, prefixKeys: Seq[String]) extends Value with Logging {
+class MultipleRecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table, token: Long, accessPrefix: AccessPath) extends Value with Logging {
 
   val (transaction, iterator) = context.dryMode match {
     case false =>
       val transaction = context.getStorageTransaction(storage).asInstanceOf[MysqlTransaction]
-      val iterator = transaction.getMultiple(table, token, context.timestamp, prefixKeys)
+      val iterator = transaction.getMultiple(table, token, context.timestamp, accessPrefix)
       (transaction, Some(iterator))
 
     case true =>
@@ -25,7 +25,7 @@ class MultipleRecordValue(storage: MysqlStorage, context: ExecutionContext, tabl
           var list = List[Value]()
           while (iter.next()) {
             val record = iter.record
-            list :+= new RecordValue(storage, context, table, token, prefixKeys :+ record.key, Some(transaction), Some(record))
+            list :+= new RecordValue(storage, context, table, token, record.accessPath, Some(transaction), Some(record))
           }
 
           new ListValue(list)
@@ -39,5 +39,5 @@ class MultipleRecordValue(storage: MysqlStorage, context: ExecutionContext, tabl
   }
 
   // Serialized version of this record is the inner map or null
-  override def serializableValue = this.innerValue
+  override def serializableValue = this.innerValue.serializableValue
 }

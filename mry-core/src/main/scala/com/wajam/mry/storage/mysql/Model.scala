@@ -6,6 +6,14 @@ class Model extends TableCollection {
 trait TableCollection {
   var tables = Map[String, Table]()
 
+  def allHierarchyTables:Seq[Table] = {
+    var allTables = Seq[Table]()
+    for ((name, table) <- this.tables) {
+      allTables ++= Seq(table) ++ table.allHierarchyTables
+    }
+    allTables
+  }
+
   def currentTable: Option[Table] = None
 
   var parentTable: Option[Table] = None
@@ -26,7 +34,7 @@ trait TableCollection {
   def getTable(name: String): Option[Table] = this.tables.get(name)
 }
 
-class Table(var name: String, var parent: Option[Table] = None) extends TableCollection {
+class Table(var name: String, var parent: Option[Table] = None, var maxVersions:Int = 3) extends TableCollection {
   override def currentTable = Some(this)
 
   def depthName(glue: String): String = {
