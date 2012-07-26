@@ -3,7 +3,7 @@ package com.wajam.mry.api.protobuf
 import com.wajam.mry.api.{TranslationException, ProtocolTranslator}
 import com.wajam.mry.api.protobuf.Transaction.{PTransactionCollectionValue, PTransactionCollection, PTransactionValue}
 import scala.collection.JavaConversions._
-import com.wajam.mry.execution.{ListValue, MapValue, IntValue, NullValue, StringValue, Value, Transaction => MryTransaction}
+import com.wajam.mry.execution.{Transaction => MryTransaction, _}
 
 /**
  * Protocol buffers translator
@@ -21,6 +21,18 @@ class ProtobufTranslator extends ProtocolTranslator {
         PTransactionValue.newBuilder()
           .setType(PTransactionValue.Type.INT)
           .setIntValue(intValue.intValue)
+          .build()
+
+      case doubleValue: DoubleValue =>
+        PTransactionValue.newBuilder()
+          .setType(PTransactionValue.Type.DOUBLE)
+          .setDoubleValue(doubleValue.doubleValue)
+          .build()
+
+      case boolValue: BoolValue =>
+        PTransactionValue.newBuilder()
+          .setType(PTransactionValue.Type.BOOL)
+          .setBoolValue(boolValue.boolValue)
           .build()
 
       case listValue: ListValue =>
@@ -61,13 +73,19 @@ class ProtobufTranslator extends ProtocolTranslator {
 
   def encodeValue(value: Value): Array[Byte] = this.toProtoValue(value).toByteArray
 
-  def fromProtoValue(protoVal: PTransactionValue) : Value = {
+  def fromProtoValue(protoVal: PTransactionValue): Value = {
     protoVal.getType match {
       case PTransactionValue.Type.STRING =>
         new StringValue(protoVal.getStringValue)
 
       case PTransactionValue.Type.INT =>
         new IntValue(protoVal.getIntValue)
+
+      case PTransactionValue.Type.BOOL =>
+        new BoolValue(protoVal.getBoolValue)
+
+      case PTransactionValue.Type.DOUBLE =>
+        new DoubleValue(protoVal.getDoubleValue)
 
       case PTransactionValue.Type.MAP =>
         var map = Map[String, Value]()
