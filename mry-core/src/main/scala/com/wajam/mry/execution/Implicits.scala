@@ -1,7 +1,7 @@
 package com.wajam.mry.execution
 
 /**
- * Implicits that can be used to help transfering values from scala types to
+ * Implicits that can be used to help converting values from scala types to
  * mry types
  */
 object Implicits {
@@ -34,6 +34,10 @@ object Implicits {
 
   implicit def value2int(value: IntValue) = value.intValue
 
+  implicit def long2value(value: Long) = new IntValue(value)
+
+  implicit def value2long(value: IntValue) = value.intValue
+
   implicit def anymap2value(map: Map[String, Any]) = map2value(map.map {
     case (k, v) => (k -> object2value(v))
   })
@@ -52,20 +56,14 @@ object Implicits {
 
   def object2value(obj: Any): Value = {
     obj match {
-      case v: String =>
-        return v
-      case v: Int =>
-        return v
-      case v: Map[String, Value] =>
-        return v
-      case v: Map[String, Any] =>
-        return v
-      case v: Seq[Value] =>
-        return v
-      case v: Seq[Any] =>
-        return v
-      case v: Value =>
-        v
+      case v: String => v
+      case v: Int => v
+      case v: Long => v
+      case v: Map[String, Value] => v
+      case v: Map[String, Any] => v
+      case v: Seq[Value] => v
+      case v: Seq[Any] => v
+      case v: Value => v
     }
   }
 
