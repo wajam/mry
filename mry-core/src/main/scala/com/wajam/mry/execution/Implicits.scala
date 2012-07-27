@@ -15,6 +15,12 @@ object Implicits {
       case rVal: IntValue =>
         rVal.intValue
 
+      case rVal: BoolValue =>
+        rVal.boolValue
+
+      case rVal: DoubleValue =>
+        rVal.doubleValue
+
       case rVal: MapValue =>
         for ((k, v) <- rVal.mapValue) yield (k, value2object(v))
 
@@ -38,6 +44,14 @@ object Implicits {
 
   implicit def value2long(value: IntValue) = value.intValue
 
+  implicit def bool2value(value: Boolean) = new BoolValue(value)
+
+  implicit def value2bool(value: BoolValue) = value.boolValue
+
+  implicit def double2value(value: Double) = new DoubleValue(value)
+
+  implicit def value2double(value: DoubleValue) = value.doubleValue
+
   implicit def anymap2value(map: Map[String, Any]) = map2value(map.map {
     case (k, v) => (k -> object2value(v))
   })
@@ -59,6 +73,8 @@ object Implicits {
       case v: String => v
       case v: Int => v
       case v: Long => v
+      case v: Boolean => v
+      case v: Double => v
       case v: Map[String, Value] => v
       case v: Map[String, Any] => v
       case v: Seq[Value] => v
