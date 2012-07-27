@@ -18,6 +18,9 @@ object Implicits {
       case rVal: BoolValue =>
         rVal.boolValue
 
+      case rVal: DoubleValue =>
+        rVal.doubleValue
+
       case rVal: MapValue =>
         for ((k, v) <- rVal.mapValue) yield (k, value2object(v))
 
