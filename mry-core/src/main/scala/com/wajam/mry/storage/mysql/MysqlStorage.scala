@@ -147,7 +147,7 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
       "`ts` bigint(20) NOT NULL AUTO_INCREMENT, " +
       "`tk` bigint(20) NOT NULL, "
 
-    sql += ((for (i <- 1 to table.depth) yield " k%d varchar(128) NOT NULL ".format(i)) ++ (for (i <- 1 to table.depth) yield " g%d varchar(128) NOT NULL ".format(i))).mkString(",") + ","
+    sql += (for (i <- 1 to table.depth) yield " k%d varchar(128) NOT NULL ".format(i)).mkString(",") + ","
 
     val keyList = (for (i <- 1 to table.depth) yield "k%d".format(i)).mkString(",")
     sql += " `d` blob NULL, " +
@@ -295,7 +295,7 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
             var collectedVersions = 0
             while (versions.size > 0 && collectedVersions < collectPerTable) {
               val version = versions.dequeue()
-              val toDeleteCount = (version.generations - table.maxVersions)
+              val toDeleteCount = (version.versionsCount - table.maxVersions)
 
               trx.truncateVersions(table, version.token, version.accessPath, toDeleteCount)
 

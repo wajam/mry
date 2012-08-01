@@ -24,9 +24,6 @@ class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table
   val innerValue = {
     this.optRecord match {
       case Some(r) =>
-        // update generation
-        accessPath.last.generation = r.accessPath.last.generation
-
         r.value
       case None =>
         new NullValue
