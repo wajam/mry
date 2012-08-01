@@ -218,7 +218,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   test("deletion should be a tombstone record") {
     val transac = new MysqlTransaction(mysqlStorage)
     val initRec = new Record(Map("test" -> 1234))
-    val path = new AccessPath(Seq(new AccessKey("test1", Some(1))))
+    val path = new AccessPath(Seq(new AccessKey("test1")))
     transac.set(table1, 1, Timestamp.now, path, Some(initRec))
 
     val rec1 = transac.get(table1, 1, Timestamp.now, path)
@@ -283,7 +283,6 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   }
 
   test("operations should be kept in a history") {
-    Thread.sleep(100)
     val fromTimestamp = Timestamp.now
     exec(t => {
       val storage = t.from("mysql")
@@ -355,10 +354,33 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
 
 
     val table1_1Timeline = mysqlStorage.getStorageTransaction(context).getTimeline(table1_1, fromTimestamp, 100)
-    assert(table1_1Timeline.size == 3, table1_1Timeline.size)
+    assert(table1_1Timeline.size == 5, table1_1Timeline.size)
 
     val table1_1_1Timeline = mysqlStorage.getStorageTransaction(context).getTimeline(table1_1_1, fromTimestamp, 100)
-    assert(table1_1_1Timeline.size == 2, table1_1_1Timeline.size)
+    assert(table1_1_1Timeline.size == 3, table1_1_1Timeline.size)
+  }
+
+  test("deleted parents should generate deletion history for children") {
+    val fromTimestamp = Timestamp.now
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", Map("k" -> "value1"))
+      table.set("key2", Map("k" -> "value2"))
+      table.get("key1").from("table1_1").set("key1.1", Map("k" -> "value1.1"))
+      table.get("key2").from("table1_1").set("key2.1", Map("k" -> "value2.1"))
+      table.delete("key2")
+    }, commit = true)
+
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.delete("key1")
+    }, commit = true)
+
+    val context = new ExecutionContext(storages)
+    val table1_1Timeline = mysqlStorage.getStorageTransaction(context).getTimeline(table1_1, fromTimestamp, 100)
+    assert(table1_1Timeline.size == 3, table1_1Timeline.size)
   }
 
   test("forced garbage collections should truncate versions and keep enough versions") {
