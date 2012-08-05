@@ -55,8 +55,8 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
           assert(tok.intValue == expectedToken)
 
           // make sure it's on the expected node
-          val nodes = db.resolveMembers(expectedToken, 1)
-          assert(nodes(0).value.get.uniqueKey == ret(2).asInstanceOf[StringValue].strValue, "%s!=%s".format(nodes(0).value.get.uniqueKey, ret(2).asInstanceOf[StringValue].strValue))
+          val members = db.resolveMembers(expectedToken, 1)
+          assert(members(0).node.uniqueKey == ret(2).asInstanceOf[StringValue].strValue, "%s!=%s".format(members(0).node.uniqueKey, ret(2).asInstanceOf[StringValue].strValue))
         }, 1000)
       }
     }, 1, 6)
