@@ -6,6 +6,8 @@ import collection.mutable
 import com.wajam.mry.execution._
 import com.wajam.mry.api.ProtocolTranslator
 import com.yammer.metrics.scala.Instrumented
+import com.wajam.scn.Timestamp
+import com.wajam.scn.storage.TimestampUtil
 
 /**
  * Mysql storage transaction
@@ -286,7 +288,7 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
     ret
   }
 
-  def truncateVersions(table: Table, token: Long, accessPath: AccessPath, count: Int, maxTimestamp: Timestamp = Timestamp.MAX) {
+  def truncateVersions(table: Table, token: Long, accessPath: AccessPath, count: Int, maxTimestamp: Timestamp = TimestampUtil.MAX) {
     val fullTableName = table.depthName("_")
     val whereKeys = (for (i <- 1 to table.depth) yield "k%1$d = ?".format(i)).mkString(" AND ")
     val keysValue = accessPath.keys

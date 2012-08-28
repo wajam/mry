@@ -5,11 +5,12 @@ import storage.Storage
 import com.wajam.nrv.Logging
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service.{Resolver, Action, Service}
+import com.wajam.scn.{Timestamp, Scn}
 
 /**
  * MRY database
  */
-class Database(var serviceName: String = "database") extends Service(serviceName) with Logging with Instrumented {
+class Database(var serviceName: String = "database", val scn: Scn) extends Service(serviceName) with Logging with Instrumented {
   var storages = Map[String, Storage]()
 
   private val metricExecuteLocal = metrics.timer("execute-local")
@@ -17,7 +18,16 @@ class Database(var serviceName: String = "database") extends Service(serviceName
   def analyseTransaction(transaction: Transaction): ExecutionContext = {
     val context = new ExecutionContext(storages)
     context.dryMode = true
-    context.timestamp = Timestamp.now
+
+    scn.getNextTimestamp(serviceName, (timestamps: List[Timestamp], optException) => {
+      if (optException.isDefined) {
+        error(optException.get.toString, 500)
+        throw optException.get
+      }
+
+      context.timestamp = timestamps(0)
+    })
+
     transaction.execute(context)
     context
   }
@@ -78,7 +88,7 @@ class Database(var serviceName: String = "database") extends Service(serviceName
   def getStorage(name: String) = this.storages.get(name).get
 
 
-  private val remoteExecuteToken = this.registerAction(new Action("/execute/:"+Database.TOKEN_KEY, req => {
+  private val remoteExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
     this.metricExecuteLocal.time {
       var values: Seq[Value] = null
       val context = new ExecutionContext(storages)
