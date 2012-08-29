@@ -26,7 +26,7 @@ class Database(var serviceName: String = "database", val scn: Scn) extends Servi
       }
 
       context.timestamp = timestamps(0)
-    })
+    }, 1)
 
     transaction.execute(context)
     context
