@@ -52,17 +52,13 @@ object Implicits {
 
   implicit def value2double(value: DoubleValue) = value.doubleValue
 
-  implicit def anymap2value(map: Map[String, Any]) = map2value(map.map {
+  implicit def map2value(map: Map[String, Any]) = new MapValue(map.map {
     case (k, v) => (k -> object2value(v))
   })
 
-  def map2value(map: Map[String, Value]) = new MapValue(map)
-
   implicit def value2map(value: MapValue) = value.mapValue
 
-  def list2value(list: Seq[Value]) = new ListValue(list)
-
-  implicit def anylist2value(list: Seq[Any]) = list2value(for (e <- list) yield object2value(e))
+  implicit def list2value(list: Seq[Any]) = new ListValue(for (e <- list) yield object2value(e))
 
   implicit def value2list(value: ListValue) = value.listValue
 
