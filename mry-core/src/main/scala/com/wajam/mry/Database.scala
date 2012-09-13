@@ -5,12 +5,12 @@ import storage.Storage
 import com.wajam.nrv.Logging
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service.{Resolver, Action, Service}
-import com.wajam.scn.{Timestamp, Scn}
+import com.wajam.scn.{ScnClient, Timestamp}
 
 /**
  * MRY database
  */
-class Database(var serviceName: String = "database", val scn: Scn) extends Service(serviceName) with Logging with Instrumented {
+class Database(var serviceName: String = "database", val scn: ScnClient) extends Service(serviceName) with Logging with Instrumented {
   var storages = Map[String, Storage]()
 
   private val metricExecuteLocal = metrics.timer("execute-local")
@@ -19,13 +19,13 @@ class Database(var serviceName: String = "database", val scn: Scn) extends Servi
     val context = new ExecutionContext(storages)
     context.dryMode = true
 
-    scn.getNextTimestamp(serviceName, (timestamps: List[Timestamp], optException) => {
+    scn.getNextTimestamp(serviceName, (timestamps: List[_], optException) => {
       if (optException.isDefined) {
         error(optException.get.toString, 500)
         throw optException.get
       }
 
-      context.timestamp = timestamps(0)
+      context.timestamp = timestamps(0).asInstanceOf[Timestamp]
     }, 1)
 
     transaction.execute(context)

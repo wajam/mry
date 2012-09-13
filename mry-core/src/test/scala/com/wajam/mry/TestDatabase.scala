@@ -9,7 +9,7 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import storage.MemoryStorage
 import com.wajam.nrv.utils.Sync
 import com.wajam.nrv.service.Resolver
-import com.wajam.scn.Scn
+import com.wajam.scn.{ScnClient, Scn}
 import com.wajam.scn.storage.StorageType
 
 @RunWith(classOf[JUnitRunner])
@@ -23,7 +23,9 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
     cluster.registerService(scn)
     scn.addMember(token, cluster.localNode)
 
-    val db = new Database("mry", scn)
+    val scnClient = new ScnClient(scn)
+
+    val db = new Database("mry", scnClient)
     cluster.registerService(db)
     db.registerStorage(new MemoryStorage("memory"))
 
