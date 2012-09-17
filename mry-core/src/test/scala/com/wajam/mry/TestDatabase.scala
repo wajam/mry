@@ -19,7 +19,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
 
     val token = (Int.MaxValue / size) * i
 
-    val scn = new Scn("scn", StorageType.memory)
+    val scn = new Scn("scn", StorageType.MEMORY)
     cluster.registerService(scn)
     scn.addMember(token, cluster.localNode)
 

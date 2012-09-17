@@ -18,16 +18,6 @@ class Database(var serviceName: String = "database", val scn: ScnClient) extends
   def analyseTransaction(transaction: Transaction): ExecutionContext = {
     val context = new ExecutionContext(storages)
     context.dryMode = true
-
-    scn.getNextTimestamp(serviceName, (timestamps: List[_], optException) => {
-      if (optException.isDefined) {
-        error(optException.get.toString, 500)
-        throw optException.get
-      }
-
-      context.timestamp = timestamps(0).asInstanceOf[Timestamp]
-    }, 1)
-
     transaction.execute(context)
     context
   }
@@ -90,26 +80,34 @@ class Database(var serviceName: String = "database", val scn: ScnClient) extends
 
   private val remoteExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
     this.metricExecuteLocal.time {
-      var values: Seq[Value] = null
-      val context = new ExecutionContext(storages)
-      context.cluster = Database.this.cluster
 
-      try {
-        val transaction = req.parameters("trx").asInstanceOf[Transaction]
-        transaction.execute(context)
-        values = context.returnValues
-        context.commit()
-
-      } catch {
-        case e: Exception => {
-          context.rollback()
-          throw e
+      scn.getNextTimestamp(serviceName, (timestamps: Seq[Timestamp], optException) => {
+        if (optException.isDefined) {
+          error(optException.get.toString, 500)
+          throw optException.get
         }
-      }
 
-      req.reply(
-        Seq("values" -> values)
-      )
+        var values: Seq[Value] = null
+        val context = new ExecutionContext(storages, Some(timestamps(0)))
+        context.cluster = Database.this.cluster
+
+        try {
+          val transaction = req.parameters("trx").asInstanceOf[Transaction]
+          transaction.execute(context)
+          values = context.returnValues
+          context.commit()
+
+        } catch {
+          case e: Exception => {
+            context.rollback()
+            throw e
+          }
+        }
+
+        req.reply(
+          Seq("values" -> values)
+        )
+      }, 1)
     }
   }))
 

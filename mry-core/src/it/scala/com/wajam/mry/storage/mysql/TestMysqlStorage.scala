@@ -45,7 +45,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   }
 
   def exec(cb: (Transaction => Unit), commit: Boolean = true): Seq[Value] = {
-    val context = new ExecutionContext(storages)
+    val context = new ExecutionContext(storages, Some(TimestampUtil.now))
 
     try {
       val transac = new Transaction()
@@ -316,7 +316,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       table.delete("key3")
     }, commit = true)
 
-    val context = new ExecutionContext(storages)
+    val context = new ExecutionContext(storages, Some(TimestampUtil.now))
     val table1Timeline = mysqlStorage.getStorageTransaction(context).getTimeline(table1, fromTimestamp, 100)
 
     assert(table1Timeline.size == 6)
@@ -379,7 +379,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       table.delete("key1")
     }, commit = true)
 
-    val context = new ExecutionContext(storages)
+    val context = new ExecutionContext(storages, Some(TimestampUtil.now))
     val table1_1Timeline = mysqlStorage.getStorageTransaction(context).getTimeline(table1_1, fromTimestamp, 100)
     assert(table1_1Timeline.size == 3, table1_1Timeline.size)
   }

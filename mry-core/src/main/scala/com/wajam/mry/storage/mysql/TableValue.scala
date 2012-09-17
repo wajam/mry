@@ -45,7 +45,7 @@ class TableValue(storage: MysqlStorage, table: Table, accessPrefix: AccessPath =
 
       val record = new Record
       record.value = mapVal
-      transaction.set(table, token, context.timestamp, accessPath, Some(record))
+      transaction.set(table, token, context.timestamp.get, accessPath, Some(record))
     }
   }
 
@@ -60,7 +60,7 @@ class TableValue(storage: MysqlStorage, table: Table, accessPrefix: AccessPath =
     if (!context.dryMode) {
       val transaction = context.getStorageTransaction(storage).asInstanceOf[MysqlTransaction]
 
-      transaction.set(table, token, context.timestamp, accessPath, None)
+      transaction.set(table, token, context.timestamp.get, accessPath, None)
     }
   }
 

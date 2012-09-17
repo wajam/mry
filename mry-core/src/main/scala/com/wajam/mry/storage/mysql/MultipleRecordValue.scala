@@ -11,7 +11,7 @@ class MultipleRecordValue(storage: MysqlStorage, context: ExecutionContext, tabl
   val (transaction, iterator) = context.dryMode match {
     case false =>
       val transaction = context.getStorageTransaction(storage).asInstanceOf[MysqlTransaction]
-      val iterator = transaction.getMultiple(table, token, context.timestamp, accessPrefix)
+      val iterator = transaction.getMultiple(table, token, context.timestamp.get, accessPrefix)
       (transaction, Some(iterator))
 
     case true =>
