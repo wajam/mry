@@ -15,6 +15,8 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table) extends Feeder 
 
   val cache = new mutable.Queue[Map[String, Any]]()
 
+  val ROWS_TO_FETCH = 1000
+
   def init(context: TaskContext) {
     this.context = context
   }
@@ -33,7 +35,7 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table) extends Feeder 
     var transaction: MysqlTransaction = null
     try {
       transaction = storage.getStorageTransaction
-      val mutations = transaction.getTimeline(table, nextTimestamp, 1000)
+      val mutations = transaction.getTimeline(table, nextTimestamp, ROWS_TO_FETCH)
 
       for (mutation <- mutations) {
         // Find next timestamp
