@@ -24,12 +24,11 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table) extends Feeder 
       loadMore()
       None
     } else {
-      Some(cache.dequeue()) // TODO
+      Some(cache.dequeue())
     }
   }
 
-  def loadMore() {
-    debug("WE HAVE TO GO DEEPER!") // TODO write a decent debug message
+  private def loadMore() {
 
     var transaction: MysqlTransaction = null
     try {
