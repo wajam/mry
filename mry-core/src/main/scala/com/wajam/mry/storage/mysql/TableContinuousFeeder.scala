@@ -9,9 +9,8 @@ import com.wajam.mry.execution.Timestamp
  *
  */
 class TableContinuousFeeder(storage: MysqlStorage, table: Table) extends Feeder with Logging {
-  var context: TaskContext = null
 
-  var nextToken: Long = 0
+  var context: TaskContext = null
   var nextTimestamp: Timestamp = 0
 
   val cache = new mutable.Queue[Map[String, Any]]()
@@ -39,10 +38,16 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table) extends Feeder 
 
       for (mutation <- mutations) {
         // Find next timestamp
-        for (timestamp <- mutation.oldTimestamp if timestamp > nextTimestamp) nextTimestamp = timestamp.value + 1L
+        for (timestamp <- mutation.oldTimestamp if timestamp > nextTimestamp) nextTimestamp = timestamp.value + 1
 
         for (value <- mutation.newValue) cache.enqueue(Map("keys" -> mutation.accessPath.keys, "value" -> value))
       }
+
+      // Restart if tree is still empty
+      if (cache.isEmpty) {
+        nextTimestamp = 0
+      }
+
     } finally {
       if (transaction != null) {
         transaction.commit()
