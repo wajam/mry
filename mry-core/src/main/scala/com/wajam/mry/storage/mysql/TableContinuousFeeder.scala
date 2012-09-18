@@ -5,17 +5,20 @@ import com.wajam.spnl.{TaskContext, Feeder}
 import collection.mutable
 import com.wajam.mry.execution.Timestamp
 
+object TableContinuousFeeder {
+  val ROWS_TO_FETCH = 1000
+}
+
 /**
  *
  */
-class TableContinuousFeeder(storage: MysqlStorage, table: Table) extends Feeder with Logging {
+class TableContinuousFeeder(storage: MysqlStorage, table: Table, rowsToFetch: Int = TableContinuousFeeder.ROWS_TO_FETCH)
+  extends Feeder with Logging {
 
   var context: TaskContext = null
   var nextTimestamp: Timestamp = 0
 
   val cache = new mutable.Queue[Map[String, Any]]()
-
-  val ROWS_TO_FETCH = 1000
 
   def init(context: TaskContext) {
     this.context = context
@@ -35,13 +38,12 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table) extends Feeder 
     var transaction: MysqlTransaction = null
     try {
       transaction = storage.getStorageTransaction
-      val mutations = transaction.getTimeline(table, nextTimestamp, ROWS_TO_FETCH)
 
-      for (mutation <- mutations) {
-        // Find next timestamp
-        for (timestamp <- mutation.oldTimestamp if timestamp > nextTimestamp) nextTimestamp = timestamp.value + 1
+      val values = transaction.getAllLatest(table, nextTimestamp, Timestamp.now, rowsToFetch)
 
-        for (value <- mutation.newValue) cache.enqueue(Map("keys" -> mutation.accessPath.keys, "value" -> value))
+      while (values.next()) {
+        val record = values.record
+        cache.enqueue(Map("keys" -> record.accessPath.keys, "value" -> record.value))
       }
 
       // Restart if tree is still empty
