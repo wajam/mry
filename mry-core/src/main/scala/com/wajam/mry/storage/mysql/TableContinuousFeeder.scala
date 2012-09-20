@@ -5,14 +5,11 @@ import com.wajam.spnl.{TaskContext, Feeder}
 import collection.mutable
 import com.wajam.mry.execution.Timestamp
 
-object TableContinuousFeeder {
-  val ROWS_TO_FETCH = 1000
-}
-
 /**
- *
+ * Fetches all current defined (not null) data on a table.
+ * When it finished, it loops over and starts again with the oldest current data.
  */
-class TableContinuousFeeder(storage: MysqlStorage, table: Table, rowsToFetch: Int = TableContinuousFeeder.ROWS_TO_FETCH)
+class TableContinuousFeeder(storage: MysqlStorage, table: Table, rowsToFetch: Int = 1000)
   extends Feeder with Logging {
 
   var context: TaskContext = null
