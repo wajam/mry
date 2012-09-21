@@ -440,6 +440,90 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     }
   }
 
+  test("getAllLatest should return all latest elements") {
+    val fromTimestamp = Timestamp.now
+    exec(t => {
+      val t1 = t.from("mysql").from("table1")
+      t1.set("key1", Map("k1" -> "v1"))
+      t1.set("key2", Map("k1" -> "v1"))
+      t1.set("key3", Map("k1" -> "v1"))
+    }, commit = true)
+
+    exec(t => {
+      val t1 = t.from("mysql").from("table1")
+      t1.set("key2", Map("k1" -> "v2"))
+      t1.delete("key3")
+    }, commit = true)
+
+    val context = new ExecutionContext(storages)
+    val table1All = mysqlStorage.getStorageTransaction(context).getAllLatest(table1, fromTimestamp, Timestamp.now, 100)
+
+    assert(table1All.next() === true)
+    val recordKey1 = table1All.record
+    assert(recordKey1.value.asInstanceOf[MapValue]("k1").toString === "v1")
+
+    assert(table1All.next() === true)
+    val recordKey2 = table1All.record
+    assert(recordKey2.value.asInstanceOf[MapValue]("k1").toString === "v2")
+
+    assert(table1All.next() === false)
+
+    table1All.close()
+  }
+
+  test("getAllLatest should return all latest elements on multi-hierarchical table") {
+    val fromTimestamp = Timestamp.now
+
+    val keys = Seq("key1", "key2", "key3")
+
+    exec(t => {
+      val t1 = t.from("mysql").from("table1")
+      keys foreach(t1.set(_, Map("k1" -> "v1")))
+    }, commit = true)
+
+    keys foreach (key => {
+      exec(t => {
+        val t11 = t.from("mysql").from("table1").get(key).from("table1_1")
+        t11.set("key1", Map("k1" -> "v1"))
+        t11.set("key2", Map("k1" -> "v1"))
+        t11.set("key3", Map("k1" -> "v1"))
+      }, commit = true)
+
+      exec(t => {
+        val t11 = t.from("mysql").from("table1").get(key).from("table1_1")
+        t11.set("key2", Map("k1" -> "v2"))
+        t11.delete("key3")
+      }, commit = true)
+    })
+
+    exec(t => t.from("mysql").from("table1").delete("key3"), commit = true)
+
+
+    val context = new ExecutionContext(storages)
+    val table11All = mysqlStorage.getStorageTransaction(context).getAllLatest(table1_1, fromTimestamp, Timestamp.now, 100)
+
+    assert(table11All.next() === true)
+    val recordKey1 = table11All.record
+    assert(recordKey1.value.asInstanceOf[MapValue]("k1").toString === "v1")
+
+    assert(table11All.next() === true)
+    val recordKey2 = table11All.record
+    assert(recordKey2.value.asInstanceOf[MapValue]("k1").toString === "v2")
+
+    assert(table11All.next() === true)
+    val recordKey3 = table11All.record
+    assert(recordKey3.value.asInstanceOf[MapValue]("k1").toString === "v1")
+
+    assert(table11All.next() === true)
+    val recordKey4 = table11All.record
+    assert(recordKey4.value.asInstanceOf[MapValue]("k1").toString === "v2")
+
+    assert(table11All.next() === false)
+
+    table11All.close()
+
+  }
+
   test("make sure junit doesn't get stuck") {
   }
 }
