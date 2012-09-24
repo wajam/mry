@@ -12,28 +12,24 @@ import com.wajam.nrv.tracing.{Tracer, Traced}
  * Mysql storage transaction
  */
 class MysqlTransaction(private val storage: MysqlStorage, private val context: Option[ExecutionContext]) extends StorageTransaction with Instrumented with Traced {
-  private val metricTimeline = tracedTimer("mysql-timeline", this)
-  private val metricTopMostVersions = tracedTimer("mysql-topmostversions", this)
-  private val metricSet = tracedTimer("mysql-set", this)
-  private val metricGet = tracedTimer("mysql-get", this)
-  private val metricDelete = tracedTimer("mysql-delete", this)
-  private val metricCommit = tracedTimer("mysql-commit", this)
-  private val metricRollback = tracedTimer("mysql-rollback", this)
-  private val metricTruncateVersions = tracedTimer("mysql-truncateversions", this)
-  private val metricSize = tracedTimer("mysql-count", this)
+  private val metricTimeline = tracedTimer("mysql-timeline")
+  private val metricTopMostVersions = tracedTimer("mysql-topmostversions")
+  private val metricSet = tracedTimer("mysql-set")
+  private val metricGet = tracedTimer("mysql-get")
+  private val metricDelete = tracedTimer("mysql-delete")
+  private val metricCommit = tracedTimer("mysql-commit")
+  private val metricRollback = tracedTimer("mysql-rollback")
+  private val metricTruncateVersions = tracedTimer("mysql-truncateversions")
+  private val metricSize = tracedTimer("mysql-count")
 
   var mutationsCount = 0
 
   val connection = storage.getConnection
   connection.setAutoCommit(false)
 
-  private def tracer: Option[Tracer] = {
-    if (context.isDefined) Some(context.get.cluster.tracer) else None
-  }
-
   def rollback() {
     if (this.connection != null) {
-      metricRollback.time(tracer) {
+      this.metricRollback.time {
         try {
           this.connection.rollback()
         } finally {
@@ -47,7 +43,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
   def commit() {
     if (this.connection != null) {
-      metricCommit.time(tracer) {
+      this.metricCommit.time {
         try {
           this.connection.commit()
         } finally {
@@ -82,13 +78,13 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
       if (optRecord.isDefined) {
         // there is a value, we set it
         val value = optRecord.get.serializeValue(storage.valueSerializer)
-        metricSet.time(tracer) {
+        this.metricSet.time {
           results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue ++ Seq(value)): _*)
         }
 
       } else {
         // no value, it's a delete
-        metricDelete.time(tracer) {
+        this.metricDelete.time {
           results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue ++ Seq(null)): _*)
 
           // delete all rows from children tables
@@ -165,7 +161,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     var results: SqlResults = null
     try {
-      metricGet.time(tracer) {
+      this.metricGet.time {
         results = storage.executeSql(connection, false, sql, (Seq(token) ++ keysValue ++ Seq(timestamp.value) ++ Seq(token)): _*)
       }
 
@@ -227,7 +223,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     var ret = mutable.LinkedList[MutationRecord]()
     var results: SqlResults = null
     try {
-      metricTimeline.time(tracer) {
+      this.metricTimeline.time {
         results = storage.executeSql(connection, false, sql)
 
         while (results.resultset.next()) {
@@ -273,7 +269,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     var ret = mutable.LinkedList[VersionRecord]()
     var results: SqlResults = null
     try {
-      metricTopMostVersions.time(tracer) {
+      this.metricTopMostVersions.time {
         results = storage.executeSql(connection, false, sql)
 
         while (results.resultset.next()) {
@@ -317,7 +313,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     var results: SqlResults = null
     try {
-      metricTruncateVersions.time(tracer) {
+      this.metricTruncateVersions.time {
         results = storage.executeSql(connection, true, sql, (Seq(token) ++ keysValue): _*)
       }
 
@@ -344,7 +340,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     var count: Long = 0
     var results: SqlResults = null
     try {
-      metricSize.time(tracer) {
+      this.metricSize.time {
         results = storage.executeSql(connection, false, sql)
       }
 
