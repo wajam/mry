@@ -9,7 +9,7 @@ import com.wajam.mry.execution.{ExecutionContext, Value, Timestamp}
 abstract class Storage(var name: String) {
   def getStorageValue(context: ExecutionContext): Value
 
-  def getStorageTransaction(context: ExecutionContext): StorageTransaction
+  def createStorageTransaction(context: ExecutionContext): StorageTransaction
 
   def nuke()
 

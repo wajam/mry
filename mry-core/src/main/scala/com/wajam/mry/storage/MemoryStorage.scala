@@ -14,7 +14,7 @@ class MemoryStorage(name: String) extends Storage(name) {
 
   def stop() {}
 
-  def getStorageTransaction(context: ExecutionContext) = new MemoryTransaction(context)
+  def createStorageTransaction(context: ExecutionContext) = new MemoryTransaction(context)
 
   def getStorageValue(context: ExecutionContext): Value = new StorageValue
 

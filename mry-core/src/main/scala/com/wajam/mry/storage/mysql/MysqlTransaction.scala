@@ -6,20 +6,21 @@ import collection.mutable
 import com.wajam.mry.execution._
 import com.wajam.mry.api.ProtocolTranslator
 import com.yammer.metrics.scala.Instrumented
+import com.wajam.nrv.tracing.{Tracer, Traced}
 
 /**
  * Mysql storage transaction
  */
-class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with Instrumented {
-  private val metricTimeline = metrics.timer("mysql-timeline")
-  private val metricTopMostVersions = metrics.timer("mysql-topmostversions")
-  private val metricSet = metrics.timer("mysql-set")
-  private val metricGet = metrics.timer("mysql-get")
-  private val metricDelete = metrics.timer("mysql-delete")
-  private val metricCommit = metrics.timer("mysql-commit")
-  private val metricRollback = metrics.timer("mysql-rollback")
-  private val metricTruncateVersions = metrics.timer("mysql-truncateversions")
-  private val metricSize = metrics.timer("mysql-count")
+class MysqlTransaction(private val storage: MysqlStorage, private val context: Option[ExecutionContext]) extends StorageTransaction with Instrumented with Traced {
+  private val metricTimeline = tracedTimer("mysql-timeline")
+  private val metricTopMostVersions = tracedTimer("mysql-topmostversions")
+  private val metricSet = tracedTimer("mysql-set")
+  private val metricGet = tracedTimer("mysql-get")
+  private val metricDelete = tracedTimer("mysql-delete")
+  private val metricCommit = tracedTimer("mysql-commit")
+  private val metricRollback = tracedTimer("mysql-rollback")
+  private val metricTruncateVersions = tracedTimer("mysql-truncateversions")
+  private val metricSize = tracedTimer("mysql-count")
 
   var mutationsCount = 0
 

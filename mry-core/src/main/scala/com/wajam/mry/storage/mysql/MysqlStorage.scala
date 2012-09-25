@@ -25,9 +25,9 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
   datasource.setUser(username)
   datasource.setPassword(password)
 
-  def getStorageTransaction(context: ExecutionContext) = this.getStorageTransaction
+  def createStorageTransaction(context: ExecutionContext) = new MysqlTransaction(this, Some(context))
 
-  def getStorageTransaction = new MysqlTransaction(this)
+  def createStorageTransaction = new MysqlTransaction(this, None)
 
   def closeStorageTransaction(trx: MysqlTransaction) {
     this.mutationsCount.getAndAdd(trx.mutationsCount)
@@ -275,7 +275,7 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
 
       metricCollect.time({
         try {
-          trx = getStorageTransaction
+          trx = createStorageTransaction
           val collectPerTable = (toCollect / allTables.size) + 1
 
           for (table <- allTables) {

@@ -34,7 +34,7 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, rowsToFetch: In
 
     var transaction: MysqlTransaction = null
     try {
-      transaction = storage.getStorageTransaction
+      transaction = storage.createStorageTransaction
 
       val values = transaction.getAllLatest(table, nextTimestamp, Timestamp.now, rowsToFetch)
 
