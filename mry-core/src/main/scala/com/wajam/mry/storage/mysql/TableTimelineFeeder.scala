@@ -37,7 +37,7 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends Feeder wi
 
     var transaction: MysqlTransaction = null
     try {
-      transaction = storage.getStorageTransaction
+      transaction = storage.createStorageTransaction
       debug("Getting timeline from timestamp {}", timestampCursor)
       var mutations = transaction.getTimeline(table, timestampCursor, BATCH_SIZE)
 
