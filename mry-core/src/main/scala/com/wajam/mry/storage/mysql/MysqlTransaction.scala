@@ -354,6 +354,53 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     count
   }
+
+  def getAllLatest(table: Table, fromTimestamp: Timestamp, currentTimestamp: Timestamp, count: Long): RecordIterator = {
+
+    val fullTableName = table.depthName("_")
+
+    val projKeys = (for (i <- 1 to table.depth) yield "o.k%1$d".format(i)).mkString(",")
+    val innerWhereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = o.k%1$d".format(i)).mkString(" AND ")
+
+    /* Generated SQL looks like:
+     *
+     *   SELECT o.ts, o.tk, d, o.k1, o.k2, o.k3
+     *   FROM `table1_table1_1_table1_1_1` AS o
+     *   WHERE o.`ts` = (  SELECT MAX(ts)
+     *                     FROM `table1_table1_1_table1_1_1` AS i
+     *                     WHERE i.`ts` <= ? AND i.`ts` > 0 AND i.`tk` = o.`tk`
+     *                     AND i.k1 = o.k1 AND i.k2 = o.k2 AND i.k3 = o.k3)
+     *   AND o.d IS NOT NULL
+     *   ORDER BY o.`ts` ASC
+     *   LIMIT 0, 100;
+     */
+    val sql = """
+        SELECT o.ts, o.tk, d, %1$s
+        FROM `%2$s` AS o
+        WHERE o.`ts` = (  SELECT MAX(ts)
+                          FROM `%2$s` AS i
+                          WHERE i.`ts` <= ? AND i.`ts` > ? AND i.`tk` = o.`tk`
+                          AND %3$s)
+        AND o.d IS NOT NULL
+        ORDER BY o.`ts` ASC
+        LIMIT 0, ?
+              """.format(projKeys, fullTableName, innerWhereKeys)
+
+    var results: SqlResults = null
+    try {
+      this.metricGet.time {
+        results = storage.executeSql(connection, false, sql, currentTimestamp.value, fromTimestamp.value, count)
+      }
+
+      new RecordIterator(storage, results, table)
+
+    } catch {
+      case e: Exception =>
+        if (results != null)
+          results.close()
+        throw e
+    }
+  }
 }
 
 class AccessKey(var key: String)
