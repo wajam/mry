@@ -5,6 +5,7 @@ import storage.Storage
 import com.wajam.nrv.Logging
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service.{Resolver, Action, Service}
+import com.wajam.nrv.tracing.Traced
 
 /**
  * MRY database

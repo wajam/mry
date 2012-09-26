@@ -216,7 +216,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   }
 
   test("deletion should be a tombstone record") {
-    val transac = new MysqlTransaction(mysqlStorage)
+    val transac = new MysqlTransaction(mysqlStorage, None)
     val initRec = new Record(Map("test" -> 1234))
     val path = new AccessPath(Seq(new AccessKey("test1")))
     transac.set(table1, 1, Timestamp.now, path, Some(initRec))
@@ -316,7 +316,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     }, commit = true)
 
     val context = new ExecutionContext(storages)
-    val table1Timeline = mysqlStorage.getStorageTransaction(context).getTimeline(table1, fromTimestamp, 100)
+    val table1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1, fromTimestamp, 100)
 
     assert(table1Timeline.size == 6)
     assert(table1Timeline(0).accessPath.keys(0) == "key1", table1Timeline(0).accessPath.keys(0))
@@ -353,10 +353,10 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     }
 
 
-    val table1_1Timeline = mysqlStorage.getStorageTransaction(context).getTimeline(table1_1, fromTimestamp, 100)
+    val table1_1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1_1, fromTimestamp, 100)
     assert(table1_1Timeline.size == 5, table1_1Timeline.size)
 
-    val table1_1_1Timeline = mysqlStorage.getStorageTransaction(context).getTimeline(table1_1_1, fromTimestamp, 100)
+    val table1_1_1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1_1_1, fromTimestamp, 100)
     assert(table1_1_1Timeline.size == 3, table1_1_1Timeline.size)
   }
 
@@ -379,7 +379,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     }, commit = true)
 
     val context = new ExecutionContext(storages)
-    val table1_1Timeline = mysqlStorage.getStorageTransaction(context).getTimeline(table1_1, fromTimestamp, 100)
+    val table1_1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1_1, fromTimestamp, 100)
     assert(table1_1Timeline.size == 3, table1_1Timeline.size)
   }
 
@@ -399,7 +399,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       }, commit = true)
 
       if (rand.nextInt(10) == 5) {
-        var trx = mysqlStorage.getStorageTransaction
+        var trx = mysqlStorage.createStorageTransaction
         val beforeSizeTable2 = trx.getSize(table2)
         val beforeSizeTable2_1 = trx.getSize(table2_1)
         val beforeSizeTable2_1_1 = trx.getSize(table2_1_1)
@@ -408,7 +408,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
 
         val collected = mysqlStorage.GarbageCollector.collect(rand.nextInt(10))
 
-        trx = mysqlStorage.getStorageTransaction
+        trx = mysqlStorage.createStorageTransaction
         val afterSizeTable2 = trx.getSize(table2)
         val afterSizeTable2_1 = trx.getSize(table2_1)
         val afterSizeTable2_1_1 = trx.getSize(table2_1_1)
@@ -456,7 +456,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     }, commit = true)
 
     val context = new ExecutionContext(storages)
-    val table1All = mysqlStorage.getStorageTransaction(context).getAllLatest(table1, fromTimestamp, Timestamp.now, 100)
+    val table1All = mysqlStorage.createStorageTransaction(context).getAllLatest(table1, fromTimestamp, Timestamp.now, 100)
 
     assert(table1All.next() === true)
     val recordKey1 = table1All.record
@@ -500,7 +500,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
 
 
     val context = new ExecutionContext(storages)
-    val table11All = mysqlStorage.getStorageTransaction(context).getAllLatest(table1_1, fromTimestamp, Timestamp.now, 100)
+    val table11All = mysqlStorage.createStorageTransaction(context).getAllLatest(table1_1, fromTimestamp, Timestamp.now, 100)
 
     assert(table11All.next() === true)
     val recordKey1 = table11All.record

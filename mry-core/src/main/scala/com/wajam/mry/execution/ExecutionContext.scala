@@ -39,7 +39,7 @@ class ExecutionContext(var storages: Map[String, Storage]) extends Logging {
   def getStorageTransaction(storage: Storage): StorageTransaction = {
     if (!this.dryMode) {
       this.storageTransactions.getOrElse(storage, {
-        val transaction = storage.getStorageTransaction(this)
+        val transaction = storage.createStorageTransaction(this)
         storageTransactions += (storage -> transaction)
         transaction
       })
