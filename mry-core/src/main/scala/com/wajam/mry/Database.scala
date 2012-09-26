@@ -10,10 +10,10 @@ import com.wajam.nrv.tracing.Traced
 /**
  * MRY database
  */
-class Database(var serviceName: String = "database") extends Service(serviceName) with Logging with Instrumented with Traced {
+class Database(var serviceName: String = "database") extends Service(serviceName) with Logging with Instrumented {
   var storages = Map[String, Storage]()
 
-  private val metricExecuteLocal = tracedTimer("execute-local")
+  private val metricExecuteLocal = metrics.timer("execute-local")
 
   def analyseTransaction(transaction: Transaction): ExecutionContext = {
     val context = new ExecutionContext(storages)
