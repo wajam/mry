@@ -15,7 +15,7 @@ import com.wajam.scn.storage.StorageType
 @RunWith(classOf[JUnitRunner])
 class TestDatabase extends FunSuite with BeforeAndAfterAll {
   val driver = new TestingClusterDriver((size, i, manager) => {
-    val cluster = new Cluster(new Node("127.0.0.1", Map("nrv" -> (50000 + 10 * i), "mry" -> (50001 + 10 * i), "scn" -> (50000))), manager)
+    val cluster = new Cluster(new Node("127.0.0.1", Map("nrv" -> (50000 + 10 * i), "mry" -> (50001 + 10 * i), "scn" -> (50002))), manager)
 
     val token = (Int.MaxValue / size) * i
 
@@ -36,8 +36,6 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
   })
 
   test("exec") {
-    val obj = new Object
-
     driver.execute((driver, oneInstance) => {
       val db = oneInstance.data.asInstanceOf[Database]
 

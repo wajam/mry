@@ -8,20 +8,21 @@ import com.wajam.mry.api.ProtocolTranslator
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.scn.Timestamp
 import com.wajam.scn.storage.TimestampUtil
+import com.wajam.nrv.tracing.Traced
 
 /**
  * Mysql storage transaction
  */
-class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with Instrumented {
-  private val metricTimeline = metrics.timer("mysql-timeline")
-  private val metricTopMostVersions = metrics.timer("mysql-topmostversions")
-  private val metricSet = metrics.timer("mysql-set")
-  private val metricGet = metrics.timer("mysql-get")
-  private val metricDelete = metrics.timer("mysql-delete")
-  private val metricCommit = metrics.timer("mysql-commit")
-  private val metricRollback = metrics.timer("mysql-rollback")
-  private val metricTruncateVersions = metrics.timer("mysql-truncateversions")
-  private val metricSize = metrics.timer("mysql-count")
+class MysqlTransaction(private val storage: MysqlStorage, private val context: Option[ExecutionContext]) extends StorageTransaction with Instrumented with Traced {
+  private val metricTimeline = tracedTimer("mysql-timeline")
+  private val metricTopMostVersions = tracedTimer("mysql-topmostversions")
+  private val metricSet = tracedTimer("mysql-set")
+  private val metricGet = tracedTimer("mysql-get")
+  private val metricDelete = tracedTimer("mysql-delete")
+  private val metricCommit = tracedTimer("mysql-commit")
+  private val metricRollback = tracedTimer("mysql-rollback")
+  private val metricTruncateVersions = tracedTimer("mysql-truncateversions")
+  private val metricSize = tracedTimer("mysql-count")
 
   var mutationsCount = 0
 
@@ -354,6 +355,53 @@ class MysqlTransaction(storage: MysqlStorage) extends StorageTransaction with In
     }
 
     count
+  }
+
+  def getAllLatest(table: Table, fromTimestamp: Timestamp, currentTimestamp: Timestamp, count: Long): RecordIterator = {
+
+    val fullTableName = table.depthName("_")
+
+    val projKeys = (for (i <- 1 to table.depth) yield "o.k%1$d".format(i)).mkString(",")
+    val innerWhereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = o.k%1$d".format(i)).mkString(" AND ")
+
+    /* Generated SQL looks like:
+     *
+     *   SELECT o.ts, o.tk, d, o.k1, o.k2, o.k3
+     *   FROM `table1_table1_1_table1_1_1` AS o
+     *   WHERE o.`ts` = (  SELECT MAX(ts)
+     *                     FROM `table1_table1_1_table1_1_1` AS i
+     *                     WHERE i.`ts` <= ? AND i.`ts` > 0 AND i.`tk` = o.`tk`
+     *                     AND i.k1 = o.k1 AND i.k2 = o.k2 AND i.k3 = o.k3)
+     *   AND o.d IS NOT NULL
+     *   ORDER BY o.`ts` ASC
+     *   LIMIT 0, 100;
+     */
+    val sql = """
+        SELECT o.ts, o.tk, d, %1$s
+        FROM `%2$s` AS o
+        WHERE o.`ts` = (  SELECT MAX(ts)
+                          FROM `%2$s` AS i
+                          WHERE i.`ts` <= ? AND i.`ts` > ? AND i.`tk` = o.`tk`
+                          AND %3$s)
+        AND o.d IS NOT NULL
+        ORDER BY o.`ts` ASC
+        LIMIT 0, ?
+              """.format(projKeys, fullTableName, innerWhereKeys)
+
+    var results: SqlResults = null
+    try {
+      this.metricGet.time {
+        results = storage.executeSql(connection, false, sql, currentTimestamp.value, fromTimestamp.value, count)
+      }
+
+      new RecordIterator(storage, results, table)
+
+    } catch {
+      case e: Exception =>
+        if (results != null)
+          results.close()
+        throw e
+    }
   }
 }
 

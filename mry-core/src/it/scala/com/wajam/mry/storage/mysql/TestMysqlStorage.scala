@@ -217,7 +217,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   }
 
   test("deletion should be a tombstone record") {
-    val transac = new MysqlTransaction(mysqlStorage)
+    val transac = new MysqlTransaction(mysqlStorage, None)
     val initRec = new Record(Map("test" -> 1234))
     val path = new AccessPath(Seq(new AccessKey("test1")))
     transac.set(table1, 1, TimestampUtil.now, path, Some(initRec))
@@ -316,10 +316,10 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       table.delete("key3")
     }, commit = true)
 
-    val context = new ExecutionContext(storages, Some(TimestampUtil.now))
-    val table1Timeline = mysqlStorage.getStorageTransaction(context).getTimeline(table1, fromTimestamp, 100)
+    val context = new ExecutionContext(storages)
+    val table1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1, fromTimestamp, 100)
 
-    assert(table1Timeline.size == 6)
+    assert(table1Timeline.size === 6)
     assert(table1Timeline(0).accessPath.keys(0) == "key1", table1Timeline(0).accessPath.keys(0))
     assert(table1Timeline(0).newValue.isEmpty)
     assert(table1Timeline(1).accessPath.keys(0) == "key2", table1Timeline(0).accessPath.keys(0))
@@ -354,10 +354,10 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     }
 
 
-    val table1_1Timeline = mysqlStorage.getStorageTransaction(context).getTimeline(table1_1, fromTimestamp, 100)
+    val table1_1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1_1, fromTimestamp, 100)
     assert(table1_1Timeline.size == 5, table1_1Timeline.size)
 
-    val table1_1_1Timeline = mysqlStorage.getStorageTransaction(context).getTimeline(table1_1_1, fromTimestamp, 100)
+    val table1_1_1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1_1_1, fromTimestamp, 100)
     assert(table1_1_1Timeline.size == 3, table1_1_1Timeline.size)
   }
 
@@ -379,9 +379,9 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       table.delete("key1")
     }, commit = true)
 
-    val context = new ExecutionContext(storages, Some(TimestampUtil.now))
-    val table1_1Timeline = mysqlStorage.getStorageTransaction(context).getTimeline(table1_1, fromTimestamp, 100)
-    assert(table1_1Timeline.size == 3, table1_1Timeline.size)
+    val context = new ExecutionContext(storages)
+    val table1_1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1_1, fromTimestamp, 100)
+    assert(table1_1Timeline.size === 3, table1_1Timeline.size)
   }
 
   test("forced garbage collections should truncate versions and keep enough versions") {
@@ -400,7 +400,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       }, commit = true)
 
       if (rand.nextInt(10) == 5) {
-        var trx = mysqlStorage.getStorageTransaction
+        var trx = mysqlStorage.createStorageTransaction
         val beforeSizeTable2 = trx.getSize(table2)
         val beforeSizeTable2_1 = trx.getSize(table2_1)
         val beforeSizeTable2_1_1 = trx.getSize(table2_1_1)
@@ -409,7 +409,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
 
         val collected = mysqlStorage.GarbageCollector.collect(rand.nextInt(10))
 
-        trx = mysqlStorage.getStorageTransaction
+        trx = mysqlStorage.createStorageTransaction
         val afterSizeTable2 = trx.getSize(table2)
         val afterSizeTable2_1 = trx.getSize(table2_1)
         val afterSizeTable2_1_1 = trx.getSize(table2_1_1)
@@ -439,6 +439,90 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       assert(val2.equalsValue(v), "%s!=%s".format(rec2, v))
       assert(val3.equalsValue(v), "%s!=%s".format(rec3, v))
     }
+  }
+
+  test("getAllLatest should return all latest elements") {
+    val fromTimestamp = TimestampUtil.now
+    exec(t => {
+      val t1 = t.from("mysql").from("table1")
+      t1.set("key1", Map("k1" -> "v1"))
+      t1.set("key2", Map("k1" -> "v1"))
+      t1.set("key3", Map("k1" -> "v1"))
+    }, commit = true)
+
+    exec(t => {
+      val t1 = t.from("mysql").from("table1")
+      t1.set("key2", Map("k1" -> "v2"))
+      t1.delete("key3")
+    }, commit = true)
+
+    val context = new ExecutionContext(storages)
+    val table1All = mysqlStorage.createStorageTransaction(context).getAllLatest(table1, fromTimestamp, TimestampUtil.now, 100)
+
+    assert(table1All.next() === true)
+    val recordKey1 = table1All.record
+    assert(recordKey1.value.asInstanceOf[MapValue]("k1").toString === "v1")
+
+    assert(table1All.next() === true)
+    val recordKey2 = table1All.record
+    assert(recordKey2.value.asInstanceOf[MapValue]("k1").toString === "v2")
+
+    assert(table1All.next() === false)
+
+    table1All.close()
+  }
+
+  test("getAllLatest should return all latest elements on multi-hierarchical table") {
+    val fromTimestamp = TimestampUtil.now
+
+    val keys = Seq("key1", "key2", "key3")
+
+    exec(t => {
+      val t1 = t.from("mysql").from("table1")
+      keys foreach(t1.set(_, Map("k1" -> "v1")))
+    }, commit = true)
+
+    keys foreach (key => {
+      exec(t => {
+        val t11 = t.from("mysql").from("table1").get(key).from("table1_1")
+        t11.set("key1", Map("k1" -> "v1"))
+        t11.set("key2", Map("k1" -> "v1"))
+        t11.set("key3", Map("k1" -> "v1"))
+      }, commit = true)
+
+      exec(t => {
+        val t11 = t.from("mysql").from("table1").get(key).from("table1_1")
+        t11.set("key2", Map("k1" -> "v2"))
+        t11.delete("key3")
+      }, commit = true)
+    })
+
+    exec(t => t.from("mysql").from("table1").delete("key3"), commit = true)
+
+
+    val context = new ExecutionContext(storages)
+    val table11All = mysqlStorage.createStorageTransaction(context).getAllLatest(table1_1, fromTimestamp, TimestampUtil.now, 100)
+
+    assert(table11All.next() === true)
+    val recordKey1 = table11All.record
+    assert(recordKey1.value.asInstanceOf[MapValue]("k1").toString === "v1")
+
+    assert(table11All.next() === true)
+    val recordKey2 = table11All.record
+    assert(recordKey2.value.asInstanceOf[MapValue]("k1").toString === "v2")
+
+    assert(table11All.next() === true)
+    val recordKey3 = table11All.record
+    assert(recordKey3.value.asInstanceOf[MapValue]("k1").toString === "v1")
+
+    assert(table11All.next() === true)
+    val recordKey4 = table11All.record
+    assert(recordKey4.value.asInstanceOf[MapValue]("k1").toString === "v2")
+
+    assert(table11All.next() === false)
+
+    table11All.close()
+
   }
 
   test("make sure junit doesn't get stuck") {

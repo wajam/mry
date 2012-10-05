@@ -7,6 +7,7 @@ import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service.{Resolver, Action, Service}
 import com.wajam.scn.{ScnClient, Timestamp}
 
+
 /**
  * MRY database
  */
