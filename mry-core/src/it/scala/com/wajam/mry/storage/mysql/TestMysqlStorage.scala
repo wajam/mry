@@ -8,6 +8,8 @@ import com.wajam.mry.storage.{StorageException, Storage}
 import org.scalatest.{BeforeAndAfterEach, FunSuite}
 import collection.mutable
 import util.Random
+import com.wajam.scn.storage.TimestampUtil
+import com.wajam.scn.Timestamp
 
 /**
  * Test MySQL storage
@@ -43,8 +45,8 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     mysqlStorage.stop()
   }
 
-  def exec(cb: (Transaction => Unit), commit: Boolean = true): Seq[Value] = {
-    val context = new ExecutionContext(storages)
+  def exec(cb: (Transaction => Unit), commit: Boolean = true, onTimestamp: Timestamp = TimestampUtil.now): Seq[Value] = {
+    val context = new ExecutionContext(storages, Some(onTimestamp))
 
     try {
       val transac = new Transaction()
@@ -219,17 +221,17 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     val transac = new MysqlTransaction(mysqlStorage, None)
     val initRec = new Record(Map("test" -> 1234))
     val path = new AccessPath(Seq(new AccessKey("test1")))
-    transac.set(table1, 1, Timestamp.now, path, Some(initRec))
+    transac.set(table1, 1, TimestampUtil.now, path, Some(initRec))
 
-    val rec1 = transac.get(table1, 1, Timestamp.now, path)
+    val rec1 = transac.get(table1, 1, TimestampUtil.now, path)
     assert(rec1.get.value.asInstanceOf[MapValue]("test").equalsValue(1234))
 
-    transac.set(table1, 1, Timestamp.now, path, None)
+    transac.set(table1, 1, TimestampUtil.now, path, None)
 
-    val rec2 = transac.get(table1, 1, Timestamp.now, path)
+    val rec2 = transac.get(table1, 1, TimestampUtil.now, path)
     assert(rec2.isEmpty)
 
-    val rec3 = transac.get(table1, 1, Timestamp.now, path, includeDeleted = true)
+    val rec3 = transac.get(table1, 1, TimestampUtil.now, path, includeDeleted = true)
     assert(rec3.isDefined)
     assert(rec3.get.value.isNull)
 
@@ -283,7 +285,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   }
 
   test("operations should be kept in a history") {
-    val fromTimestamp = Timestamp.now
+    val fromTimestamp = TimestampUtil.now
     exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
@@ -295,7 +297,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       table.get("key3").from("table1_1").set("key3.2", Map("k" -> "value3.2"))
       table.get("key3").from("table1_1").delete("key3.1")
       table.get("key3").from("table1_1").get("key3.2").from("table1_1_1").set("key3.2.1", Map("k" -> "value3.2.1"))
-    }, commit = true)
+    }, commit = true, onTimestamp = createTimestamp(10))
 
     exec(t => {
       val storage = t.from("mysql")
@@ -303,7 +305,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       table.set("key4", Map("k" -> "value4"))
       table.get("key2").from("table1_1").set("key2.1", Map("k" -> "value2.1"))
       table.get("key2").from("table1_1").get("key2.1").from("table1_1_1").set("key2.1.1", Map("k" -> "value2.1.1"))
-    }, commit = false)
+    }, commit = false, onTimestamp = createTimestamp(100))
 
     exec(t => {
       val storage = t.from("mysql")
@@ -313,12 +315,12 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       table.get("key2").from("table1_1").set("key2.2", Map("k" -> "value2.1"))
       table.get("key2").from("table1_1").get("key2.2").from("table1_1_1").set("key2.2.1", Map("k" -> "value2.2.1"))
       table.delete("key3")
-    }, commit = true)
+    }, commit = true, onTimestamp = createTimestamp(200))
 
     val context = new ExecutionContext(storages)
-    val table1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1, fromTimestamp, 100)
+    val table1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1, createTimestamp(0), 100)
 
-    assert(table1Timeline.size == 6)
+    assert(table1Timeline.size === 6)
     assert(table1Timeline(0).accessPath.keys(0) == "key1", table1Timeline(0).accessPath.keys(0))
     assert(table1Timeline(0).newValue.isEmpty)
     assert(table1Timeline(1).accessPath.keys(0) == "key2", table1Timeline(0).accessPath.keys(0))
@@ -353,15 +355,14 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     }
 
 
-    val table1_1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1_1, fromTimestamp, 100)
+    val table1_1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1_1, createTimestamp(0), 100)
     assert(table1_1Timeline.size == 5, table1_1Timeline.size)
 
-    val table1_1_1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1_1_1, fromTimestamp, 100)
+    val table1_1_1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1_1_1, createTimestamp(0), 100)
     assert(table1_1_1Timeline.size == 3, table1_1_1Timeline.size)
   }
 
   test("deleted parents should generate deletion history for children") {
-    val fromTimestamp = Timestamp.now
     exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
@@ -370,17 +371,17 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       table.get("key1").from("table1_1").set("key1.1", Map("k" -> "value1.1"))
       table.get("key2").from("table1_1").set("key2.1", Map("k" -> "value2.1"))
       table.delete("key2")
-    }, commit = true)
+    }, commit = true, onTimestamp = createTimestamp(10))
 
     exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
       table.delete("key1")
-    }, commit = true)
+    }, commit = true, onTimestamp = createTimestamp(100))
 
     val context = new ExecutionContext(storages)
-    val table1_1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1_1, fromTimestamp, 100)
-    assert(table1_1Timeline.size == 3, table1_1Timeline.size)
+    val table1_1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1_1, createTimestamp(0), 100)
+    assert(table1_1Timeline.size === 3, table1_1Timeline.size)
   }
 
   test("forced garbage collections should truncate versions and keep enough versions") {
@@ -441,22 +442,23 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   }
 
   test("getAllLatest should return all latest elements") {
-    val fromTimestamp = Timestamp.now
+
     exec(t => {
       val t1 = t.from("mysql").from("table1")
       t1.set("key1", Map("k1" -> "v1"))
       t1.set("key2", Map("k1" -> "v1"))
       t1.set("key3", Map("k1" -> "v1"))
-    }, commit = true)
+    }, commit = true, onTimestamp = createTimestamp(0))
 
     exec(t => {
       val t1 = t.from("mysql").from("table1")
       t1.set("key2", Map("k1" -> "v2"))
       t1.delete("key3")
-    }, commit = true)
+    }, commit = true, onTimestamp = createTimestamp(100))
 
     val context = new ExecutionContext(storages)
-    val table1All = mysqlStorage.createStorageTransaction(context).getAllLatest(table1, fromTimestamp, Timestamp.now, 100)
+    val table1All = mysqlStorage.createStorageTransaction(context)
+      .getAllLatest(table1, createTimestamp(0), createTimestamp(200), 100)
 
     assert(table1All.next() === true)
     val recordKey1 = table1All.record
@@ -472,35 +474,37 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   }
 
   test("getAllLatest should return all latest elements on multi-hierarchical table") {
-    val fromTimestamp = Timestamp.now
-
     val keys = Seq("key1", "key2", "key3")
 
     exec(t => {
       val t1 = t.from("mysql").from("table1")
       keys foreach(t1.set(_, Map("k1" -> "v1")))
-    }, commit = true)
+    }, commit = true, onTimestamp = createTimestamp(0) )
 
+    var currentTime = 100
     keys foreach (key => {
       exec(t => {
         val t11 = t.from("mysql").from("table1").get(key).from("table1_1")
         t11.set("key1", Map("k1" -> "v1"))
         t11.set("key2", Map("k1" -> "v1"))
         t11.set("key3", Map("k1" -> "v1"))
-      }, commit = true)
+      }, commit = true, onTimestamp = createTimestamp(currentTime))
 
+      currentTime += 10
       exec(t => {
         val t11 = t.from("mysql").from("table1").get(key).from("table1_1")
         t11.set("key2", Map("k1" -> "v2"))
         t11.delete("key3")
-      }, commit = true)
+      }, commit = true, onTimestamp = createTimestamp(currentTime))
+      currentTime += 10
     })
 
-    exec(t => t.from("mysql").from("table1").delete("key3"), commit = true)
+    exec(t => t.from("mysql").from("table1").delete("key3"), commit = true, onTimestamp = createTimestamp(currentTime))
 
 
     val context = new ExecutionContext(storages)
-    val table11All = mysqlStorage.createStorageTransaction(context).getAllLatest(table1_1, fromTimestamp, Timestamp.now, 100)
+    val table11All = mysqlStorage.createStorageTransaction(context)
+      .getAllLatest(table1_1, createTimestamp(0), createTimestamp(400), 100)
 
     assert(table11All.next() === true)
     val recordKey1 = table11All.record
@@ -525,5 +529,9 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   }
 
   test("make sure junit doesn't get stuck") {
+  }
+
+  def createTimestamp(time: Long) = new Timestamp {
+    def value = time
   }
 }

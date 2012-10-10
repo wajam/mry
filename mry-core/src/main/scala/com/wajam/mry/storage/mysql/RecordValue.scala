@@ -1,15 +1,15 @@
 package com.wajam.mry.storage.mysql
 
 import com.wajam.mry.execution._
-import com.wajam.mry.storage.{StorageTransaction, StorageException}
+import com.wajam.mry.storage.StorageException
 
 
 /**
  * MRY value representing a mysql record
  */
 class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table, token: Long,
-                  accessPath: AccessPath, var optTransaction:Option[MysqlTransaction] = None,
-                  var optRecord:Option[Record] = None) extends Value {
+                  accessPath: AccessPath, var optTransaction: Option[MysqlTransaction] = None,
+                  var optRecord: Option[Record] = None) extends Value {
 
   if (optTransaction.isEmpty) {
     if (!context.dryMode) {
@@ -18,7 +18,7 @@ class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table
   }
 
   if (optRecord.isEmpty && !context.dryMode) {
-    optRecord = optTransaction.get.get(table, token, context.timestamp, accessPath)
+    optRecord = optTransaction.get.get(table, token, context.timestamp.get, accessPath)
   }
 
   val innerValue = {
