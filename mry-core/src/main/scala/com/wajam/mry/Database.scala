@@ -82,7 +82,7 @@ class Database(var serviceName: String = "database", val scn: ScnClient) extends
   private val remoteExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
     this.metricExecuteLocal.time {
 
-      scn.getNextTimestamp(serviceName, (timestamps: Seq[Timestamp], optException) => {
+      scn.fetchTimestamps(serviceName, (timestamps: Seq[Timestamp], optException) => {
         if (optException.isDefined) {
           error(optException.get.toString, 500)
           throw optException.get
