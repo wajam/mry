@@ -9,25 +9,33 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import storage.MemoryStorage
 import com.wajam.nrv.utils.Sync
 import com.wajam.nrv.service.Resolver
+import com.wajam.scn.{ScnConfig, ScnClient, Scn}
+import com.wajam.scn.storage.StorageType
 
 @RunWith(classOf[JUnitRunner])
 class TestDatabase extends FunSuite with BeforeAndAfterAll {
   val driver = new TestingClusterDriver((size, i, manager) => {
-    val cluster = new Cluster(new Node("127.0.0.1", Map("nrv" -> (50000 + 10 * i), "mry" -> (50001 + 10 * i))), manager)
+    val cluster = new Cluster(new Node("127.0.0.1", Map("nrv" -> (50000 + 10 * i), "mry" -> (50001 + 10 * i), "scn" -> (50002))), manager)
 
-    val db = new Database("mry")
+    val token = (Int.MaxValue / size) * i
+
+    val scn = new Scn("scn", ScnConfig(), StorageType.MEMORY)
+    cluster.registerService(scn)
+    scn.addMember(token, cluster.localNode)
+
+    val scnClient = new ScnClient(scn)
+
+    val db = new Database("mry", scnClient)
     cluster.registerService(db)
     db.registerStorage(new MemoryStorage("memory"))
 
-    val token = (Int.MaxValue / size)*i
+
     db.addMember(token, cluster.localNode)
 
     new TestingClusterInstance(cluster, db)
   })
 
   test("exec") {
-    val obj = new Object
-
     driver.execute((driver, oneInstance) => {
       val db = oneInstance.data.asInstanceOf[Database]
 

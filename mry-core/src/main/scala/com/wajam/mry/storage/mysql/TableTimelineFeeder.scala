@@ -1,9 +1,9 @@
 package com.wajam.mry.storage.mysql
 
-import collection.mutable.Queue
+import collection.mutable
 import com.wajam.nrv.Logging
-import com.wajam.mry.execution.Timestamp
-import com.wajam.spnl.{TaskContext, Task, Feeder}
+import com.wajam.spnl.{TaskContext, Feeder}
+import com.wajam.scn.Timestamp
 
 /**
  * Table mutation timeline task feeder
@@ -12,8 +12,8 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends Feeder wi
   val BATCH_SIZE = 100
   val WAIT_BATCH_NO_RESULT = 100 // wait for 100 ms before loading next batch if there were no result
 
-  var mutationsCache = new Queue[MutationRecord]()
-  var context:TaskContext = null
+  var mutationsCache = new mutable.Queue[MutationRecord]()
+  var context: TaskContext = null
 
   var lastElement: Option[(Timestamp, Seq[String])] = None
 
@@ -27,7 +27,7 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends Feeder wi
     // TODO: should make sure we don't call too often
 
     // get starting timestamp
-    val timestampCursor = lastElement match {
+    val timestampCursor: Timestamp = lastElement match {
       case Some((ts, keys)) =>
         context.data += ("from_timestamp" -> ts.value.toString)
         ts

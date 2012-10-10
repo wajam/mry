@@ -1,6 +1,6 @@
 package com.wajam.mry.storage
 
-import com.wajam.mry.execution.{ExecutionContext, Value, Timestamp}
+import com.wajam.mry.execution.{ExecutionContext, Value}
 
 
 /**

@@ -4,15 +4,15 @@ import com.wajam.mry.storage.{Storage, StorageTransaction => StorageTransaction}
 import com.wajam.nrv.service.Resolver
 import com.wajam.nrv.Logging
 import com.wajam.nrv.cluster.Cluster
+import com.wajam.scn.Timestamp
 
 /**
  * Execution context, used to store different information when a transaction
  * is executed.
  */
-class ExecutionContext(var storages: Map[String, Storage]) extends Logging {
+class ExecutionContext(var storages: Map[String, Storage], val timestamp: Option[Timestamp] = None) extends Logging {
   var dryMode: Boolean = false
   var isMutation: Boolean = false
-  var timestamp = Timestamp.now
   var tokens: List[Long] = List()
   var cluster: Cluster = null
 
@@ -77,4 +77,5 @@ class ExecutionContext(var storages: Map[String, Storage]) extends Logging {
       }
     }
   }
+
 }
