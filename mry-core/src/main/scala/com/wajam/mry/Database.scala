@@ -6,15 +6,18 @@ import com.wajam.nrv.Logging
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service.{Resolver, Action, Service}
 import com.wajam.scn.{ScnClient, Timestamp}
+import com.wajam.nrv.tracing.Traced
 
 
 /**
  * MRY database
  */
-class Database(var serviceName: String = "database", val scn: ScnClient) extends Service(serviceName) with Logging with Instrumented {
+class Database(var serviceName: String = "database", val scn: ScnClient)
+  extends Service(serviceName) with Logging with Instrumented with Traced {
+
   var storages = Map[String, Storage]()
 
-  private val metricExecuteLocal = metrics.timer("execute-local")
+  private val metricExecuteLocal = tracedTimer("execute-local")
 
   def analyseTransaction(transaction: Transaction): ExecutionContext = {
     val context = new ExecutionContext(storages)
@@ -80,11 +83,11 @@ class Database(var serviceName: String = "database", val scn: ScnClient) extends
 
 
   private val remoteExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
-    this.metricExecuteLocal.time {
-
-      scn.fetchTimestamps(serviceName, (timestamps: Seq[Timestamp], optException) => {
+    val timerContext = this.metricExecuteLocal.timerContext()
+    scn.fetchTimestamps(serviceName, (timestamps: Seq[Timestamp], optException) => {
+      try {
         if (optException.isDefined) {
-          error(optException.get.toString, 500)
+          info("Exception while fetching timestamps from SCN.", optException.get)
           throw optException.get
         }
 
@@ -108,8 +111,12 @@ class Database(var serviceName: String = "database", val scn: ScnClient) extends
         req.reply(
           Seq("values" -> values)
         )
-      }, 1)
-    }
+      } catch {
+        case e: Exception => req.replyWithError(e)
+      } finally {
+         timerContext.stop()
+      }
+    }, 1)
   }))
 
   remoteExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
