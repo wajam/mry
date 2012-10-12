@@ -7,8 +7,8 @@ import com.wajam.nrv.cluster._
 import com.wajam.mry.execution.Implicits._
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import storage.MemoryStorage
-import com.wajam.nrv.utils.Sync
 import com.wajam.nrv.service.Resolver
+import com.wajam.nrv.utils.{Future, Promise}
 import com.wajam.scn.{ScnClientConfig, ScnConfig, ScnClient, Scn}
 import com.wajam.scn.storage.StorageType
 
@@ -29,7 +29,6 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
     cluster.registerService(db)
     db.registerStorage(new MemoryStorage("memory"))
 
-
     db.addMember(token, cluster.localNode)
 
     new TestingClusterInstance(cluster, db)
@@ -42,7 +41,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
       for (i <- 0 to 100) {
         val key = "key%d".format(i)
 
-        val sync = new Sync[Seq[Value]]
+        val p = Promise[Seq[Value]]
         db.execute(b => {
           b.from("memory").set(key, "value%d".format(i))
         })
@@ -50,22 +49,23 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
         db.execute(b => {
           val context = b.from("context")
           b.returns(b.from("memory").get(key), context.get("tokens"), context.get("local_node"))
-        }, sync.done(_, _))
+        }, p.complete(_, _))
 
-        sync.thenWait(ret => {
-          assert(ret != null)
-          assert(ret.size == 3)
-          assert(ret(0).equalsValue("value%d".format(i)))
+        Future.blocking(p.future map {
+          case ret =>
+            assert(ret != null)
+            assert(ret.size == 3)
+            assert(ret(0).equalsValue("value%d".format(i)))
 
-          // make sure it has the expected token
-          val tok = ret(1).asInstanceOf[ListValue].listValue(0).asInstanceOf[IntValue]
-          val expectedToken = Resolver.hashData(key)
-          assert(tok.intValue == expectedToken)
+            // make sure it has the expected token
+            val tok = ret(1).asInstanceOf[ListValue].listValue(0).asInstanceOf[IntValue]
+            val expectedToken = Resolver.hashData(key)
+            assert(tok.intValue == expectedToken)
 
-          // make sure it's on the expected node
-          val nodes = db.resolveMembers(expectedToken, 1)
-          assert(nodes(0).value.get.uniqueKey == ret(2).asInstanceOf[StringValue].strValue, "%s!=%s".format(nodes(0).value.get.uniqueKey, ret(2).asInstanceOf[StringValue].strValue))
-        }, 1000)
+            // make sure it's on the expected node
+            val members = db.resolveMembers(expectedToken, 1)
+            assert(members(0).node.uniqueKey == ret(2).asInstanceOf[StringValue].strValue, "%s!=%s".format(members(0).node.uniqueKey, ret(2).asInstanceOf[StringValue].strValue))
+        })
       }
     }, 1, 6)
   }
