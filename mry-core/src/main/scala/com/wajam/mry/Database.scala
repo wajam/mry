@@ -4,9 +4,11 @@ import execution._
 import storage.Storage
 import com.wajam.nrv.Logging
 import com.yammer.metrics.scala.Instrumented
-import com.wajam.nrv.service.{Resolver, Action, Service}
+import com.wajam.nrv.service.{ActionMethod, Resolver, Action, Service}
 import com.wajam.scn.{ScnClient, Timestamp}
 import com.wajam.nrv.tracing.Traced
+import java.util.concurrent.atomic.AtomicReference
+import com.wajam.nrv.data.InMessage
 
 
 /**
@@ -55,7 +57,13 @@ class Database(var serviceName: String = "database", val scn: ScnClient)
       transaction.reset()
 
       // send transaction to node in charge of that token
-      remoteExecuteToken.call(Map(Database.TOKEN_KEY -> context.tokens(0), "trx" -> transaction), onReply = (resp, optException) => {
+      val remoteAction = if (context.isMutation) {
+        remoteWriteExecuteToken
+      } else {
+        remoteReadExecuteToken
+      }
+
+      remoteAction.call(Map(Database.TOKEN_KEY -> context.tokens(0), "trx" -> transaction), onReply = (resp, optException) => {
         if (ret != null) {
           if (optException.isEmpty)
             ret(resp.parameters("values").asInstanceOf[Seq[Value]], None)
@@ -81,8 +89,17 @@ class Database(var serviceName: String = "database", val scn: ScnClient)
 
   def getStorage(name: String) = this.storages.get(name).get
 
+  private val remoteWriteExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
+    executeToken(req)
+  }, ActionMethod.POST))
+  remoteWriteExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
 
-  private val remoteExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
+  private val remoteReadExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
+    executeToken(req)
+  }, ActionMethod.GET))
+  remoteReadExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
+
+  private def executeToken(req: InMessage) {
     val timerContext = this.metricExecuteLocal.timerContext()
     scn.fetchTimestamps(serviceName, (timestamps: Seq[Timestamp], optException) => {
       try {
@@ -91,35 +108,37 @@ class Database(var serviceName: String = "database", val scn: ScnClient)
           throw optException.get
         }
 
-        var values: Seq[Value] = null
-        val context = new ExecutionContext(storages, Some(timestamps(0)))
-        context.cluster = Database.this.cluster
-
-        try {
-          val transaction = req.parameters("trx").asInstanceOf[Transaction]
-          transaction.execute(context)
-          values = context.returnValues
-          context.commit()
-
-        } catch {
-          case e: Exception => {
-            context.rollback()
-            throw e
-          }
-        }
-
-        req.reply(
-          Seq("values" -> values)
-        )
+        execute(timestamps(0), req)
       } catch {
         case e: Exception => req.replyWithError(e)
       } finally {
-         timerContext.stop()
+        timerContext.stop()
       }
     }, 1)
-  }))
+  }
 
-  remoteExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
+  private def execute(timestamp: Timestamp, req: InMessage) {
+    var values: Seq[Value] = null
+    val context = new ExecutionContext(storages, Some(timestamp))
+    context.cluster = Database.this.cluster
+
+    try {
+      val transaction = req.parameters("trx").asInstanceOf[Transaction]
+      transaction.execute(context)
+      values = context.returnValues
+      context.commit()
+
+    } catch {
+      case e: Exception => {
+        context.rollback()
+        throw e
+      }
+    }
+
+    req.reply(
+      Seq("values" -> values)
+    )
+  }
 }
 
 object Database {
