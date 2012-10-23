@@ -14,16 +14,20 @@ import java.util.concurrent.{TimeUnit, ScheduledThreadPoolExecutor}
 /**
  * MySQL backed storage
  */
-class MysqlStorage(name: String, host: String, database: String, username: String, password: String, garbageCollection: Boolean = true) extends Storage(name) with Logging with Value with Instrumented {
+class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean = true)
+  extends Storage(config.name) with Logging with Value with Instrumented {
   var model: Model = new Model
   var mutationsCount = new AtomicInteger(0)
   val valueSerializer = new ProtobufTranslator
 
   val datasource = new ComboPooledDataSource()
   datasource.setDriverClass("com.mysql.jdbc.Driver")
-  datasource.setJdbcUrl(String.format("jdbc:mysql://%s/%s?zeroDateTimeBehavior=convertToNull", host, database))
-  datasource.setUser(username)
-  datasource.setPassword(password)
+  datasource.setJdbcUrl(String.format("jdbc:mysql://%s/%s?zeroDateTimeBehavior=convertToNull", config.host, config.database))
+  datasource.setUser(config.username)
+  datasource.setPassword(config.password)
+  datasource.setInitialPoolSize(config.initPoolSize)
+  datasource.setMaxPoolSize(config.maxPoolSize)
+  datasource.setNumHelperThreads(config.numhelperThread)
 
   def createStorageTransaction(context: ExecutionContext) = new MysqlTransaction(this, Some(context))
 
@@ -330,6 +334,15 @@ class MysqlStorage(name: String, host: String, database: String, username: Strin
   }
 
 }
+
+case class MysqlStorageConfiguration(name: String,
+                                     host: String,
+                                     database: String,
+                                     username: String,
+                                     password: String,
+                                     initPoolSize: Int = 3,
+                                     maxPoolSize: Int = 15,
+                                     numhelperThread: Int = 3)
 
 class SqlResults {
   var statement: PreparedStatement = null
