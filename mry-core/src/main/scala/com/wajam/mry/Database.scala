@@ -18,6 +18,7 @@ class Database(var serviceName: String = "database", val scn: ScnClient)
   extends Service(serviceName) with Logging with Instrumented with Traced {
 
   var storages = Map[String, Storage]()
+  def responseTimeout = 1000 //TODO hardcoded while timeout implementation is not in action support
 
   private val metricExecuteLocal = tracedTimer("execute-local")
   private val lastWriteTimestamp = new AtomicReference[Option[Timestamp]](None)
@@ -71,7 +72,7 @@ class Database(var serviceName: String = "database", val scn: ScnClient)
           else
             ret(Seq(), optException)
         }
-      })
+      }, responseTimeout = responseTimeout)
 
     } catch {
       case ex: Exception =>
