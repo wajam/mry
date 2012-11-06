@@ -24,9 +24,9 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
 
   def createClusterInstance(size: Int, i: Int, manager: ClusterManager): TestingClusterInstance = {
 
-    val tracer = null //new Tracer(new ScribeTraceRecorder("127.0.0.1", 1463, 1))
-    val node = new Node("127.0.0.1", Map("nrv" -> (50000 + 10 * i), "mry" -> (50001 + 10 * i), "scn" -> (50002 + 10 * i)))
-    val cluster = new Cluster(node, manager, new ActionSupportOptions(tracer = Option(tracer)))
+    val tracer = new Tracer(new ScribeTraceRecorder("127.0.0.1", 1463, 1))
+    val node = new LocalNode("127.0.0.1", Map("nrv" -> (50000 + 10 * i), "mry" -> (50001 + 10 * i), "scn" -> (50002 + 10 * i)))
+    val cluster = new Cluster(node, manager/*, new ActionSupportOptions(tracer = Option(tracer))*/)
 
     val token = Resolver.MAX_TOKEN / size * i
 
@@ -87,7 +87,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
     driver.destroy()
   }
 
-  test("database with dynamic cluster") {
+  ignore("database with dynamic cluster") {
     ZookeeperTestingClusterDriver.cleanupZookeeper()
     val driver = new ZookeeperTestingClusterDriver((size, i, manager) => createClusterInstance(size, i, manager))
     driver.execute((driver, instance) => testDatabaseInstance(instance), 1, 6)
