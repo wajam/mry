@@ -17,7 +17,7 @@ import java.util.UUID
 import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.scn.ScnClientConfig
 import com.wajam.scn.ScnConfig
-import zookeeper.ZookeeperTestingClusterDriver
+import com.wajam.nrv.zookeeper.cluster.ZookeeperTestingClusterDriver
 
 @RunWith(classOf[JUnitRunner])
 class TestDatabase extends FunSuite with BeforeAndAfterAll {
