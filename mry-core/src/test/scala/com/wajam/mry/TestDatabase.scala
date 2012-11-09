@@ -90,7 +90,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
   ignore("database with dynamic cluster") {
     ZookeeperTestingClusterDriver.cleanupZookeeper()
     val driver = new ZookeeperTestingClusterDriver((size, i, manager) => createClusterInstance(size, i, manager))
-    driver.execute((driver, instance) => testDatabaseInstance(instance), 1, 6)
+    driver.execute((driver, instance) => testDatabaseInstance(instance), 6)
     driver.destroy()
   }
 }
