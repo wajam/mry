@@ -144,7 +144,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *   WHERE o.`tk` = 2517541033
      *   AND o.k1 = 'k1' AND o.k2 = 'k2'
      *   AND o.`ts` = (  SELECT MAX(ts)
-     *                   FROM `table1_table1_1_table1_1_1` AS i
+     *                   FROM `table1_table1_1_table1_1_1` AS i USE INDEX(revkey)
      *                   WHERE i.`ts` <= ? AND i.`tk` = 2517541033 AND i.k1 = o.k1 AND i.k2 = o.k2 AND i.k3 = o.k3)
      *   AND o.d IS NOT NULL
      */
@@ -154,7 +154,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         WHERE o.`tk` = ?
         AND %3$s
         AND o.`ts` = (  SELECT MAX(ts)
-                        FROM `%2$s` AS i
+                        FROM `%2$s` AS i USE INDEX(revkey)
                         WHERE i.`ts` <= ? AND i.`tk` = ? AND %4$s)
               """.format(projKeys, fullTableName, outerWhereKeys, innerWhereKeys)
 
@@ -216,7 +216,9 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     val sql = """
                 SELECT c.tk, c.ts, c.d, l.ts, l.d, %1$s
                 FROM `%2$s` AS c
-                LEFT JOIN `%2$s` l ON (c.tk = l.tk AND %3$s AND l.ts = (SELECT MAX(i.ts) FROM `%2$s` AS i WHERE i.tk = c.tk AND %4$s AND i.ts < c.ts))
+                LEFT JOIN `%2$s` l ON (c.tk = l.tk AND %3$s AND l.ts = (SELECT MAX(i.ts)
+                 FROM `%2$s` AS i USE INDEX(revkey)
+                 WHERE i.tk = c.tk AND %4$s AND i.ts < c.ts))
                 WHERE c.ts >= %5$d
                 ORDER BY c.ts ASC
                 LIMIT 0, %6$d;
@@ -369,7 +371,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *   SELECT o.ts, o.tk, d, o.k1, o.k2, o.k3
      *   FROM `table1_table1_1_table1_1_1` AS o
      *   WHERE o.`ts` = (  SELECT MAX(ts)
-     *                     FROM `table1_table1_1_table1_1_1` AS i
+     *                     FROM `table1_table1_1_table1_1_1` AS i USE INDEX(revkey)
      *                     WHERE i.`ts` <= ? AND i.`ts` > 0 AND i.`tk` = o.`tk`
      *                     AND i.k1 = o.k1 AND i.k2 = o.k2 AND i.k3 = o.k3)
      *   AND o.d IS NOT NULL
@@ -380,7 +382,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         SELECT o.ts, o.tk, d, %1$s
         FROM `%2$s` AS o
         WHERE o.`ts` = (  SELECT MAX(ts)
-                          FROM `%2$s` AS i
+                          FROM `%2$s` AS i USE INDEX(revkey)
                           WHERE i.`ts` <= ? AND i.`ts` > ? AND i.`tk` = o.`tk`
                           AND %3$s)
         AND o.d IS NOT NULL
