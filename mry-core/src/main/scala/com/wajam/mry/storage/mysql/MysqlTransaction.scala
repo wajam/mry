@@ -202,7 +202,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *   LEFT JOIN `table1_table1_1_table1_1_1` l
      *      ON (c.tk = l.tk AND c.k1 = l.k1 AND c.k2 = l.k2
      *          AND l.ts = ( SELECT MAX(i.ts)
-     *                       FROM `table1_table1_1_table1_1_1` AS i
+     *                       FROM `table1_table1_1_table1_1_1` AS i USE INDEX(revkey)
      *                       WHERE i.tk = c.tk AND i.k1 = c.k1
      *                       AND i.k2 = c.k2
      *                       AND i.k3 = c.k3
