@@ -34,7 +34,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
     cluster.registerService(scn)
     scn.addMember(token, cluster.localNode)
 
-    val scnClient = new ScnClient(scn, ScnClientConfig(100))
+    val scnClient = new ScnClient(scn, ScnClientConfig(100)).start()
 
     val db = new Database("mry", scnClient)
     cluster.registerService(db)
