@@ -120,7 +120,7 @@ class Database(var serviceName: String = "database", val scn: ScnClient)
       } finally {
         timerContext.stop()
       }
-    }, 1)
+    }, 1, req.token)
   }
 
   /**
