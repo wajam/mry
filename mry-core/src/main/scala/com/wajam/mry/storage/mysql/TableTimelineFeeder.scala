@@ -2,7 +2,8 @@ package com.wajam.mry.storage.mysql
 
 import collection.mutable
 import com.wajam.nrv.Logging
-import com.wajam.spnl.{TaskContext, Feeder}
+import com.wajam.spnl.feeder.Feeder
+import com.wajam.spnl.TaskContext
 import com.wajam.scn.Timestamp
 
 /**
@@ -69,31 +70,47 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends Feeder wi
         this.context.data += ("from_timestamp" -> (timestampCursor.value + 1).toString)
         this.lastElement = None
       }
+    } catch {
+      case e: Exception =>
+        log.error("An exception occured while loading more elements from table {}", table.depthName("_"), e)
     } finally {
       if (transaction != null)
         transaction.commit()
     }
   }
 
+  def kill() {
+
+  }
+
+  //TODO remove theses 3 methods and use CachedDataFeeder
   def next(): Option[Map[String, Any]] = {
     if (!mutationsCache.isEmpty) {
       val mr = mutationsCache.dequeue()
       this.lastElement = Some((mr.newTimestamp, mr.accessPath.keys))
 
-      Some(Map(
-        "keys" -> mr.accessPath.keys,
-        "old_timestamp" -> mr.oldTimestamp,
-        "old_value" -> mr.oldValue,
-        "new_timestamp" -> mr.newTimestamp,
-        "new_value" -> mr.newValue
-      ))
+      Some(mutationToMap(mr))
     } else {
       this.loadMore()
       None
     }
   }
 
-  def kill() {
+  def peek(): Option[Map[String, Any]] = {
+    if (!mutationsCache.isEmpty) {
+      val mr = mutationsCache.head
 
+      Some(mutationToMap(mr))
+    } else {
+      None
+    }
   }
+
+  def mutationToMap(mr: MutationRecord): Map[String, Any] = Map(
+    "keys" -> mr.accessPath.keys,
+    "old_timestamp" -> mr.oldTimestamp,
+    "old_value" -> mr.oldValue,
+    "new_timestamp" -> mr.newTimestamp,
+    "new_value" -> mr.newValue
+  )
 }
