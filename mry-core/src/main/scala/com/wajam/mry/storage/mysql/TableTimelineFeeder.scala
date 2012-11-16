@@ -1,19 +1,17 @@
 package com.wajam.mry.storage.mysql
 
-import collection.mutable
 import com.wajam.nrv.Logging
-import com.wajam.spnl.feeder.Feeder
+import com.wajam.spnl.feeder.CachedDataFeeder
 import com.wajam.spnl.TaskContext
 import com.wajam.scn.Timestamp
 
 /**
  * Table mutation timeline task feeder
  */
-class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends Feeder with Logging {
+class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends CachedDataFeeder with Logging {
   val BATCH_SIZE = 100
   val WAIT_BATCH_NO_RESULT = 100 // wait for 100 ms before loading next batch if there were no result
 
-  var mutationsCache = new mutable.Queue[MutationRecord]()
   var context: TaskContext = null
 
   var lastElement: Option[(Timestamp, Seq[String])] = None
@@ -22,7 +20,7 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends Feeder wi
     this.context = context
   }
 
-  def loadMore() {
+  def loadMore() = {
     debug("Getting new batch for table {}", table.depthName("_"))
 
     // TODO: should make sure we don't call too often
@@ -63,16 +61,16 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends Feeder wi
         debug("Before {} after {}", before.asInstanceOf[Object], after.asInstanceOf[Object])
       }
 
-
-      if (!mutations.isEmpty) {
-        mutationsCache ++= mutations
-      } else {
+      if (mutations.isEmpty) {
         this.context.data += ("from_timestamp" -> (timestampCursor.value + 1).toString)
         this.lastElement = None
       }
+
+      mutations map mutationToMap
     } catch {
       case e: Exception =>
         log.error("An exception occured while loading more elements from table {}", table.depthName("_"), e)
+        Seq()
     } finally {
       if (transaction != null)
         transaction.commit()
@@ -81,29 +79,6 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends Feeder wi
 
   def kill() {
 
-  }
-
-  //TODO remove theses 3 methods and use CachedDataFeeder
-  def next(): Option[Map[String, Any]] = {
-    if (!mutationsCache.isEmpty) {
-      val mr = mutationsCache.dequeue()
-      this.lastElement = Some((mr.newTimestamp, mr.accessPath.keys))
-
-      Some(mutationToMap(mr))
-    } else {
-      this.loadMore()
-      None
-    }
-  }
-
-  def peek(): Option[Map[String, Any]] = {
-    if (!mutationsCache.isEmpty) {
-      val mr = mutationsCache.head
-
-      Some(mutationToMap(mr))
-    } else {
-      None
-    }
   }
 
   def mutationToMap(mr: MutationRecord): Map[String, Any] = Map(

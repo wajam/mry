@@ -43,7 +43,7 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, rowsToFetch: In
         nextTimestamp = TimestampUtil.MIN
       }
 
-      records.map(record => Map("keys" -> record.accessPath.keys, "value" -> record.value)).toIterable
+      records.map(record => Map("keys" -> record.accessPath.keys, "value" -> record.value)).toList
     } catch {
       case e: Exception => {
         log.error("An exception occured while loading more elements from table {}", table.depthName("_"), e)
