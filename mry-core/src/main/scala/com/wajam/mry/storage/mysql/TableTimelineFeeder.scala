@@ -66,7 +66,13 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends CachedDat
         this.lastElement = None
       }
 
-      mutations map mutationToMap
+      mutations map (mr => Map(
+        "keys" -> mr.accessPath.keys,
+        "old_timestamp" -> mr.oldTimestamp,
+        "old_value" -> mr.oldValue,
+        "new_timestamp" -> mr.newTimestamp,
+        "new_value" -> mr.newValue
+      ))
     } catch {
       case e: Exception =>
         log.error("An exception occured while loading more elements from table {}", table.depthName("_"), e)
@@ -77,15 +83,17 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends CachedDat
     }
   }
 
+  override def next(): Option[Map[String, Any]] = {
+    val optElem = super.next()
+    for (elem <- optElem) {
+      this.lastElement = Some((elem("new_timestamp").asInstanceOf[Timestamp], elem("keys").asInstanceOf[Seq[String]]))
+    }
+
+    optElem
+  }
+
   def kill() {
 
   }
 
-  def mutationToMap(mr: MutationRecord): Map[String, Any] = Map(
-    "keys" -> mr.accessPath.keys,
-    "old_timestamp" -> mr.oldTimestamp,
-    "old_value" -> mr.oldValue,
-    "new_timestamp" -> mr.newTimestamp,
-    "new_value" -> mr.newValue
-  )
 }
