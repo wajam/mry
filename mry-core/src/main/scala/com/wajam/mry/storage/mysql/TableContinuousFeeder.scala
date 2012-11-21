@@ -56,5 +56,7 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, rowsToFetch: In
     }
   }
 
+  def ack(data: Map[String, Any]) {}
+
   def kill() {}
 }

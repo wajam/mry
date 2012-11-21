@@ -10,10 +10,10 @@ import com.wajam.scn.Timestamp
  */
 class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends CachedDataFeeder with Logging {
   val BATCH_SIZE = 100
-  val WAIT_BATCH_NO_RESULT = 100 // wait for 100 ms before loading next batch if there were no result
 
   var context: TaskContext = null
 
+  var currentTimestamps: List[(Timestamp, Seq[String])] = Nil
   var lastElement: Option[(Timestamp, Seq[String])] = None
 
   def init(context: TaskContext) {
@@ -27,11 +27,8 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends CachedDat
 
     // get starting timestamp
     val timestampCursor: Timestamp = lastElement match {
-      case Some((ts, keys)) =>
-        context.data += ("from_timestamp" -> ts.value.toString)
-        ts
-      case None =>
-        Timestamp(context.data.get("from_timestamp").getOrElse("0").toLong)
+      case Some((ts, keys)) => ts
+      case None => Timestamp(context.data.get("from_timestamp").getOrElse("0").toLong)
     }
 
     var transaction: MysqlTransaction = null
@@ -41,8 +38,7 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends CachedDat
       var mutations = transaction.getTimeline(table, timestampCursor, BATCH_SIZE)
 
       // filter out already processed records
-      if (this.lastElement.isDefined) {
-        val (ts, keys) = lastElement.get
+      for ((ts, keys) <- lastElement) {
         val foundLastElement = mutations.find(mut => mut.newTimestamp == ts && mut.accessPath.keys == keys)
 
         val before = mutations.size
@@ -86,14 +82,29 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends CachedDat
   override def next(): Option[Map[String, Any]] = {
     val optElem = super.next()
     for (elem <- optElem) {
-      this.lastElement = Some((elem("new_timestamp").asInstanceOf[Timestamp], elem("keys").asInstanceOf[Seq[String]]))
+      val (timestamp, keys) = getTimestampKey(elem)
+      this.lastElement = Some((timestamp, keys))
+      currentTimestamps ::=(timestamp, keys)
     }
 
     optElem
   }
 
-  def kill() {
+  def ack(data: Map[String, Any]) {
+    currentTimestamps = currentTimestamps filterNot (_ != getTimestampKey(data))
+    if (currentTimestamps.isEmpty) {
+      for ((ts, _) <- this.lastElement) context.data += ("from_timestamp" -> ts.value.toString)
+    } else {
+      context.data += ("from_timestamp" -> currentTimestamps.map(_._1).min.value.toString)
+    }
+  }
 
+  def kill() {}
+
+  private def getTimestampKey(data: Map[String, Any]) = {
+    val timestamp = data("new_timestamp").asInstanceOf[Timestamp]
+    val keys = data("keys").asInstanceOf[Seq[String]]
+    (timestamp, keys)
   }
 
 }
