@@ -8,7 +8,6 @@ import com.wajam.mry.storage.{StorageException, Storage}
 import org.scalatest.{BeforeAndAfterEach, FunSuite}
 import collection.mutable
 import util.Random
-import com.wajam.scn.storage.TimestampUtil
 import com.wajam.scn.Timestamp
 
 /**
@@ -45,7 +44,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     mysqlStorage.stop()
   }
 
-  def exec(cb: (Transaction => Unit), commit: Boolean = true, onTimestamp: Timestamp = TimestampUtil.now): Seq[Value] = {
+  def exec(cb: (Transaction => Unit), commit: Boolean = true, onTimestamp: Timestamp = Timestamp.now): Seq[Value] = {
     val context = new ExecutionContext(storages, Some(onTimestamp))
 
     try {
@@ -221,17 +220,17 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     val transac = new MysqlTransaction(mysqlStorage, None)
     val initRec = new Record(Map("test" -> 1234))
     val path = new AccessPath(Seq(new AccessKey("test1")))
-    transac.set(table1, 1, TimestampUtil.now, path, Some(initRec))
+    transac.set(table1, 1, Timestamp.now, path, Some(initRec))
 
-    val rec1 = transac.get(table1, 1, TimestampUtil.now, path)
+    val rec1 = transac.get(table1, 1, Timestamp.now, path)
     assert(rec1.get.value.asInstanceOf[MapValue]("test").equalsValue(1234))
 
-    transac.set(table1, 1, TimestampUtil.now, path, None)
+    transac.set(table1, 1, Timestamp.now, path, None)
 
-    val rec2 = transac.get(table1, 1, TimestampUtil.now, path)
+    val rec2 = transac.get(table1, 1, Timestamp.now, path)
     assert(rec2.isEmpty)
 
-    val rec3 = transac.get(table1, 1, TimestampUtil.now, path, includeDeleted = true)
+    val rec3 = transac.get(table1, 1, Timestamp.now, path, includeDeleted = true)
     assert(rec3.isDefined)
     assert(rec3.get.value.isNull)
 
@@ -285,7 +284,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   }
 
   test("operations should be kept in a history") {
-    val fromTimestamp = TimestampUtil.now
+    val fromTimestamp = Timestamp.now
     exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
