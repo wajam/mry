@@ -9,6 +9,7 @@ import org.scalatest.{BeforeAndAfterEach, FunSuite}
 import collection.mutable
 import util.Random
 import com.wajam.scn.Timestamp
+import org.scalatest.matchers.ShouldMatchers._
 
 /**
  * Test MySQL storage
@@ -386,6 +387,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   test("forced garbage collections should truncate versions and keep enough versions") {
     val values = mutable.Map[String, Int]()
     val rand = new Random(3234234)
+    var totalCollected = 0
 
     for (i <- 0 to 1000) {
       val k = rand.nextInt(100).toString
@@ -407,6 +409,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
         trx.rollback()
 
         val collected = mysqlStorage.GarbageCollector.collect(rand.nextInt(10))
+        totalCollected += collected
 
         trx = mysqlStorage.createStorageTransaction
         val afterSizeTable2 = trx.getSize(table2)
@@ -420,6 +423,8 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
 
       values += (k -> v)
     }
+
+    totalCollected should be > (0)
 
     for ((k, v) <- values) {
       val Seq(rec1, rec2, rec3) = exec(t => {
