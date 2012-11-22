@@ -4,7 +4,6 @@ import com.wajam.nrv.Logging
 import com.wajam.spnl.feeder.CachedDataFeeder
 import com.wajam.spnl.TaskContext
 import com.wajam.scn.Timestamp
-import com.wajam.scn.storage.TimestampUtil
 
 /**
  * Fetches all current defined (not null) data on a table.
@@ -14,7 +13,7 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, rowsToFetch: In
   extends CachedDataFeeder with Logging {
 
   var context: TaskContext = null
-  var nextTimestamp: Timestamp = TimestampUtil.MIN
+  var nextTimestamp: Timestamp = Timestamp.MIN
 
 
   def init(context: TaskContext) {
@@ -28,7 +27,7 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, rowsToFetch: In
     try {
       transaction = storage.createStorageTransaction
 
-      val values = transaction.getAllLatest(table, nextTimestamp, TimestampUtil.now, rowsToFetch)
+      val values = transaction.getAllLatest(table, nextTimestamp, Timestamp.now, rowsToFetch)
 
       val records = Iterator.continually({
         if (values.next()) {
@@ -40,7 +39,7 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, rowsToFetch: In
 
       // Restart if tree is still empty
       if (records.isEmpty) {
-        nextTimestamp = TimestampUtil.MIN
+        nextTimestamp = Timestamp.MIN
       }
 
       records.map(record => Map("keys" -> record.accessPath.keys, "value" -> record.value)).toList

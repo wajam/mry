@@ -8,8 +8,8 @@ import com.wajam.mry.storage.{StorageException, Storage}
 import org.scalatest.{BeforeAndAfterEach, FunSuite}
 import collection.mutable
 import util.Random
-import com.wajam.scn.storage.TimestampUtil
 import com.wajam.scn.Timestamp
+import org.scalatest.matchers.ShouldMatchers._
 
 /**
  * Test MySQL storage
@@ -45,7 +45,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     mysqlStorage.stop()
   }
 
-  def exec(cb: (Transaction => Unit), commit: Boolean = true, onTimestamp: Timestamp = TimestampUtil.now): Seq[Value] = {
+  def exec(cb: (Transaction => Unit), commit: Boolean = true, onTimestamp: Timestamp = Timestamp.now): Seq[Value] = {
     val context = new ExecutionContext(storages, Some(onTimestamp))
 
     try {
@@ -221,17 +221,17 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
     val transac = new MysqlTransaction(mysqlStorage, None)
     val initRec = new Record(Map("test" -> 1234))
     val path = new AccessPath(Seq(new AccessKey("test1")))
-    transac.set(table1, 1, TimestampUtil.now, path, Some(initRec))
+    transac.set(table1, 1, Timestamp.now, path, Some(initRec))
 
-    val rec1 = transac.get(table1, 1, TimestampUtil.now, path)
+    val rec1 = transac.get(table1, 1, Timestamp.now, path)
     assert(rec1.get.value.asInstanceOf[MapValue]("test").equalsValue(1234))
 
-    transac.set(table1, 1, TimestampUtil.now, path, None)
+    transac.set(table1, 1, Timestamp.now, path, None)
 
-    val rec2 = transac.get(table1, 1, TimestampUtil.now, path)
+    val rec2 = transac.get(table1, 1, Timestamp.now, path)
     assert(rec2.isEmpty)
 
-    val rec3 = transac.get(table1, 1, TimestampUtil.now, path, includeDeleted = true)
+    val rec3 = transac.get(table1, 1, Timestamp.now, path, includeDeleted = true)
     assert(rec3.isDefined)
     assert(rec3.get.value.isNull)
 
@@ -285,7 +285,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   }
 
   test("operations should be kept in a history") {
-    val fromTimestamp = TimestampUtil.now
+    val fromTimestamp = Timestamp.now
     exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
@@ -387,6 +387,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
   test("forced garbage collections should truncate versions and keep enough versions") {
     val values = mutable.Map[String, Int]()
     val rand = new Random(3234234)
+    var totalCollected = 0
 
     for (i <- 0 to 1000) {
       val k = rand.nextInt(100).toString
@@ -408,6 +409,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
         trx.rollback()
 
         val collected = mysqlStorage.GarbageCollector.collect(rand.nextInt(10))
+        totalCollected += collected
 
         trx = mysqlStorage.createStorageTransaction
         val afterSizeTable2 = trx.getSize(table2)
@@ -421,6 +423,8 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
 
       values += (k -> v)
     }
+
+    totalCollected should be > (0)
 
     for ((k, v) <- values) {
       val Seq(rec1, rec2, rec3) = exec(t => {

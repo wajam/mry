@@ -5,7 +5,8 @@ import storage.Storage
 import com.wajam.nrv.Logging
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service.{ActionMethod, Resolver, Action, Service}
-import com.wajam.scn.{ScnClient, Timestamp}
+import com.wajam.scn.client.ScnClient
+import com.wajam.scn.Timestamp
 import com.wajam.nrv.tracing.Traced
 import java.util.concurrent.atomic.AtomicReference
 import com.wajam.nrv.data.InMessage
