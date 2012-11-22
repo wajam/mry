@@ -7,16 +7,15 @@ import com.wajam.nrv.cluster._
 import com.wajam.mry.execution.Implicits._
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import storage.MemoryStorage
-import com.wajam.nrv.service.{ActionSupportOptions, Resolver}
+import com.wajam.nrv.service.Resolver
 import com.wajam.nrv.utils.{Future, Promise}
-import com.wajam.scn.{ScnClient, Scn}
+import com.wajam.scn.client.{ScnClientConfig, ScnClient}
+import com.wajam.scn.{ScnConfig, Scn}
 import com.wajam.scn.storage.StorageType
 import com.wajam.nrv.tracing.Tracer
 import com.wajam.nrvext.scribe.ScribeTraceRecorder
 import java.util.UUID
 import org.scalatest.matchers.ShouldMatchers._
-import com.wajam.scn.ScnClientConfig
-import com.wajam.scn.ScnConfig
 import com.wajam.nrv.zookeeper.cluster.ZookeeperTestingClusterDriver
 
 @RunWith(classOf[JUnitRunner])
