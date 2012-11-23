@@ -64,7 +64,7 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends CachedDat
 
       mutations map (mr => Map(
         "keys" -> mr.accessPath.keys,
-        "token" -> mr.accessPath.keys.mkString("/","/",""),
+        "token" -> mr.token.toString,
         "old_timestamp" -> mr.oldTimestamp,
         "old_value" -> mr.oldValue,
         "new_timestamp" -> mr.newTimestamp,
