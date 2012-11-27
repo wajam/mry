@@ -452,7 +452,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
       t1.set("key1", Map("k1" -> "v1"))
       t1.set("key2", Map("k1" -> "v1"))
       t1.set("key3", Map("k1" -> "v1"))
-    }, commit = true, onTimestamp = createTimestamp(0))
+    }, commit = true, onTimestamp = createTimestamp(1))
 
     exec(t => {
       val t1 = t.from("mysql").from("table1")
