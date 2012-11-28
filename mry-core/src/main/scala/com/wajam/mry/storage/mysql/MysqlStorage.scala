@@ -299,11 +299,10 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
             var collectedVersions = 0
             while (versions.size > 0 && collectedVersions < collectPerTable) {
               val version = versions.dequeue()
-              val toDeleteCount = (version.versionsCount - table.maxVersions)
 
-              trx.truncateVersions(table, version.token, version.accessPath, toDeleteCount)
+              trx.truncateVersion(table, version.token, version.accessPath, version.minTimestamp)
 
-              collectedVersions += toDeleteCount
+              collectedVersions += 1
               lastToken = version.token
             }
 

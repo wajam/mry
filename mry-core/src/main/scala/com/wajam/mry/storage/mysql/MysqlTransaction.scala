@@ -251,7 +251,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     /*
      * Generated SQL looks like:
      *
-     *    SELECT t.tk, COUNT(*) AS nb, t.k1,t.k2,t.k3
+     *    SELECT t.tk, MIN(t.ts) AS min_ts, COUNT(*) AS nb, t.k1,t.k2,t.k3
      *    FROM `table1_table1_1_table1_1_1` AS t
      *    WHERE t.tk >= 0
      *    GROUP BY t.k1,t.k2,t.k3
@@ -260,7 +260,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      */
     val sql =
       """
-         SELECT t.tk, COUNT(*) AS nb, %1$s
+         SELECT t.tk, MIN(t.ts) AS min_ts, COUNT(*) AS nb, %1$s
          FROM `%2$s` AS t
          WHERE t.tk >= %3$d
          GROUP BY %1$s
@@ -290,7 +290,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     ret
   }
 
-  def truncateVersions(table: Table, token: Long, accessPath: AccessPath, count: Int, maxTimestamp: Timestamp = Timestamp.MAX) {
+  def truncateVersion(table: Table, token: Long, accessPath: AccessPath, timestamp: Timestamp) {
     val fullTableName = table.depthName("_")
     val whereKeys = (for (i <- 1 to table.depth) yield "k%1$d = ?".format(i)).mkString(" AND ")
     val keysValue = accessPath.keys
@@ -301,18 +301,14 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *     DELETE FROM `table2_table2_1_table2_1_1`
      *     WHERE tk = ?
      *     AND k1 = ? AND k2 = ? AND k3 = ?
-     *     AND ts < 9223372036854775807
-     *     ORDER BY ts ASC
-     *     LIMIT 2;
+     *     AND ts = ?;
      */
     val sql = """
                 DELETE FROM `%1$s`
                 WHERE tk = ?
                 AND %2$s
-                AND ts < %3$d
-                ORDER BY ts ASC
-                LIMIT %4$d;
-              """.format(fullTableName, whereKeys, maxTimestamp.value, count)
+                AND ts = %3$d;
+              """.format(fullTableName, whereKeys, timestamp.value)
 
     var results: SqlResults = null
     try {
@@ -500,12 +496,14 @@ class RecordIterator(storage: MysqlStorage, results: SqlResults, table: Table) {
 class VersionRecord {
   var token: Long = 0
   var versionsCount: Int = 0
+  var minTimestamp: Timestamp = Timestamp(0)
   var accessPath = new AccessPath()
 
   def load(resultset: ResultSet, depth: Int) {
     this.token = resultset.getLong(1)
-    this.versionsCount = resultset.getInt(2)
-    this.accessPath = new AccessPath(for (i <- 1 to depth) yield new AccessKey(resultset.getString(2 + i)))
+    this.minTimestamp = Timestamp(resultset.getLong(2))
+    this.versionsCount = resultset.getInt(3)
+    this.accessPath = new AccessPath(for (i <- 1 to depth) yield new AccessKey(resultset.getString(3 + i)))
   }
 }
 
