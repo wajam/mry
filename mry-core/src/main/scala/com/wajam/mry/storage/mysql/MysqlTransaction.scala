@@ -301,15 +301,13 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *     DELETE FROM `table2_table2_1_table2_1_1`
      *     WHERE tk = ?
      *     AND k1 = ? AND k2 = ? AND k3 = ?
-     *     AND ts = ?
-     *     ORDER BY ts ASC;
+     *     AND ts = ?;
      */
     val sql = """
                 DELETE FROM `%1$s`
                 WHERE tk = ?
                 AND %2$s
-                AND ts = %3$d
-                ORDER BY ts ASC;
+                AND ts = %3$d;
               """.format(fullTableName, whereKeys, timestamp.value)
 
     var results: SqlResults = null
