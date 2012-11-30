@@ -10,6 +10,7 @@ import collection.mutable
 import util.Random
 import com.wajam.scn.Timestamp
 import org.scalatest.matchers.ShouldMatchers._
+import com.wajam.mry.storage.mysql.TimelineSelectMode.AtTimestamp
 
 /**
  * Test MySQL storage
@@ -360,6 +361,21 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
 
     val table1_1_1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1_1_1, createTimestamp(0), 100)
     assert(table1_1_1Timeline.size == 3, table1_1_1Timeline.size)
+
+    val limitedTable1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1, createTimestamp(0), 2)
+    limitedTable1Timeline.size should be (2)
+
+    val table1TimelineAt10 = mysqlStorage.createStorageTransaction(context).getTimeline(table1, createTimestamp(10),
+      0, AtTimestamp)
+    table1TimelineAt10.size should be (3)
+
+    val table1TimelineAt100 = mysqlStorage.createStorageTransaction(context).getTimeline(table1, createTimestamp(100),
+      0, AtTimestamp)
+    table1TimelineAt100.size should be (0)
+
+    val table1TimelineAt200 = mysqlStorage.createStorageTransaction(context).getTimeline(table1, createTimestamp(200),
+      0, AtTimestamp)
+    table1TimelineAt200.size should be (3)
   }
 
   test("deleted parents should generate deletion history for children") {

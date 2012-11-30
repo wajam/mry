@@ -188,7 +188,8 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     }
   }
 
-  def getTimeline(table: Table, fromTimestamp: Timestamp, count: Int): Seq[MutationRecord] = {
+  def getTimeline(table: Table, timestamp: Timestamp, count: Int,
+                  selectMode: TimelineSelectMode = TimelineSelectMode.FromTimestamp): Seq[MutationRecord] = {
     val projKeys = (for (i <- 1 to table.depth) yield "c.k%1$d".format(i)).mkString(",")
     val whereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = c.k%1$d".format(i)).mkString(" AND ")
     val joinKeys = (for (i <- 1 to table.depth) yield "c.k%1$d = l.k%1$d".format(i)).mkString(" AND ")
@@ -212,16 +213,29 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *   ORDER BY c.ts ASC
      *   LIMIT 0, 100;
      */
-    val sql = """
+    var sql = """
                 SELECT c.tk, c.ts, c.d, l.ts, l.d, %1$s
                 FROM `%2$s` AS c
                 LEFT JOIN `%2$s` l ON (c.tk = l.tk AND %3$s AND l.ts = (SELECT MAX(i.ts)
                  FROM `%2$s` AS i USE INDEX(revkey)
                  WHERE i.tk = c.tk AND %4$s AND i.ts < c.ts))
-                WHERE c.ts >= %5$d
-                ORDER BY c.ts ASC
-                LIMIT 0, %6$d;
-              """.format(projKeys, fullTableName, joinKeys, whereKeys, fromTimestamp.value, count)
+              """.format(projKeys, fullTableName, joinKeys, whereKeys)
+
+    selectMode match {
+      case TimelineSelectMode.FromTimestamp => {
+        sql +=
+          """
+            WHERE c.ts >= %1$d
+            ORDER BY c.ts ASC
+            LIMIT 0, %2$d;
+          """.format(timestamp.value, count)
+      }
+      case TimelineSelectMode.AtTimestamp => {
+        sql +=
+          """
+            WHERE c.ts = %1$d;""".format(timestamp.value)
+      }
+    }
 
     var ret = mutable.LinkedList[MutationRecord]()
     var results: SqlResults = null
@@ -505,5 +519,12 @@ class VersionRecord {
     this.versionsCount = resultset.getInt(3)
     this.accessPath = new AccessPath(for (i <- 1 to depth) yield new AccessKey(resultset.getString(3 + i)))
   }
+}
+
+sealed trait TimelineSelectMode
+
+object TimelineSelectMode {
+  object FromTimestamp extends TimelineSelectMode
+  object AtTimestamp extends TimelineSelectMode
 }
 
