@@ -92,12 +92,12 @@ class Database(var serviceName: String = "database", val scn: ScnClient)
 
   def getStorage(name: String) = this.storages.get(name).get
 
-  private val remoteWriteExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
+  protected val remoteWriteExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
     fetchTimestampAndExecute(req)
   }, ActionMethod.POST))
   remoteWriteExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
 
-  private val remoteReadExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
+  protected val remoteReadExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
     lastWriteTimestamp.get() match {
       case Some(timestamp) => metricExecuteLocal.time {execute(timestamp, req)}
       case None => fetchTimestampAndExecute(req)
