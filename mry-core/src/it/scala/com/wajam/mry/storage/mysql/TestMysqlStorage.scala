@@ -514,7 +514,7 @@ class TestMysqlStorage extends TestMysqlBase {
 
 
     rep = transaction.genWhereHigherEqualTuple(Map("a" -> 1, "b" -> 2, "c" -> 3))
-    rep._1 should be("((a >= ?)) OR ((a = ?) AND (b >= ?)) OR ((a = ?) AND (b = ?) AND (c >= ?))")
+    rep._1 should be("((a > ?)) OR ((a = ?) AND (b > ?)) OR ((a = ?) AND (b = ?) AND (c >= ?))")
     rep._2 should be(Seq(1, 1, 2, 1, 2, 3))
 
   }

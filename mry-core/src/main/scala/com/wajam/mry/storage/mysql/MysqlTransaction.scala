@@ -381,19 +381,22 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
    * Generates a SQL where clause that will keep only rows after given columns and their values.
    *
    * Ex: We want only people that have name higher than "A" and then higher than 1000$ in salary
-   *    genWhereHigherEqualTuple(Map("name" -> "A", "salary" -> 1000))
-   *    returns (name >= "A") OR (name == "A" AND salary >= 1000), but with placeholders (?) instead
-   *    of values and values in second position of the tuple
+   * genWhereHigherEqualTuple(Map("name" -> "A", "salary" -> 1000))
+   * returns (name > "A") OR (name == "A" AND salary >= 1000), but with placeholders (?) instead
+   * of values and values in second position of the tuple
    */
   protected[mry] def genWhereHigherEqualTuple(keyVal: Map[String, Any]): (String, Seq[Any]) = {
     val keys: Seq[String] = keyVal.keys.toSeq
     val vals: Seq[Any] = keyVal.values.toSeq
+    val count = keys.size
 
-    val ors = Seq.range(0, keys.size).map(a => {
+    val ors = Seq.range(0, count).map(a => {
       val eqs = Seq.range(0, a).map(b => {
         ("%s = ?".format(keys(b)), vals(b))
       })
-      val ands = eqs.map(_._1) ++ Seq("%s >= ?".format(keys(a)))
+
+      val op = if (a == count - 1) ">=" else ">"
+      val ands = eqs.map(_._1) ++ Seq("%s %s ?".format(keys(a), op))
       (ands.mkString("(", ") AND (", ")"), eqs.map(_._2) ++ Seq(vals(a)))
     })
 
@@ -427,7 +430,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *   FROM `table1` AS o, (
      *       SELECT i.tk, MAX(i.ts) AS max_ts, i.k1
      *       FROM `table1` AS i
-     *       WHERE ((i.tk >= 4025886270)) OR ((i.tk = 4025886270) AND (k1 >= 'key15'))
+     *       WHERE ((i.tk > 4025886270)) OR ((i.tk = 4025886270) AND (k1 > 'key15'))
      *       GROUP BY i.tk, i.k1
      *       ORDER BY i.tk, i.k1
      *   ) AS i
