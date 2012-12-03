@@ -280,7 +280,6 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       metricCollect.time({
         try {
           trx = createStorageTransaction
-          val collectPerTable = (toCollect / allTables.size) + 1
 
           for (table <- allTables) {
             var lastToken = lastTokens.getOrElse(table, 0l)
@@ -297,7 +296,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
             }
 
             var collectedVersions = 0
-            while (recordsVersions.size > 0 && collectedVersions < collectPerTable) {
+            while (recordsVersions.size > 0 && collectedVersions < toCollect) {
               val record = recordsVersions.dequeue()
               val versions = record.versions
               val toDeleteVersions = versions.sortBy(_.value).slice(0, table.maxVersions - 1)
