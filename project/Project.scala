@@ -25,7 +25,8 @@ object mryBuild extends Build {
     "c3p0" % "c3p0" % "0.9.1.2",
     "mysql" % "mysql-connector-java" % "5.1.6",
     "org.scalatest" %% "scalatest" % "1.7.1" % "test,it",
-    "junit" % "junit" % "4.10" % "test,it"
+    "junit" % "junit" % "4.10" % "test,it",
+    "org.mockito" % "mockito-core" % "1.9.0" % "test,it"
   )
 
   val defaultSettings = Defaults.defaultSettings ++ Defaults.itSettings ++ Seq(
