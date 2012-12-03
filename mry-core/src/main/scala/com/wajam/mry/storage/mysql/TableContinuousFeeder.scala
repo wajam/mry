@@ -13,8 +13,7 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, rowsToFetch: In
   extends CachedDataFeeder with Logging {
 
   var context: TaskContext = null
-  var nextTimestamp: Timestamp = Timestamp.MIN
-
+  var lastRecord: Option[Record] = None
 
   def init(context: TaskContext) {
     //TODO add elements in context to make sure tests work
@@ -25,21 +24,28 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, rowsToFetch: In
 
     var transaction: MysqlTransaction = null
     try {
+      val fromRecord = lastRecord
       transaction = storage.createStorageTransaction
+      val recordsIterator = transaction.getAllLatest(table, rowsToFetch, lastRecord)
 
-      val values = transaction.getAllLatest(table, nextTimestamp, Timestamp.now, rowsToFetch)
-
-      val records = Iterator.continually({
-        if (values.next()) {
-          Some(values.record)
+      var records = Iterator.continually({
+        if (recordsIterator.next()) {
+          lastRecord = Some(recordsIterator.record)
+          lastRecord
         } else {
           None
         }
       }).takeWhile(_.isDefined).flatten
 
+      // since getAllLatest return the "from" record, we remove it first
+      records = fromRecord match {
+        case Some(record) => records.filterNot(_ == record)
+        case None => records
+      }
+
       // Restart if tree is still empty
       if (records.isEmpty) {
-        nextTimestamp = Timestamp.MIN
+        lastRecord = None
       }
 
       records.map(record => Map("keys" -> record.accessPath.keys, "value" -> record.value)).toList

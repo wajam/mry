@@ -4,8 +4,7 @@ import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 import com.wajam.mry.execution.Implicits._
 import com.wajam.mry.execution._
-import com.wajam.mry.storage.{StorageException, Storage}
-import org.scalatest.{BeforeAndAfterEach, FunSuite}
+import com.wajam.mry.storage.StorageException
 import collection.mutable
 import util.Random
 import com.wajam.scn.Timestamp
@@ -15,52 +14,7 @@ import org.scalatest.matchers.ShouldMatchers._
  * Test MySQL storage
  */
 @RunWith(classOf[JUnitRunner])
-class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
-  var mysqlStorage: MysqlStorage = null
-  var storages: Map[String, Storage] = null
-  val model = new Model
-  val table1 = model.addTable(new Table("table1"))
-  val table1_1 = table1.addTable(new Table("table1_1"))
-  val table1_1_1 = table1_1.addTable(new Table("table1_1_1"))
-  val table2 = model.addTable(new Table("table2"))
-  val table2_1 = table2.addTable(new Table("table2_1"))
-  val table2_1_1 = table2_1.addTable(new Table("table2_1_1"))
-
-  override def beforeEach() {
-    this.mysqlStorage = newStorageInstance()
-  }
-
-  def newStorageInstance() = {
-    val storage = new MysqlStorage(MysqlStorageConfiguration("mysql", "localhost", "mry", "mry", "mry"), garbageCollection = false)
-    storages = Map(("mysql" -> storage))
-
-    storage.nuke()
-    storage.syncModel(model)
-    storage.start()
-
-    storage
-  }
-
-  override protected def afterEach() {
-    mysqlStorage.stop()
-  }
-
-  def exec(cb: (Transaction => Unit), commit: Boolean = true, onTimestamp: Timestamp = Timestamp.now): Seq[Value] = {
-    val context = new ExecutionContext(storages, Some(onTimestamp))
-
-    try {
-      val transac = new Transaction()
-      cb(transac)
-      transac.execute(context)
-
-      context.returnValues
-    } finally {
-      if (commit)
-        context.commit()
-      else
-        context.rollback()
-    }
-  }
+class TestMysqlStorage extends TestMysqlBase {
 
   test("should get committed record") {
     exec(t => {
@@ -462,7 +416,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
 
     val context = new ExecutionContext(storages)
     val table1All = mysqlStorage.createStorageTransaction(context)
-      .getAllLatest(table1, createTimestamp(0), createTimestamp(200), 100)
+      .getAllLatest(table1, 100)
 
     assert(table1All.next() === true)
     val recordKey1 = table1All.record
@@ -482,8 +436,8 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
 
     exec(t => {
       val t1 = t.from("mysql").from("table1")
-      keys foreach(t1.set(_, Map("k1" -> "v1")))
-    }, commit = true, onTimestamp = createTimestamp(0) )
+      keys foreach (t1.set(_, Map("k1" -> "v1")))
+    }, commit = true, onTimestamp = createTimestamp(0))
 
     var currentTime = 100
     keys foreach (key => {
@@ -508,7 +462,7 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
 
     val context = new ExecutionContext(storages)
     val table11All = mysqlStorage.createStorageTransaction(context)
-      .getAllLatest(table1_1, createTimestamp(0), createTimestamp(400), 100)
+      .getAllLatest(table1_1, 100)
 
     assert(table11All.next() === true)
     val recordKey1 = table11All.record
@@ -532,10 +486,44 @@ class TestMysqlStorage extends FunSuite with BeforeAndAfterEach {
 
   }
 
-  test("make sure junit doesn't get stuck") {
+  test("genWhereHigherEqualTuple should generate a where string") {
+
+    val context = new ExecutionContext(storages)
+    val transaction = mysqlStorage.createStorageTransaction(context)
+
+
+    var rep = transaction.genWhereHigherEqualTuple(Map("a" -> 1))
+    rep._1 should be("((a >= ?))")
+    rep._2 should be(Seq(1))
+
+
+    rep = transaction.genWhereHigherEqualTuple(Map("a" -> 1, "b" -> 2, "c" -> 3))
+    rep._1 should be("((a > ?)) OR ((a = ?) AND (b > ?)) OR ((a = ?) AND (b = ?) AND (c >= ?))")
+    rep._2 should be(Seq(1, 1, 2, 1, 2, 3))
+
   }
 
-  def createTimestamp(time: Long) = new Timestamp {
-    def value = time
+  test("getAllLatest should support fromRecord") {
+    val context = new ExecutionContext(storages)
+    val keys = Seq.range(0, 40).map(i => {
+      val key = "key%d".format(i)
+      (context.getToken(key), key)
+    }).sorted
+
+    exec(t => {
+      val t1 = t.from("mysql").from("table1")
+      keys foreach (tup => t1.set(tup._2, Map(tup._2 -> tup._2)))
+    }, commit = true, onTimestamp = createTimestamp(0))
+
+    var records = mysqlStorage.createStorageTransaction(context).getAllLatest(table1, 20).toList
+    var recordsKey = records.map(_.accessPath(0).key)
+    recordsKey should be(keys.map(_._2).slice(0, 20).toList)
+
+    records = mysqlStorage.createStorageTransaction(context).getAllLatest(table1, 20, optFromRecord = Some(records.last)).toList
+    recordsKey = records.map(_.accessPath(0).key)
+    recordsKey should be(keys.map(_._2).slice(19, 39).toList)
+  }
+
+  test("make sure junit doesn't get stuck") {
   }
 }

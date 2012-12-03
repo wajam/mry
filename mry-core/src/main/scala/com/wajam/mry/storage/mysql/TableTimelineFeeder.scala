@@ -8,11 +8,10 @@ import com.wajam.scn.Timestamp
 /**
  * Table mutation timeline task feeder
  */
-class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends CachedDataFeeder with Logging {
-  val BATCH_SIZE = 100
+class TableTimelineFeeder(storage: MysqlStorage, table: Table, val batchSize: Int = 100)
+  extends CachedDataFeeder with Logging {
 
   var context: TaskContext = null
-
   var currentTimestamps: List[(Timestamp, Seq[String])] = Nil
   var lastElement: Option[(Timestamp, Seq[String])] = None
 
@@ -35,7 +34,7 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table) extends CachedDat
     try {
       transaction = storage.createStorageTransaction
       debug("Getting timeline from timestamp {}", timestampCursor)
-      var mutations = transaction.getTimeline(table, timestampCursor, BATCH_SIZE)
+      var mutations = transaction.getTimeline(table, timestampCursor, batchSize)
 
       // filter out already processed records
       for ((ts, keys) <- lastElement) {
