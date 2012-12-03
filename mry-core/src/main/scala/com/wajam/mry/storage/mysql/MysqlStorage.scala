@@ -284,12 +284,12 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
           for (table <- allTables) {
             var lastToken = lastTokens.getOrElse(table, 0l)
-            val versions: mutable.Queue[VersionRecord] = versionsCache.getOrElse(table, mutable.Queue())
+            val recordsVersions: mutable.Queue[VersionRecord] = versionsCache.getOrElse(table, mutable.Queue())
 
             // no more versions in cache, fetch new batch
-            if (versions.size == 0) {
+            if (recordsVersions.size == 0) {
               val fetched = trx.getTopMostVersions(table, lastToken, VERSIONS_BATCH_COUNT)
-              versions ++= fetched
+              recordsVersions ++= fetched
 
               // didn't fetch anything, no more versions after this token. rewind to beginning
               if (fetched.size == 0)
@@ -297,17 +297,20 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
             }
 
             var collectedVersions = 0
-            while (versions.size > 0 && collectedVersions < collectPerTable) {
-              val version = versions.dequeue()
+            while (recordsVersions.size > 0 && collectedVersions < collectPerTable) {
+              val record = recordsVersions.dequeue()
+              val versions = record.versions
+              val toDeleteVersions = versions.sortBy(_.value).slice(0, table.maxVersions - 1)
 
-              trx.truncateVersion(table, version.token, version.accessPath, version.minTimestamp)
-
-              collectedVersions += 1
-              lastToken = version.token
+              if (toDeleteVersions.size > 0) {
+                trx.truncateVersions(table, record.token, record.accessPath, toDeleteVersions)
+                collectedVersions += toDeleteVersions.size
+              }
+              lastToken = record.token
             }
 
             lastTokens += (table -> lastToken)
-            versionsCache += (table -> versions)
+            versionsCache += (table -> recordsVersions)
             collectedTotal += collectedVersions
           }
 

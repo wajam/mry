@@ -10,10 +10,8 @@ import com.wajam.nrv.utils.CurrentTime
 /**
  * Table mutation timeline task feeder
  */
-class TableTimelineFeeder(storage: MysqlStorage, table: Table, emptyThrottlePeriod: Int = 1000)
+class TableTimelineFeeder(storage: MysqlStorage, table: Table, val batchSize: Int = 100, emptyThrottlePeriod: Int = 1000)
   extends CachedDataFeeder with CurrentTime with Logging {
-  val BATCH_SIZE = 100
-
   var context: TaskContext = null
 
   var lastEmptyTimestamp = currentTime
@@ -38,7 +36,7 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table, emptyThrottlePeri
       try {
         transaction = storage.createStorageTransaction
         debug("Getting timeline from timestamp {}", timestampCursor)
-        var mutations = transaction.getTimeline(table, timestampCursor, BATCH_SIZE, FromTimestamp)
+        var mutations = transaction.getTimeline(table, timestampCursor, batchSize, FromTimestamp)
 
         // filter out already processed records
         for ((ts, keys) <- lastElement) {
