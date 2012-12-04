@@ -221,10 +221,6 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
     private val metricCollect = metrics.timer("gc-collect")
     private val metricCollected = metrics.counter("gc-collected-records")
 
-    val VERSIONS_BATCH_COUNT = 100
-    val MIN_COLLECTION = 10
-    val GC_DELAY = 1000
-
     @volatile
     var active = false
 
@@ -244,12 +240,12 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           lastCollectMutationsCount = curCount
 
           if (mutationsDiff > 0 || lastCollected > 0) {
-            val toCollect = math.min(mutationsDiff, MIN_COLLECTION)
-            lastCollected = collect(toCollect)
+            val toCollect = math.min(mutationsDiff, config.gcMinimumCollection) * config.gcCollectionFactor
+            lastCollected = collect(toCollect.toInt)
           }
         }
       }
-    }, GC_DELAY, GC_DELAY, TimeUnit.MILLISECONDS)
+    }, config.gcDelayMs, config.gcDelayMs, TimeUnit.MILLISECONDS)
 
     def start() {
       this.active = true
@@ -287,7 +283,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
             // no more versions in cache, fetch new batch
             if (recordsVersions.size == 0) {
-              val fetched = trx.getTopMostVersions(table, lastToken, VERSIONS_BATCH_COUNT)
+              val fetched = trx.getTopMostVersions(table, lastToken, config.gcVersionsBatch)
               recordsVersions ++= fetched
 
               // didn't fetch anything, no more versions after this token. rewind to beginning
@@ -343,7 +339,12 @@ case class MysqlStorageConfiguration(name: String,
                                      password: String,
                                      initPoolSize: Int = 3,
                                      maxPoolSize: Int = 15,
-                                     numhelperThread: Int = 3)
+                                     numhelperThread: Int = 3,
+                                     gcMinimumCollection: Int = 20,
+                                     gcCollectionFactor: Double = 1.2,
+                                     gcDelayMs: Int = 1000,
+                                     gcVersionsBatch: Int = 100)
+
 
 class SqlResults {
   var statement: PreparedStatement = null
