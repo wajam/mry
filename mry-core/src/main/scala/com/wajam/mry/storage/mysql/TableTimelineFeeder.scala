@@ -14,7 +14,6 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table, val batchSize: In
   extends CachedDataFeeder with CurrentTime with Logging {
   var context: TaskContext = null
 
-  var lastEmptyTimestamp = 0L
   var currentTimestamps: List[(Timestamp, Seq[String])] = Nil
   var lastElement: Option[(Timestamp, Seq[String])] = None
   var lastSelectMode: TimelineSelectMode =  FromTimestamp
@@ -71,12 +70,6 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table, val batchSize: In
           val after = mutations.size
           debug("Before {} after {}", before.asInstanceOf[Object], after.asInstanceOf[Object])
         }
-      }
-
-      if (mutations.isEmpty) {
-        context.data += ("from_timestamp" -> (timestampCursor.value).toString)
-        lastElement = None
-        lastEmptyTimestamp = currentTime
       }
 
       mutations map (mr => Map(
