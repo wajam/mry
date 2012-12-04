@@ -10,7 +10,7 @@ import com.wajam.nrv.utils.CurrentTime
 /**
  * Table mutation timeline task feeder
  */
-class TableTimelineFeeder(storage: MysqlStorage, table: Table, val batchSize: Int = 100, emptyThrottlePeriod: Int = 1000)
+class TableTimelineFeeder(storage: MysqlStorage, table: Table, val batchSize: Int = 100)
   extends CachedDataFeeder with CurrentTime with Logging {
   var context: TaskContext = null
 
@@ -24,81 +24,77 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table, val batchSize: In
   }
 
   def loadMore() = {
-    if (lastEmptyTimestamp + emptyThrottlePeriod < currentTime) {
-      debug("Getting new batch for table {}", table.depthName("_"))
+    debug("Getting new batch for table {}", table.depthName("_"))
 
-      // get starting timestamp
-      val timestampCursor: Timestamp = lastElement match {
-        case Some((ts, keys)) => {
-          if (lastSelectMode == AtTimestamp)
-            // All records loaded in the previous call where at the same timestamp.
-            // Increment the last record timestamp to not load the same records forever.
-            Timestamp(ts.value + 1)
-          else ts
-        }
-        case None => {
-          Timestamp(context.data.get("from_timestamp").getOrElse("0").toLong)
-        }
+    // get starting timestamp
+    val timestampCursor: Timestamp = lastElement match {
+      case Some((ts, keys)) => {
+        if (lastSelectMode == AtTimestamp)
+        // All records loaded in the previous call where at the same timestamp.
+        // Increment the last record timestamp to not load the same records forever.
+          Timestamp(ts.value + 1)
+        else ts
       }
+      case None => {
+        Timestamp(context.data.get("from_timestamp").getOrElse("0").toLong)
+      }
+    }
 
-      var transaction: MysqlTransaction = null
-      try {
-        transaction = storage.createStorageTransaction
-        var mutations = transaction.getTimeline(table, timestampCursor, batchSize, FromTimestamp)
-        lastSelectMode = FromTimestamp
+    var transaction: MysqlTransaction = null
+    try {
+      transaction = storage.createStorageTransaction
+      var mutations = transaction.getTimeline(table, timestampCursor, batchSize, FromTimestamp)
+      lastSelectMode = FromTimestamp
 
-        if (mutations.size > 1 && mutations.head.newTimestamp == mutations.last.newTimestamp) {
-          // The whole batch has the same timestamp and has thus been inserted together in the same transaction.
-          // Reload everything at that timestamp in case some records where drop by the batch size limit.
-          mutations = transaction.getTimeline(table, mutations.head.newTimestamp, 0, AtTimestamp)
-          lastSelectMode = AtTimestamp
-        } else {
-          // Filter out already processed records
-          for ((ts, keys) <- lastElement) {
-            val foundLastElement = mutations.find(mut => mut.newTimestamp == ts && mut.accessPath.keys == keys)
+      if (mutations.size > 1 && mutations.head.newTimestamp == mutations.last.newTimestamp) {
+        // The whole batch has the same timestamp and has thus been inserted together in the same transaction.
+        // Reload everything at that timestamp in case some records where drop by the batch size limit.
+        mutations = transaction.getTimeline(table, mutations.head.newTimestamp, 0, AtTimestamp)
+        lastSelectMode = AtTimestamp
+      } else {
+        // Filter out already processed records
+        for ((ts, keys) <- lastElement) {
+          val foundLastElement = mutations.find(mut => mut.newTimestamp == ts && mut.accessPath.keys == keys)
 
-            val before = mutations.size
-            if (foundLastElement.isDefined) {
-              var found = false
-              mutations = mutations.filter(mut => {
-                if (mut.newTimestamp == ts && mut.accessPath.keys == keys) {
-                  found = true
-                  false
-                } else {
-                  found
-                }
-              })
-            }
-            val after = mutations.size
-            debug("Before {} after {}", before.asInstanceOf[Object], after.asInstanceOf[Object])
+          val before = mutations.size
+          if (foundLastElement.isDefined) {
+            var found = false
+            mutations = mutations.filter(mut => {
+              if (mut.newTimestamp == ts && mut.accessPath.keys == keys) {
+                found = true
+                false
+              } else {
+                found
+              }
+            })
           }
+          val after = mutations.size
+          debug("Before {} after {}", before.asInstanceOf[Object], after.asInstanceOf[Object])
         }
-
-        if (mutations.isEmpty) {
-          context.data += ("from_timestamp" -> (timestampCursor.value).toString)
-          lastElement = None
-          lastEmptyTimestamp = currentTime
-        }
-
-        mutations map (mr => Map(
-          "keys" -> mr.accessPath.keys,
-          "token" -> mr.token.toString,
-          "old_timestamp" -> mr.oldTimestamp,
-          "old_value" -> mr.oldValue,
-          "new_timestamp" -> mr.newTimestamp,
-          "new_value" -> mr.newValue
-        ))
-      } catch {
-        case e: Exception =>
-          log.error("An exception occured while loading more elements from table {}", table.depthName("_"), e)
-          lastSelectMode =  FromTimestamp
-          Seq()
-      } finally {
-        if (transaction != null)
-          transaction.commit()
       }
-    } else {
-      Seq()
+
+      if (mutations.isEmpty) {
+        context.data += ("from_timestamp" -> (timestampCursor.value).toString)
+        lastElement = None
+        lastEmptyTimestamp = currentTime
+      }
+
+      mutations map (mr => Map(
+        "keys" -> mr.accessPath.keys,
+        "token" -> mr.token.toString,
+        "old_timestamp" -> mr.oldTimestamp,
+        "old_value" -> mr.oldValue,
+        "new_timestamp" -> mr.newTimestamp,
+        "new_value" -> mr.newValue
+      ))
+    } catch {
+      case e: Exception =>
+        log.error("An exception occured while loading more elements from table {}", table.depthName("_"), e)
+        lastSelectMode = FromTimestamp
+        Seq()
+    } finally {
+      if (transaction != null)
+        transaction.commit()
     }
   }
 

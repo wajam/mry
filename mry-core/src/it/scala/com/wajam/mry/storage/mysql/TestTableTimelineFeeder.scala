@@ -82,66 +82,6 @@ class TestTableTimelineFeeder extends TestMysqlBase {
     records should be(records.sorted)
   }
 
-  test("empty timeline feeder should not call database during throttling period") {
-    val spyStorage = spy(mysqlStorage)
-    val throttlePeriod = 1000
-    val feeder = new TableTimelineFeeder(spyStorage, table1, emptyThrottlePeriod = throttlePeriod) with ControlableCurrentTime
-    feeder.init(new TaskContext())
-
-    // Ensure storage called once during throttling period
-    var records = Iterator.continually({
-      feeder.next()
-    }).take(100).flatten.toList
-    records.size should be(0)
-    verify(spyStorage, times(1)).createStorageTransaction
-
-    // Ensure storage is called once after throttling period
-    feeder.advanceTime(throttlePeriod + 1)
-    records = Iterator.continually({
-      feeder.next()
-    }).take(100).flatten.toList
-    records.size should be(0)
-    verify(spyStorage, times(2)).createStorageTransaction
-  }
-
-  test("empty timeline feeder should read new inserted records only after throttling period expired") {
-    // Initialize table with a few records
-    exec(t => {
-      val t1 = t.from("mysql").from("table1")
-      Seq.range(0, 5).foreach(i => t1.set("a_%d".format(i), Map("key" -> "val")))
-    }, commit = true, onTimestamp = createTimestamp(0))
-
-    // Load all existing records
-    val throttlePeriod = 1000
-    val feeder = new TableTimelineFeeder(mysqlStorage, table1, emptyThrottlePeriod = throttlePeriod) with ControlableCurrentTime
-    feeder.init(new TaskContext())
-    var records = Iterator.continually({
-      feeder.next()
-    }).take(100).flatten.toList
-    records.size should be(5)
-
-    // Add extra individual records
-    Seq.range(0, 5).foreach(i => {
-      exec(t => {
-        val t1 = t.from("mysql").from("table1")
-        t1.set("b_%d".format(i), Map("key" -> "val"))
-      }, commit = true, onTimestamp = createTimestamp(i + 2))
-    })
-
-    // Fetch again without advancing time, should be empty because of throttling period
-    records = Iterator.continually({
-      feeder.next()
-    }).take(100).flatten.toList
-    records.size should be(0)
-
-    // Finally fetch after advancing time
-    feeder.advanceTime(throttlePeriod * 2)
-    records = Iterator.continually({
-      feeder.next()
-    }).take(100).flatten.toList
-    records.size should be(5)
-  }
-
   test("should update context on ack") {
     // Add a few individual records
     Seq.range(0, 5).foreach(i => {
