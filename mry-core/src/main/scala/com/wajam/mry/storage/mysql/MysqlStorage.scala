@@ -160,7 +160,8 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   private def createTable(table: Table, fullTableName: String) {
     var sql = "CREATE TABLE `%s` ( ".format(fullTableName) +
       "`ts` bigint(20) NOT NULL, " +
-      "`tk` bigint(20) NOT NULL, "
+      "`tk` bigint(20) NOT NULL, " +
+      "`ec` tinyint(1) NOT NULL DEFAULT '0', "
 
     sql += (for (i <- 1 to table.depth) yield " k%d varchar(128) NOT NULL ".format(i)).mkString(",") + ","
 

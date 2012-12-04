@@ -73,11 +73,11 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     /* Generated SQL looks like:
      *
-     *   INSERT INTO `table1_table1_1_table1_1_1` (`ts`,`tk`,k1,k2,k3,`d`)
+     *   INSERT INTO `table1_table1_1_table1_1_1` (`ts`,`tk`,`ec`,k1,k2,k3,`d`)
      *   VALUES (1343138009222, 2517541033, 0, 'k1', 'k1.2', 'k1.2.1', '...BLOB BYTES...')
      *   ON DUPLICATE KEY UPDATE d=VALUES(d)', with params
      */
-    val sql = "INSERT INTO `%s` (`ts`,`tk`,%s,`d`) VALUES (?,?,%s,?) ON DUPLICATE KEY UPDATE d=VALUES(d)".format(fullTableName, sqlKeys, sqlValues)
+    val sql = "INSERT INTO `%s` (`ts`,`tk`,`ec`,%s,`d`) VALUES (?,?,?,%s,?) ON DUPLICATE KEY UPDATE d=VALUES(d)".format(fullTableName, sqlKeys, sqlValues)
 
     var results: SqlResults = null
     try {
@@ -86,14 +86,14 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
           // there is a value, we set it
           val value = record.serializeValue(storage.valueSerializer)
           this.tableMetricSet(table).time {
-            results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue ++ Seq(value)): _*)
+            results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ Seq(record.encoding) ++ keysValue ++ Seq(value)): _*)
           }
           this.tableMutationsCount(table).incrementAndGet()
 
         case None =>
           // no value, it's a delete
           this.tableMetricDelete(table).time {
-            results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue ++ Seq(null)): _*)
+            results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ Seq(0) ++ keysValue ++ Seq(null)): _*)
             this.tableMutationsCount(table).incrementAndGet()
 
             // delete all rows from children tables
@@ -107,7 +107,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
               /* Generated SQL looks like:
               *
               *     INSERT INTO `table1_table1_1`
-              *       SELECT 1343138009222 AS ts, tk, k1,k2, NULL AS d
+              *       SELECT 1343138009222 AS ts, tk, ec, k1,k2, NULL AS d
               *       FROM `table1_table1_1`
               *       WHERE tk = 2517541033 AND ts <= 1343138009222 AND k1 = 'k1'
               *       GROUP BY tk, k1, k2
@@ -115,7 +115,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
               */
               val childSql = """
                  INSERT INTO `%1$s`
-                  SELECT ? AS ts, tk, %2$s, NULL AS d
+                  SELECT ? AS ts, tk, ec, %2$s, NULL AS d
                   FROM `%1$s`
                   WHERE tk = ? AND ts <= ? AND %3$s
                   GROUP BY tk, %2$s
@@ -146,7 +146,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     /* Generated SQL looks like:
      *
-     *   SELECT o.ts, o.tk, o.d, o.k1
+     *   SELECT o.ts, o.tk, o.ec, o.d, o.k1
      *   FROM `table1` AS o, (
      *       SELECT i.tk, MAX(i.ts) AS max_ts, i.k1
      *       FROM `table1` AS i
@@ -159,7 +159,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *   AND o.d IS NOT NULL
      */
     var sql = """
-        SELECT o.ts, o.tk, o.d, %1$s
+        SELECT o.ts, o.tk, o.ec, o.d, %1$s
         FROM `%2$s` AS o, (
             SELECT i.tk, MAX(i.ts) AS max_ts, %3$s
             FROM `%2$s` AS i
@@ -212,7 +212,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     /* Generated SQL looks like:
      *
-     *   SELECT c.tk, c.ts, c.d, l.ts, l.d, c.k1, c.k2, c.k3, c.g3
+     *   SELECT c.tk, c.ts, c.ec, c.d, l.ts, l.ec, l.d, c.k1, c.k2, c.k3, c.g3
      *   FROM `table1_table1_1_table1_1_1` AS c
      *   LEFT JOIN `table1_table1_1_table1_1_1` l
      *      ON (c.tk = l.tk AND c.k1 = l.k1 AND c.k2 = l.k2
@@ -229,7 +229,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *   LIMIT 0, 100;
      */
     var sql = """
-                SELECT c.tk, c.ts, c.d, l.ts, l.d, %1$s
+                SELECT c.tk, c.ts, c.ec, c.d, l.ts, l.ec, l.d, %1$s
                 FROM `%2$s` AS c
                 LEFT JOIN `%2$s` l ON (c.tk = l.tk AND %3$s AND l.ts = (
                  SELECT MAX(i.ts)
@@ -281,7 +281,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     /*
      * Generated SQL looks like:
      *
-     *    SELECT t.tk, COUNT(*) AS nb, GROUP_CONCAT(t.ts SEPARATOR ',') AS timestamps, t.k1,t.k2,t.k3
+     *    SELECT t.tk, t.ec, COUNT(*) AS nb, GROUP_CONCAT(t.ts SEPARATOR ',') AS timestamps, t.k1,t.k2,t.k3
      *    FROM `table1_table1_1_table1_1_1` AS t
      *    WHERE t.tk >= 0
      *    GROUP BY t.tk,t.k1,t.k2,t.k3
@@ -290,7 +290,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      */
     val sql =
       """
-         SELECT t.tk, COUNT(*) AS nb, GROUP_CONCAT(t.ts SEPARATOR ',') AS timestamps, %1$s
+         SELECT t.tk, t.ec, COUNT(*) AS nb, GROUP_CONCAT(t.ts SEPARATOR ',') AS timestamps, %1$s
          FROM `%2$s` AS t
          WHERE t.tk >= %3$d
          GROUP BY t.tk, %1$s
@@ -433,7 +433,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     /* Generated SQL looks like:
      *
-     *   SELECT o.ts, o.tk, o.d, o.k1
+     *   SELECT o.ts, o.tk, o.ec, o.d, o.k1
      *   FROM `table1` AS o, (
      *       SELECT i.tk, MAX(i.ts) AS max_ts, i.k1
      *       FROM `table1` AS i
@@ -449,7 +449,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *   LIMIT 0, 1000
      */
     val sql = """
-        SELECT o.ts, o.tk, o.d, %1$s
+        SELECT o.ts, o.tk, o.ec, o.d, %1$s
         FROM `%2$s` AS o, (
             SELECT i.tk, MAX(i.ts) AS max_ts, %3$s
             FROM `%2$s` AS i
@@ -499,6 +499,7 @@ class AccessPath(val parts: Seq[AccessKey] = Seq()) {
 class Record(var value: Value = new MapValue(Map())) {
   var accessPath = new AccessPath()
   var token: Long = 0
+  var encoding: Byte = 0
   var timestamp: Timestamp = Timestamp(0)
 
   override def equals(that: Any) = that match {
@@ -509,9 +510,10 @@ class Record(var value: Value = new MapValue(Map())) {
   def load(serializer: ProtocolTranslator, resultset: ResultSet, depth: Int) {
     this.timestamp = Timestamp(resultset.getLong(1))
     this.token = resultset.getLong(2)
-    this.unserializeValue(serializer, resultset.getBytes(3))
+    this.encoding = resultset.getByte(3)
+    this.unserializeValue(serializer, resultset.getBytes(4))
 
-    this.accessPath = new AccessPath(for (i <- 1 to depth) yield new AccessKey(resultset.getString(3 + i)))
+    this.accessPath = new AccessPath(for (i <- 1 to depth) yield new AccessKey(resultset.getString(4 + i)))
   }
 
   def serializeValue(serializer: ProtocolTranslator): Array[Byte] = {
@@ -531,22 +533,26 @@ class MutationRecord {
 
   var accessPath = new AccessPath()
   var newTimestamp: Timestamp = Timestamp(0)
+  var newEncoding: Byte = 0
   var newValue: Option[Value] = None
   var oldTimestamp: Option[Timestamp] = None
+  var oldEncoding: Byte = 0
   var oldValue: Option[Value] = None
 
   def load(serializer: ProtocolTranslator, resultset: ResultSet, depth: Int) {
     this.token = resultset.getLong(1)
     this.newTimestamp = Timestamp(resultset.getLong(2))
-    this.newValue = this.unserializeValue(serializer, resultset.getBytes(3))
+    this.newEncoding = resultset.getByte(3)
+    this.newValue = this.unserializeValue(serializer, resultset.getBytes(4))
 
-    val oldTs = resultset.getObject(4)
+    val oldTs = resultset.getObject(5)
     if (oldTs != null) {
       this.oldTimestamp = Some(Timestamp(oldTs.asInstanceOf[Long]))
-      this.oldValue = this.unserializeValue(serializer, resultset.getBytes(5))
+      this.oldEncoding = resultset.getByte(6)
+      this.oldValue = this.unserializeValue(serializer, resultset.getBytes(7))
     }
 
-    this.accessPath = new AccessPath(for (i <- 1 to depth) yield new AccessKey(resultset.getString(5 + i)))
+    this.accessPath = new AccessPath(for (i <- 1 to depth) yield new AccessKey(resultset.getString(7 + i)))
   }
 
   def unserializeValue(serializer: ProtocolTranslator, bytes: Array[Byte]): Option[Value] = {
@@ -593,15 +599,17 @@ class RecordIterator(storage: MysqlStorage, results: SqlResults, table: Table) e
 
 class VersionRecord {
   var token: Long = 0
+  var encoding: Byte = 0
   var versionsCount: Int = 0
   var versions = Seq[Timestamp]()
   var accessPath = new AccessPath()
 
   def load(resultset: ResultSet, depth: Int) {
     this.token = resultset.getLong(1)
-    this.versionsCount = resultset.getInt(2)
-    this.versions = resultset.getString(3).split(",").map(vers => Timestamp(vers.toLong))
-    this.accessPath = new AccessPath(for (i <- 1 to depth) yield new AccessKey(resultset.getString(3 + i)))
+    this.encoding = resultset.getByte(2)
+    this.versionsCount = resultset.getInt(3)
+    this.versions = resultset.getString(4).split(",").map(vers => Timestamp(vers.toLong))
+    this.accessPath = new AccessPath(for (i <- 1 to depth) yield new AccessKey(resultset.getString(4 + i)))
   }
 }
 
