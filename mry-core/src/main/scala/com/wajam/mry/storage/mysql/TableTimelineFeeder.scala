@@ -4,16 +4,20 @@ import com.wajam.nrv.Logging
 import com.wajam.spnl.feeder.CachedDataFeeder
 import com.wajam.spnl.TaskContext
 import com.wajam.scn.Timestamp
+import com.wajam.mry.storage.mysql.TimelineSelectMode.{FromTimestamp, AtTimestamp}
+import com.wajam.nrv.utils.CurrentTime
 
 /**
  * Table mutation timeline task feeder
  */
 class TableTimelineFeeder(storage: MysqlStorage, table: Table, val batchSize: Int = 100)
-  extends CachedDataFeeder with Logging {
-
+  extends CachedDataFeeder with CurrentTime with Logging {
   var context: TaskContext = null
+
+  var lastEmptyTimestamp = 0L
   var currentTimestamps: List[(Timestamp, Seq[String])] = Nil
   var lastElement: Option[(Timestamp, Seq[String])] = None
+  var lastSelectMode: TimelineSelectMode =  FromTimestamp
 
   def init(context: TaskContext) {
     this.context = context
@@ -22,43 +26,57 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table, val batchSize: In
   def loadMore() = {
     debug("Getting new batch for table {}", table.depthName("_"))
 
-    // TODO: should make sure we don't call too often
-
     // get starting timestamp
     val timestampCursor: Timestamp = lastElement match {
-      case Some((ts, keys)) => ts
-      case None => Timestamp(context.data.get("from_timestamp").getOrElse("0").toLong)
+      case Some((ts, keys)) => {
+        if (lastSelectMode == AtTimestamp)
+        // All records loaded in the previous call where at the same timestamp.
+        // Increment the last record timestamp to not load the same records forever.
+          Timestamp(ts.value + 1)
+        else ts
+      }
+      case None => {
+        Timestamp(context.data.get("from_timestamp").getOrElse("0").toLong)
+      }
     }
 
     var transaction: MysqlTransaction = null
     try {
       transaction = storage.createStorageTransaction
-      debug("Getting timeline from timestamp {}", timestampCursor)
-      var mutations = transaction.getTimeline(table, timestampCursor, batchSize)
+      var mutations = transaction.getTimeline(table, timestampCursor, batchSize, FromTimestamp)
+      lastSelectMode = FromTimestamp
 
-      // filter out already processed records
-      for ((ts, keys) <- lastElement) {
-        val foundLastElement = mutations.find(mut => mut.newTimestamp == ts && mut.accessPath.keys == keys)
+      if (mutations.size > 1 && mutations.head.newTimestamp == mutations.last.newTimestamp) {
+        // The whole batch has the same timestamp and has thus been inserted together in the same transaction.
+        // Reload everything at that timestamp in case some records where drop by the batch size limit.
+        mutations = transaction.getTimeline(table, mutations.head.newTimestamp, 0, AtTimestamp)
+        lastSelectMode = AtTimestamp
+      } else {
+        // Filter out already processed records
+        for ((ts, keys) <- lastElement) {
+          val foundLastElement = mutations.find(mut => mut.newTimestamp == ts && mut.accessPath.keys == keys)
 
-        val before = mutations.size
-        if (foundLastElement.isDefined) {
-          var found = false
-          mutations = mutations.filter(mut => {
-            if (mut.newTimestamp == ts && mut.accessPath.keys == keys) {
-              found = true
-              false
-            } else {
-              found
-            }
-          })
+          val before = mutations.size
+          if (foundLastElement.isDefined) {
+            var found = false
+            mutations = mutations.filter(mut => {
+              if (mut.newTimestamp == ts && mut.accessPath.keys == keys) {
+                found = true
+                false
+              } else {
+                found
+              }
+            })
+          }
+          val after = mutations.size
+          debug("Before {} after {}", before.asInstanceOf[Object], after.asInstanceOf[Object])
         }
-        val after = mutations.size
-        debug("Before {} after {}", before.asInstanceOf[Object], after.asInstanceOf[Object])
       }
 
       if (mutations.isEmpty) {
-        this.context.data += ("from_timestamp" -> (timestampCursor.value + 1).toString)
-        this.lastElement = None
+        context.data += ("from_timestamp" -> (timestampCursor.value).toString)
+        lastElement = None
+        lastEmptyTimestamp = currentTime
       }
 
       mutations map (mr => Map(
@@ -72,6 +90,7 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table, val batchSize: In
     } catch {
       case e: Exception =>
         log.error("An exception occured while loading more elements from table {}", table.depthName("_"), e)
+        lastSelectMode = FromTimestamp
         Seq()
     } finally {
       if (transaction != null)
@@ -83,7 +102,7 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table, val batchSize: In
     val optElem = super.next()
     for (elem <- optElem) {
       val (timestamp, keys) = getTimestampKey(elem)
-      this.lastElement = Some((timestamp, keys))
+      lastElement = Some((timestamp, keys))
       currentTimestamps ::=(timestamp, keys)
     }
 
@@ -91,9 +110,9 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table, val batchSize: In
   }
 
   def ack(data: Map[String, Any]) {
-    currentTimestamps = currentTimestamps filterNot (_ != getTimestampKey(data))
+    currentTimestamps = currentTimestamps filter (_ != getTimestampKey(data))
     if (currentTimestamps.isEmpty) {
-      for ((ts, _) <- this.lastElement) context.data += ("from_timestamp" -> ts.value.toString)
+      for ((ts, _) <- lastElement) context.data += ("from_timestamp" -> ts.value.toString)
     } else {
       context.data += ("from_timestamp" -> currentTimestamps.map(_._1).min.value.toString)
     }
