@@ -41,7 +41,15 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
   def getStorageValue(context: ExecutionContext): Value = this
 
+  /**
+   * Create and delete tables from MySQL based on the given model.
+   * *WARNING*: This method should only be called ONCE before starting the storage
+   *
+   * @param model Model to sync
+   * @param deleteOld Also delete the old tables
+   */
   def syncModel(model: Model, deleteOld: Boolean = false) {
+    assert(this.model == null, "Cannot sync model more than once")
     this.model = model
 
     val mysqlTables = this.getTables
