@@ -317,19 +317,19 @@ class TestMysqlStorage extends TestMysqlBase {
     assert(table1_1_1Timeline.size == 3, table1_1_1Timeline.size)
 
     val limitedTable1Timeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1, createTimestamp(0), 2)
-    limitedTable1Timeline.size should be (2)
+    limitedTable1Timeline.size should be(2)
 
     val table1TimelineAt10 = mysqlStorage.createStorageTransaction(context).getTimeline(table1, createTimestamp(10),
       0, AtTimestamp)
-    table1TimelineAt10.size should be (3)
+    table1TimelineAt10.size should be(3)
 
     val table1TimelineAt100 = mysqlStorage.createStorageTransaction(context).getTimeline(table1, createTimestamp(100),
       0, AtTimestamp)
-    table1TimelineAt100.size should be (0)
+    table1TimelineAt100.size should be(0)
 
     val table1TimelineAt200 = mysqlStorage.createStorageTransaction(context).getTimeline(table1, createTimestamp(200),
       0, AtTimestamp)
-    table1TimelineAt200.size should be (3)
+    table1TimelineAt200.size should be(3)
   }
 
   test("deleted parents should generate deletion history for children") {
@@ -378,7 +378,7 @@ class TestMysqlStorage extends TestMysqlBase {
         val totalBeforeSize = beforeSizeTable2 + beforeSizeTable2_1 + beforeSizeTable2_1_1
         trx.rollback()
 
-        val collected = mysqlStorage.GarbageCollector.collect(rand.nextInt(10))
+        val collected = mysqlStorage.GarbageCollector.collectAll(rand.nextInt(10))
         totalCollected += collected
 
         trx = mysqlStorage.createStorageTransaction
