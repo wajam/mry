@@ -8,25 +8,30 @@ import com.wajam.mry.api.ProtocolTranslator
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.scn.Timestamp
 import com.wajam.nrv.tracing.Traced
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Mysql storage transaction
  */
 class MysqlTransaction(private val storage: MysqlStorage, private val context: Option[ExecutionContext]) extends StorageTransaction with Instrumented with Traced {
-  private val metricTimeline = tracedTimer("mysql-timeline")
-  private val metricTopMostVersions = tracedTimer("mysql-topmostversions")
-  private val metricSet = tracedTimer("mysql-set")
-  private val metricGet = tracedTimer("mysql-get")
-  private val metricDelete = tracedTimer("mysql-delete")
+  private val tableMetricTimeline = generateTablesTimers("mysql-timeline")
+  private val tableMetricGetAllLatest = generateTablesTimers("mysql-timeline")
+  private val tableMetricTopMostVersions = generateTablesTimers("mysql-topmosversions")
+  private val tableMetricSet = generateTablesTimers("mysql-set")
+  private val tableMetricGet = generateTablesTimers("mysql-get")
+  private val tableMetricDelete = generateTablesTimers("mysql-delete")
   private val metricCommit = tracedTimer("mysql-commit")
   private val metricRollback = tracedTimer("mysql-rollback")
-  private val metricTruncateVersions = tracedTimer("mysql-truncateversions")
-  private val metricSize = tracedTimer("mysql-count")
+  private val tableMetricTruncateVersions = generateTablesTimers("mysql-truncateversions")
+  private val tableMetricSize = generateTablesTimers("mysql-size")
 
-  var mutationsCount = 0
+  protected[mry] val tableMutationsCount = storage.model.allHierarchyTables.map(table => (table, new AtomicInteger(0))).toMap
 
   val connection = storage.getConnection
   connection.setAutoCommit(false)
+
+  private def generateTablesTimers(timerName: String) = storage.model.allHierarchyTables.map(table =>
+    (table, tracedTimer(timerName, table.uniqueName))).toMap
 
   def rollback() {
     if (this.connection != null) {
@@ -80,21 +85,24 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         case Some(record) =>
           // there is a value, we set it
           val value = record.serializeValue(storage.valueSerializer)
-          this.metricSet.time {
+          this.tableMetricSet(table).time {
             results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue ++ Seq(value)): _*)
           }
+          this.tableMutationsCount(table).incrementAndGet()
 
         case None =>
           // no value, it's a delete
-          this.metricDelete.time {
+          this.tableMetricDelete(table).time {
             results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue ++ Seq(null)): _*)
+            this.tableMutationsCount(table).incrementAndGet()
 
             // delete all rows from children tables
             for (childTable <- table.allHierarchyTables) {
               val childFullTableName = childTable.depthName("_")
-
               val childSelectKeys = (for (i <- 1 to childTable.depth) yield "k%d".format(i)).mkString(",")
               val parentWhereKeys = (for (i <- 1 to keysValue.length) yield "k%d = ?".format(i)).mkString(" AND ")
+
+              this.tableMutationsCount(childTable).incrementAndGet()
 
               /* Generated SQL looks like:
               *
@@ -119,7 +127,6 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
           }
       }
 
-      this.mutationsCount += 1
 
     } finally {
       if (results != null)
@@ -170,7 +177,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     var results: SqlResults = null
     try {
-      this.metricGet.time {
+      this.tableMetricGet(table).time {
         results = storage.executeSql(connection, false, sql, (Seq(token) ++ keysValue ++ Seq(timestamp.value)): _*)
       }
 
@@ -249,7 +256,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     var ret = mutable.LinkedList[MutationRecord]()
     var results: SqlResults = null
     try {
-      this.metricTimeline.time {
+      this.tableMetricTimeline(table).time {
         results = storage.executeSql(connection, false, sql)
 
         while (results.resultset.next()) {
@@ -295,7 +302,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     var ret = mutable.LinkedList[VersionRecord]()
     var results: SqlResults = null
     try {
-      this.metricTopMostVersions.time {
+      this.tableMetricTopMostVersions(table).time {
         results = storage.executeSql(connection, false, sql)
 
         while (results.resultset.next()) {
@@ -335,7 +342,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     var results: SqlResults = null
     try {
-      this.metricTruncateVersions.time {
+      this.tableMetricTruncateVersions(table).time {
         results = storage.executeSql(connection, true, sql, (Seq(token) ++ keysValue): _*)
       }
 
@@ -362,7 +369,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     var count: Long = 0
     var results: SqlResults = null
     try {
-      this.metricSize.time {
+      this.tableMetricSize(table).time {
         results = storage.executeSql(connection, false, sql)
       }
 
@@ -460,7 +467,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     var results: SqlResults = null
     try {
-      this.metricGet.time {
+      this.tableMetricGetAllLatest(table).time {
         results = storage.executeSql(connection, false, sql, (recordPosition._2 ++ Seq(count)): _*)
       }
 
@@ -601,7 +608,10 @@ class VersionRecord {
 sealed trait TimelineSelectMode
 
 object TimelineSelectMode {
+
   object FromTimestamp extends TimelineSelectMode
+
   object AtTimestamp extends TimelineSelectMode
+
 }
 

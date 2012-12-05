@@ -17,7 +17,7 @@ import java.util.concurrent.{TimeUnit, ScheduledThreadPoolExecutor}
 class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean = true)
   extends Storage(config.name) with Logging with Value with Instrumented {
   var model: Model = new Model
-  var mutationsCount = new AtomicInteger(0)
+  var tablesMutationsCount = Map[Table, AtomicInteger]()
   val valueSerializer = new ProtobufTranslator
 
   val datasource = new ComboPooledDataSource()
@@ -34,12 +34,22 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   def createStorageTransaction = new MysqlTransaction(this, None)
 
   def closeStorageTransaction(trx: MysqlTransaction) {
-    this.mutationsCount.getAndAdd(trx.mutationsCount)
+    model.allHierarchyTables.map(table => {
+      this.tablesMutationsCount(table).getAndAdd(trx.tableMutationsCount(table).get)
+    })
   }
 
   def getStorageValue(context: ExecutionContext): Value = this
 
+  /**
+   * Create and delete tables from MySQL based on the given model.
+   * *WARNING*: This method should only be called ONCE before starting the storage
+   *
+   * @param model Model to sync
+   * @param deleteOld Also delete the old tables
+   */
   def syncModel(model: Model, deleteOld: Boolean = false) {
+    assert(this.model == null, "Cannot sync model more than once")
     this.model = model
 
     val mysqlTables = this.getTables
@@ -61,6 +71,8 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           this.dropTable(table)
       }
     }
+
+    tablesMutationsCount = allTables.map(table => (table, new AtomicInteger(0))).toMap
   }
 
   def getConnection = datasource.getConnection
@@ -218,31 +230,34 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   }
 
   object GarbageCollector extends Instrumented {
-    private val metricCollect = metrics.timer("gc-collect")
-    private val metricCollected = metrics.counter("gc-collected-records")
+    private val allTables: Iterable[Table] = model.allHierarchyTables
+
+    private val metricCollect = allTables.map(table =>
+      (table, metrics.timer("gc-collect", table.uniqueName))).toMap
+    private val metricCollected = allTables.map(table =>
+      (table, metrics.meter("gc-collected-record", "records", table.uniqueName))).toMap
 
     @volatile
-    var active = false
+    private var active = false
+    private val lastTokens = mutable.Map[Table, Long]()
+    private val versionsCache = mutable.Map[Table, mutable.Queue[VersionRecord]]()
+    private var lastCollectMutationsCount = 0
+    private var lastCollected = 0 // always force first collection
 
-    val lastTokens = mutable.Map[Table, Long]()
-    val versionsCache = mutable.Map[Table, mutable.Queue[VersionRecord]]()
-    val allTables: Seq[Table] = model.allHierarchyTables
-
-    var lastCollectMutationsCount = 0
-    var lastCollected = 0 // always force first collection
-
-    val scheduledExecutor = new ScheduledThreadPoolExecutor(1)
-    val scheduledTask = scheduledExecutor.scheduleWithFixedDelay(new Runnable {
+    private val scheduledExecutor = new ScheduledThreadPoolExecutor(1)
+    private val scheduledTask = scheduledExecutor.scheduleWithFixedDelay(new Runnable {
       def run() {
         if (active) {
-          val curCount = mutationsCount.get()
-          val mutationsDiff = curCount - lastCollectMutationsCount
-          lastCollectMutationsCount = curCount
+          allTables.foreach(table => {
+            val curCount = tablesMutationsCount(table).get()
+            val mutationsDiff = curCount - lastCollectMutationsCount
+            lastCollectMutationsCount = curCount
 
-          if (mutationsDiff > 0 || lastCollected > 0) {
-            val toCollect = math.min(mutationsDiff, config.gcMinimumCollection) * config.gcCollectionFactor
-            lastCollected = collect(toCollect.toInt)
-          }
+            if (mutationsDiff > 0 || lastCollected > 0) {
+              val toCollect = math.min(mutationsDiff, config.gcMinimumCollection) * config.gcCollectionFactor
+              lastCollected = collect(table, toCollect.toInt)
+            }
+          })
         }
       }
     }, config.gcDelayMs, config.gcDelayMs, TimeUnit.MILLISECONDS)
@@ -260,57 +275,59 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       this.scheduledTask.cancel(true)
     }
 
+    private[mysql] def collectAll(toCollect: Int): Int = {
+      allTables.foldLeft(0)((sum, table) => sum + collect(table, toCollect))
+    }
+
     /**
-     * Garbage collect at least specified versions (if any can be collected)
+     * Garbage collect at least specified versions (if any can be collected) from a table
      * Not thread safe! Call from 1 thread at the time!
      *
+     * @param table Table to collect
      * @param toCollect Number of versions to collect
      * @return Collected versions
      */
-    private[mysql] def collect(toCollect: Int): Int = {
+    private[mysql] def collect(table: Table, toCollect: Int): Int = {
       debug("GCing iteration starting, need {} to be collected", toCollect)
 
       var trx: MysqlTransaction = null
       var collectedTotal = 0
 
-      metricCollect.time({
+      metricCollect(table).time({
         try {
           trx = createStorageTransaction
 
-          for (table <- allTables) {
-            var lastToken = lastTokens.getOrElse(table, 0l)
-            val recordsVersions: mutable.Queue[VersionRecord] = versionsCache.getOrElse(table, mutable.Queue())
+          var lastToken = lastTokens.getOrElse(table, 0l)
+          val recordsVersions: mutable.Queue[VersionRecord] = versionsCache.getOrElse(table, mutable.Queue())
 
-            // no more versions in cache, fetch new batch
-            if (recordsVersions.size == 0) {
-              val fetched = trx.getTopMostVersions(table, lastToken, config.gcVersionsBatch)
-              recordsVersions ++= fetched
+          // no more versions in cache, fetch new batch
+          if (recordsVersions.size == 0) {
+            val fetched = trx.getTopMostVersions(table, lastToken, config.gcVersionsBatch)
+            recordsVersions ++= fetched
 
-              // didn't fetch anything, no more versions after this token. rewind to beginning
-              if (fetched.size == 0)
-                lastToken = 0
-            }
-
-            var collectedVersions = 0
-            while (recordsVersions.size > 0 && collectedVersions < toCollect) {
-              val record = recordsVersions.dequeue()
-              val versions = record.versions
-              val toDeleteVersions = versions.sortBy(_.value).slice(0, table.maxVersions - 1)
-
-              if (toDeleteVersions.size > 0) {
-                trx.truncateVersions(table, record.token, record.accessPath, toDeleteVersions)
-                collectedVersions += toDeleteVersions.size
-              }
-              lastToken = record.token
-            }
-
-            lastTokens += (table -> lastToken)
-            versionsCache += (table -> recordsVersions)
-            collectedTotal += collectedVersions
+            // didn't fetch anything, no more versions after this token. rewind to beginning
+            if (fetched.size == 0)
+              lastToken = 0
           }
 
+          var collectedVersions = 0
+          while (recordsVersions.size > 0 && collectedVersions < toCollect) {
+            val record = recordsVersions.dequeue()
+            val versions = record.versions
+            val toDeleteVersions = versions.sortBy(_.value).slice(0, table.maxVersions - 1)
 
-          metricCollected += collectedTotal
+            if (toDeleteVersions.size > 0) {
+              trx.truncateVersions(table, record.token, record.accessPath, toDeleteVersions)
+              collectedVersions += toDeleteVersions.size
+            }
+            lastToken = record.token
+          }
+
+          lastTokens += (table -> lastToken)
+          versionsCache += (table -> recordsVersions)
+          collectedTotal += collectedVersions
+
+          metricCollected(table).mark(collectedTotal)
           trx.commit()
         } catch {
           case e: Exception =>
