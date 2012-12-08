@@ -28,7 +28,16 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
   protected[mry] val tableMutationsCount = storage.model.allHierarchyTables.map(table => (table, new AtomicInteger(0))).toMap
 
   val connection = storage.getConnection
-  connection.setAutoCommit(false)
+  try {
+    connection.setAutoCommit(false)
+  } catch {
+    case ex: Exception => {
+      if (connection != null) {
+        connection.close()
+      }
+      throw ex
+    }
+  }
 
   private def generateTablesTimers(timerName: String) = storage.model.allHierarchyTables.map(table =>
     (table, tracedTimer(timerName, table.uniqueName))).toMap
