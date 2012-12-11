@@ -415,6 +415,35 @@ class TestMysqlStorage extends TestMysqlBase {
     }
   }
 
+  test("should be able to set the same key twice and keep the last version") {
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", Map("k" -> toVal("value1")))
+      table.set("key1", Map("k" -> toVal("value2")))
+    }, commit = true)
+
+    val Seq(a, b) = exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      val a = table.get("key1")
+      table.set("key1", Map("k" -> toVal("value3")))
+      val b = table.get("key1")
+
+      t.ret(a, b)
+    }, commit = false)
+
+    a.value.serializableValue match {
+      case m: MapValue => assert(m("k").equalsValue("value2"))
+      case _ => fail()
+    }
+
+    b.value.serializableValue match {
+      case m: MapValue => assert(m("k").equalsValue("value3"))
+      case _ => fail()
+    }
+  }
+
   test("getAllLatest should return all latest elements") {
 
     exec(t => {
