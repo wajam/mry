@@ -38,6 +38,85 @@ class TestMysqlStorage extends TestMysqlBase {
     }
   }
 
+  test("a get before a set should return initial value, not new value") {
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", Map("mapk" -> toVal("value1")))
+      table.set("key2", Map("mapk" -> toVal("value2")))
+    }, commit = true)
+
+    val Seq(rec1, rec2, rec3, rec4) = exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      val a = table.get("key1")
+      val b = table.get("key2")
+      table.set("key1", Map("mapk" -> toVal("value1.2")))
+      table.delete("key2")
+      val c = table.get("key1")
+      val d = table.get("key2")
+      t.returns(a, b, c, d)
+    }, commit = true)
+
+
+    val val1 = rec1.asInstanceOf[MapValue].mapValue("mapk")
+    val val2 = rec2.asInstanceOf[MapValue].mapValue("mapk")
+    val val3 = rec3.asInstanceOf[MapValue].mapValue("mapk")
+    assert(rec4.equalsValue(NullValue))
+
+    assert(val1.equalsValue("value1"), val1)
+    assert(val2.equalsValue("value2"), val2)
+    assert(val3.equalsValue("value1.2"), val3)
+  }
+
+  test("a get before a delete should return initial value, not null") {
+    exec(t => {
+      t.from("mysql").from("table1").set("key1", Map("mapk" -> toVal("value1")))
+    }, commit = true)
+
+    val Seq(rec1, rec2) = exec(t => {
+      val table = t.from("mysql").from("table1")
+      val a = table.get("key1")
+      table.delete("key1")
+      val b = table.get("key1")
+      t.returns(a, b)
+    }, commit = true)
+
+    val val1 = rec1.asInstanceOf[MapValue].mapValue("mapk")
+    assert(rec2.equalsValue(NullValue))
+    assert(val1.equalsValue("value1"), val1)
+  }
+
+  test("a get before a set on multi level hierarchy should return initial values, not new values") {
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", Map("mapk" -> toVal("value1")))
+      val rec1 = table.get("key1")
+      rec1.from("table1_1").set("key1_1", Map("mapk" -> toVal("value1_1a")))
+      rec1.from("table1_1").set("key1_2", Map("mapk" -> toVal("value1_2a")))
+      rec1.from("table1_1").set("key1_3", Map("mapk" -> toVal("value1_3a")))
+
+    }, commit = true)
+
+    val Seq(rec1, rec2) = exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1").get("key1").from("table1_1")
+      val a = table.get()
+      table.delete("key1_1")
+      table.set("key1_2", Map("mapk" -> toVal("value1_2b")))
+      val b = table.get()
+      t.returns(a, b)
+    }, commit = true)
+
+    val val1 = rec1.asInstanceOf[ListValue]
+    val val2 = rec2.asInstanceOf[ListValue]
+    val1.listValue.size should be(3)
+    val2.listValue.size should be(2)
+    val2.listValue(1).asInstanceOf[MapValue].mapValue("mapk").equalsValue("value1_2b")
+  }
+
+
   test("shouldn't get uncommited record") {
     exec(t => {
       val storage = t.from("mysql")
@@ -538,6 +617,37 @@ class TestMysqlStorage extends TestMysqlBase {
     records = mysqlStorage.createStorageTransaction(context).getAllLatest(table1, 20, optFromRecord = Some(records.last)).toList
     recordsKey = records.map(_.accessPath(0).key)
     recordsKey should be(keys.map(_._2).slice(19, 39).toList)
+  }
+
+
+  test("calling limit on a multi-record value should offset and limit the number of records returned") {
+    val keys = List.range(0, 40).map(i => {
+      "key%02d".format(i)
+    })
+
+    val Seq(a, b, c, d) = exec(t => {
+      val t1 = t.from("mysql").from("table1")
+      t1.set("key1", Map("k" -> "v"))
+      val t2 = t1.get("key1").from("table1_1")
+      keys foreach (key => t2.set(key, Map(key -> key)))
+
+      val a = t2.get()
+      val b = t2.get().limit(10)
+      val c = t2.get().limit(0, 10)
+      val d = t2.get().limit(10, 10)
+
+      t.returns(a, b, c, d)
+    }, commit = true, onTimestamp = createTimestamp(0))
+
+    val la = a.asInstanceOf[ListValue].flatMap(_.asInstanceOf[MapValue].mapValue.values).map(_.toString)
+    val lb = b.asInstanceOf[ListValue].flatMap(_.asInstanceOf[MapValue].mapValue.values).map(_.toString)
+    val lc = c.asInstanceOf[ListValue].flatMap(_.asInstanceOf[MapValue].mapValue.values).map(_.toString)
+    val ld = d.asInstanceOf[ListValue].flatMap(_.asInstanceOf[MapValue].mapValue.values).map(_.toString)
+
+    la should be(keys)
+    lb should be(keys.slice(0, 10))
+    lc should be(keys.slice(0, 10))
+    ld should be(keys.slice(10, 20))
   }
 
   test("make sure junit doesn't get stuck") {

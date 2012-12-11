@@ -16,11 +16,11 @@ trait OperationSource {
     }
   }
 
-  def param[T : ClassManifest](param:Object):T = {
+  def param[T: ClassManifest](param: Object): T = {
     this.param[T](Seq(param), 0)
   }
 
-  def param[T : ClassManifest](params:Seq[Object], position:Int):T = {
+  def param[T: ClassManifest](params: Seq[Object], position: Int): T = {
     if (params.size <= position)
       throw new InvalidParameter("Excepted parameter at position %d".format(position))
 
@@ -49,6 +49,10 @@ trait OperationSource {
 
   def execDelete(context: ExecutionContext, into: Variable, keys: Object*) {
     getProxiedSource.execDelete(context, into, keys: _*)
+  }
+
+  def execLimit(context: ExecutionContext, into: Variable, keys: Object*) {
+    getProxiedSource.execLimit(context, into, keys: _*)
   }
 }
 
