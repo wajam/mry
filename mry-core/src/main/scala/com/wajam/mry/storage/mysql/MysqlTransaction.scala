@@ -25,7 +25,9 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
   private val tableMetricTruncateVersions = generateTablesTimers("mysql-truncateversions")
   private val tableMetricSize = generateTablesTimers("mysql-size")
 
-  protected[mry] val tableMutationsCount = storage.model.allHierarchyTables.map(table => (table, new AtomicInteger(0))).toMap
+  private[mry] val tableMutationsCount = storage.model.allHierarchyTables.map(table => (table, new AtomicInteger(0))).toMap
+  private var lazilyReadValues = List[Value]()
+
 
   val connection = storage.getConnection
   connection.setAutoCommit(false)
@@ -45,6 +47,15 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     }
 
     storage.closeStorageTransaction(this)
+  }
+
+  private[mry] def markAsLazyRead(value: Value) {
+    lazilyReadValues = value :: lazilyReadValues
+  }
+
+  private[mry] def loadLazyValues() {
+    lazilyReadValues.foreach(_.serializableValue)
+    lazilyReadValues = List()
   }
 
   def commit() {
@@ -134,7 +145,9 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     }
   }
 
-  def getMultiple(table: Table, token: Long, timestamp: Timestamp, accessPath: AccessPath, includeDeleted: Boolean = false): RecordIterator = {
+  def getMultiple(table: Table, token: Long, timestamp: Timestamp, accessPath: AccessPath,
+                  includeDeleted: Boolean = false, optOffset: Option[Long] = None,
+                  optCount: Option[Long] = None): RecordIterator = {
     assert(accessPath.length >= 1)
 
     val keysValue = accessPath.keys
@@ -144,6 +157,13 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     val outerWhereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = o.k%1$d".format(i)).mkString(" AND ")
     val innerWhereKeys = (for (i <- 1 to accessPath.parts.length) yield "i.k%d = ?".format(i)).mkString(" AND ")
 
+    val limitSql = (optOffset, optCount) match {
+      case (Some(offset), Some(count)) => "LIMIT %d, %d".format(offset, count)
+      case (Some(offset), None) => "LIMIT %d".format(offset)
+      case (None, Some(count)) => "LIMIT 0, %d".format(count)
+      case (None, None) => ""
+    }
+
     /* Generated SQL looks like:
      *
      *   SELECT o.ts, o.tk, o.ec, o.d, o.k1
@@ -152,6 +172,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *       FROM `table1` AS i
      *       WHERE i.ts <= ? AND i.tk = ? AND i.k1 = ?
      *       GROUP BY i.tk, i.k1
+     *       LIMIT 0,1000
      *   ) AS i
      *   WHERE i.tk = o.tk
      *   AND i.k1 = o.k1
@@ -165,11 +186,12 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
             FROM `%2$s` AS i
             WHERE i.tk = ? AND %4$s AND i.ts <= ?
             GROUP BY i.tk, %3$s
+            %5$s
         ) AS i
         WHERE i.tk = o.tk
-        AND %5$s
+        AND %6$s
         AND o.ts = i.max_ts
-              """.format(outerProjKeys, fullTableName, innerProjKeys, innerWhereKeys, outerWhereKeys)
+              """.format(outerProjKeys, fullTableName, innerProjKeys, innerWhereKeys, limitSql, outerWhereKeys)
 
 
     if (!includeDeleted)
@@ -524,7 +546,7 @@ class Record(var value: Value = new MapValue(Map())) {
     if (bytes != null)
       this.value = serializer.decodeValue(bytes).asInstanceOf[MapValue]
     else
-      this.value = NullValue()
+      this.value = NullValue
   }
 }
 

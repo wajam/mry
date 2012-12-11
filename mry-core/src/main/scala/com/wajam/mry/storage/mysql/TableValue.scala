@@ -29,6 +29,11 @@ class TableValue(storage: MysqlStorage, table: Table, accessPrefix: AccessPath =
       val token = context.getToken(keysSeq(0).key)
       into.value = new MultipleRecordValue(storage, context, table, token, accessPrefix)
     }
+
+    if (!context.dryMode) {
+      val transaction = context.getStorageTransaction(storage).asInstanceOf[MysqlTransaction]
+      transaction.markAsLazyRead(into.value)
+    }
   }
 
   override def execSet(context: ExecutionContext, into: Variable, data: Object*) {
@@ -42,6 +47,7 @@ class TableValue(storage: MysqlStorage, table: Table, accessPrefix: AccessPath =
 
     if (!context.dryMode) {
       val transaction = context.getStorageTransaction(storage).asInstanceOf[MysqlTransaction]
+      transaction.loadLazyValues()
 
       val record = new Record
       record.value = mapVal
@@ -59,6 +65,7 @@ class TableValue(storage: MysqlStorage, table: Table, accessPrefix: AccessPath =
 
     if (!context.dryMode) {
       val transaction = context.getStorageTransaction(storage).asInstanceOf[MysqlTransaction]
+      transaction.loadLazyValues()
 
       transaction.set(table, token, context.timestamp.get, accessPath, None)
     }

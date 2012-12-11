@@ -46,4 +46,15 @@ object Operation {
     }
 
     def reset() {}
-  }}
+  }
+
+  class Limit(source: OperationSource, into: Variable, keys: Object*) extends Operation(source) with Serializable {
+    def execute(context: ExecutionContext) {
+      source.execLimit(context, into, keys: _*)
+    }
+
+    def reset() {}
+  }
+
+}
+
