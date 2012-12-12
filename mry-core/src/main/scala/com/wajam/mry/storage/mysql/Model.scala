@@ -48,6 +48,8 @@ class Table(var name: String, var parent: Option[Table] = None, var maxVersions:
     case other: Table => this.uniqueName.equalsIgnoreCase(other.uniqueName)
     case _ => false
   }
+
+  override def toString: String = uniqueName
 }
 
 
