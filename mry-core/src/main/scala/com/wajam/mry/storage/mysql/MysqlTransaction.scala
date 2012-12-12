@@ -30,7 +30,16 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
 
   val connection = storage.getConnection
-  connection.setAutoCommit(false)
+  try {
+    connection.setAutoCommit(false)
+  } catch {
+    case ex: Exception => {
+      if (connection != null) {
+        connection.close()
+      }
+      throw ex
+    }
+  }
 
   private def generateTablesTimers(timerName: String) = storage.model.allHierarchyTables.map(table =>
     (table, tracedTimer(timerName, table.uniqueName))).toMap
@@ -84,11 +93,10 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     /* Generated SQL looks like:
      *
-     *   INSERT INTO `table1_table1_1_table1_1_1` (`ts`,`tk`,`ec`,k1,k2,k3,`d`)
+     *   REPLACE INTO `table1_table1_1_table1_1_1` (`ts`,`tk`,`ec`,k1,k2,k3,`d`)
      *   VALUES (1343138009222, 2517541033, 0, 'k1', 'k1.2', 'k1.2.1', '...BLOB BYTES...')
-     *   ON DUPLICATE KEY UPDATE d=VALUES(d)', with params
      */
-    val sql = "INSERT INTO `%s` (`ts`,`tk`,`ec`,%s,`d`) VALUES (?,?,?,%s,?) ON DUPLICATE KEY UPDATE d=VALUES(d)".format(fullTableName, sqlKeys, sqlValues)
+    val sql = "REPLACE INTO `%s` (`ts`,`tk`,`ec`,%s,`d`) VALUES (?,?,?,%s,?)".format(fullTableName, sqlKeys, sqlValues)
 
     var results: SqlResults = null
     try {
@@ -117,20 +125,18 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
               /* Generated SQL looks like:
               *
-              *     INSERT INTO `table1_table1_1`
+              *     REPLACE INTO `table1_table1_1`
               *       SELECT 1343138009222 AS ts, tk, ec, k1,k2, NULL AS d
               *       FROM `table1_table1_1`
               *       WHERE tk = 2517541033 AND ts <= 1343138009222 AND k1 = 'k1'
               *       GROUP BY tk, k1, k2
-              *     ON DUPLICATE KEY UPDATE d=VALUES(d)
               */
               val childSql = """
-                 INSERT INTO `%1$s`
+                 REPLACE INTO `%1$s`
                   SELECT ? AS ts, tk, ec, %2$s, NULL AS d
                   FROM `%1$s`
                   WHERE tk = ? AND ts <= ? AND %3$s
                   GROUP BY tk, %2$s
-                 ON DUPLICATE KEY UPDATE d=VALUES(d)
                              """.format(childFullTableName, childSelectKeys, parentWhereKeys)
 
               results = storage.executeSql(connection, true, childSql, (Seq(timestamp.value) ++ Seq(token) ++ Seq(timestamp.value) ++ keysValue): _*)
