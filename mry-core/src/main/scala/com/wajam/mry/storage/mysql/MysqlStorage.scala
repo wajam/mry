@@ -16,7 +16,7 @@ import java.util.concurrent.{TimeUnit, ScheduledThreadPoolExecutor}
  */
 class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean = true)
   extends Storage(config.name) with Logging with Value with Instrumented {
-  var model: Model = new Model
+  var model: Model = _
   var tablesMutationsCount = Map[Table, AtomicInteger]()
   val valueSerializer = new ProtobufTranslator
 
@@ -239,25 +239,32 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
     @volatile
     private var active = false
-    private val lastTokens = mutable.Map[Table, Long]()
-    private val versionsCache = mutable.Map[Table, mutable.Queue[VersionRecord]]()
-    private var lastCollectMutationsCount = 0
-    private var lastCollected = 0 // always force first collection
+    private val tableLastTokens = mutable.Map[Table, Long]().withDefaultValue(0)
+    private val tableVersionsCache = mutable.Map[Table, mutable.Queue[VersionRecord]]()
+    private val tableLastMutationsCount = mutable.Map[Table, Int]().withDefaultValue(0)
+    private val tableLastCollection = mutable.Map[Table, Int]().withDefaultValue(0) // always force first collection
 
     private val scheduledExecutor = new ScheduledThreadPoolExecutor(1)
     private val scheduledTask = scheduledExecutor.scheduleWithFixedDelay(new Runnable {
       def run() {
-        if (active) {
-          allTables.foreach(table => {
-            val curCount = tablesMutationsCount(table).get()
-            val mutationsDiff = curCount - lastCollectMutationsCount
-            lastCollectMutationsCount = curCount
+        try {
+          if (active) {
+            allTables.foreach(table => {
+              val currentMutations = tablesMutationsCount(table).get()
+              val lastMutations = tableLastMutationsCount(table)
+              val mutationsDiff = currentMutations - lastMutations
+              tableLastMutationsCount += (table -> currentMutations)
 
-            if (mutationsDiff > 0 || lastCollected > 0) {
-              val toCollect = math.min(mutationsDiff, config.gcMinimumCollection) * config.gcCollectionFactor
-              lastCollected = collect(table, toCollect.toInt)
-            }
-          })
+              val lastCollection = tableLastCollection(table)
+              if (mutationsDiff > 0 || lastCollection > 0) {
+                val toCollect = math.max(math.max(mutationsDiff, config.gcMinimumCollection), lastCollection) * config.gcCollectionFactor
+                log.info("Collecting {} from table {}", toCollect, table.name)
+                tableLastCollection += (table -> collect(table, toCollect.toInt))
+              }
+            })
+          }
+        } catch {
+          case e: Exception => log.error("Got an error in GC scheduler", e)
         }
       }
     }, config.gcDelayMs, config.gcDelayMs, TimeUnit.MILLISECONDS)
@@ -297,8 +304,8 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
         try {
           trx = createStorageTransaction
 
-          var lastToken = lastTokens.getOrElse(table, 0l)
-          val recordsVersions: mutable.Queue[VersionRecord] = versionsCache.getOrElse(table, mutable.Queue())
+          var lastToken = tableLastTokens(table)
+          val recordsVersions: mutable.Queue[VersionRecord] = tableVersionsCache.getOrElse(table, mutable.Queue())
 
           // no more versions in cache, fetch new batch
           if (recordsVersions.size == 0) {
@@ -323,8 +330,8 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
             lastToken = record.token
           }
 
-          lastTokens += (table -> lastToken)
-          versionsCache += (table -> recordsVersions)
+          tableLastTokens += (table -> lastToken)
+          tableVersionsCache += (table -> recordsVersions)
           collectedTotal += collectedVersions
 
           metricCollected(table).mark(collectedTotal)
