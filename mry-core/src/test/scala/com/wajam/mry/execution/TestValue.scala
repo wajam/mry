@@ -9,8 +9,7 @@ class TestValue extends FunSuite {
 
   test("null value should be always match null, whatever instances it is") {
     assert((new NullValue).isNull)
-    assert(NullValue().isNull)
-    assert(NullValue.NULL_VALUE.isNull)
+    assert(NullValue.isNull)
   }
 
   test("list value should return a list of serializable values when serializing it") {
@@ -29,4 +28,5 @@ class TestValue extends FunSuite {
   class NonSerializableInt(var intVal: Long) extends IntValue(intVal) {
     override def serializableValue: Value = new IntValue(intVal)
   }
+
 }

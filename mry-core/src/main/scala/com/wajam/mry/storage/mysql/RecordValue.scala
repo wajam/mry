@@ -17,11 +17,11 @@ class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table
     }
   }
 
-  if (optRecord.isEmpty && !context.dryMode) {
-    optRecord = optTransaction.get.get(table, token, context.timestamp.get, accessPath)
-  }
+  lazy val innerValue = {
+    if (optRecord.isEmpty && !context.dryMode) {
+      optRecord = optTransaction.get.get(table, token, context.timestamp.get, accessPath)
+    }
 
-  val innerValue = {
     this.optRecord match {
       case Some(r) =>
         r.value
@@ -40,7 +40,7 @@ class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table
     val tableName = param[StringValue](keys, 0).strValue
     val optTable = table.getTable(tableName)
 
-    if (!context.dryMode && optRecord.isEmpty)
+    if (!context.dryMode && innerValue.isNull)
       throw new StorageException("Cannot execute 'from' on an non existing record (table=%s, access_path=%s)".format(table.depthName("_"), accessPath))
 
     optTable match {
