@@ -11,18 +11,14 @@ trait Value extends Object with OperationSource {
 
   def equalsValue(that: Value): Boolean = this == that
 
-  def isNull = this.equalsValue(NullValue.NULL_VALUE)
+  def isNull = this.equalsValue(NullValue)
 }
 
-class NullValue() extends Value with Serializable {
+class NullValue extends Value with Serializable {
   override def equalsValue(that: Value): Boolean = this.isInstanceOf[NullValue]
 }
 
-object NullValue {
-  val NULL_VALUE = new NullValue()
-
-  def apply() = NULL_VALUE
-}
+object NullValue extends NullValue
 
 class MapValue(var mapValue: Map[String, Value]) extends Value with Serializable {
 

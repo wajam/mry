@@ -53,4 +53,13 @@ trait OperationApi extends OperationSource {
     sourceBlock.addOperation(new Delete(this, into, data: _*))
     into
   }
+
+  def limit(keys: Object*): Variable = {
+    this.limitInto(this.sourceBlock.defineVariable(), keys: _*)
+  }
+
+  def limitInto(into: Variable, keys: Object*): Variable = {
+    sourceBlock.addOperation(new Limit(this, into, keys: _*))
+    into
+  }
 }
