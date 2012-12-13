@@ -22,7 +22,9 @@ abstract class TestMysqlBase extends FunSuite with BeforeAndAfterEach {
   }
 
   def newStorageInstance() = {
-    val storage = new MysqlStorage(MysqlStorageConfiguration("mysql", "localhost", "mry", "mry", "mry"), garbageCollection = false)
+    val storage = new MysqlStorage(
+      MysqlStorageConfiguration("mysql", "localhost", "mry", "mry", "mry", gcTokenStep = 4300000000l),
+      garbageCollection = false)
     storages = Map(("mysql" -> storage))
 
     storage.nuke()

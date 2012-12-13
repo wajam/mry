@@ -93,10 +93,11 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     /* Generated SQL looks like:
      *
-     *   REPLACE INTO `table1_table1_1_table1_1_1` (`ts`,`tk`,`ec`,k1,k2,k3,`d`)
+     *   INSERT INTO `table1_table1_1_table1_1_1` (`ts`,`tk`,`ec`,k1,k2,k3,`d`)
      *   VALUES (1343138009222, 2517541033, 0, 'k1', 'k1.2', 'k1.2.1', '...BLOB BYTES...')
+     *   ON DUPLICATE KEY UPDATE d=VALUES(d)', with params
      */
-    val sql = "REPLACE INTO `%s` (`ts`,`tk`,`ec`,%s,`d`) VALUES (?,?,?,%s,?)".format(fullTableName, sqlKeys, sqlValues)
+    val sql = "INSERT INTO `%s` (`ts`,`tk`,`ec`,%s,`d`) VALUES (?,?,?,%s,?) ON DUPLICATE KEY UPDATE d=VALUES(d)".format(fullTableName, sqlKeys, sqlValues)
 
     var results: SqlResults = null
     try {
@@ -125,18 +126,20 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
               /* Generated SQL looks like:
               *
-              *     REPLACE INTO `table1_table1_1`
+              *     INSERT INTO `table1_table1_1`
               *       SELECT 1343138009222 AS ts, tk, ec, k1,k2, NULL AS d
               *       FROM `table1_table1_1`
               *       WHERE tk = 2517541033 AND ts <= 1343138009222 AND k1 = 'k1'
               *       GROUP BY tk, k1, k2
+              *     ON DUPLICATE KEY UPDATE d=VALUES(d)
               */
               val childSql = """
-                 REPLACE INTO `%1$s`
+                 INSERT INTO `%1$s`
                   SELECT ? AS ts, tk, ec, %2$s, NULL AS d
                   FROM `%1$s`
                   WHERE tk = ? AND ts <= ? AND %3$s
                   GROUP BY tk, %2$s
+                 ON DUPLICATE KEY UPDATE d=VALUES(d)
                              """.format(childFullTableName, childSelectKeys, parentWhereKeys)
 
               results = storage.executeSql(connection, true, childSql, (Seq(timestamp.value) ++ Seq(token) ++ Seq(timestamp.value) ++ keysValue): _*)
@@ -302,7 +305,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     ret
   }
 
-  def getTopMostVersions(table: Table, fromToken: Long, count: Int): Seq[VersionRecord] = {
+  def getTopMostVersions(table: Table, fromToken: Long, toToken: Long, count: Int): Seq[VersionRecord] = {
     val projKeys = (for (i <- 1 to table.depth) yield "t.k%1$d".format(i)).mkString(",")
     val fullTableName = table.depthName("_")
 
@@ -311,7 +314,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *
      *    SELECT t.tk, t.ec, COUNT(*) AS nb, GROUP_CONCAT(t.ts SEPARATOR ',') AS timestamps, t.k1,t.k2,t.k3
      *    FROM `table1_table1_1_table1_1_1` AS t
-     *    WHERE t.tk >= 0
+     *    WHERE t.tk >= 0 AND t.tk < 10000
      *    GROUP BY t.tk,t.k1,t.k2,t.k3
      *    HAVING COUNT(*) > 3
      *    LIMIT 0, 100
@@ -320,11 +323,11 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
       """
          SELECT t.tk, t.ec, COUNT(*) AS nb, GROUP_CONCAT(t.ts SEPARATOR ',') AS timestamps, %1$s
          FROM `%2$s` AS t
-         WHERE t.tk >= %3$d
+         WHERE t.tk >= %3$d AND t.tk < %4$d
          GROUP BY t.tk, %1$s
-         HAVING COUNT(*) > %4$d
-         LIMIT 0, %5$d
-      """.format(projKeys, fullTableName, fromToken, table.maxVersions, count)
+         HAVING COUNT(*) > %5$d
+         LIMIT 0, %6$d
+      """.format(projKeys, fullTableName, fromToken, toToken, table.maxVersions, count)
 
 
     var ret = mutable.LinkedList[VersionRecord]()
