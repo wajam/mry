@@ -77,11 +77,9 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   def getConnection = datasource.getConnection
 
   def nuke() {
-    val tables = this.getTables
-
-    for (table <- tables) {
+    this.getTables.foreach(table => {
       this.dropTable(table)
-    }
+    })
   }
 
   def start() {
@@ -112,11 +110,12 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
         results.statement.setObject(p, param)
       }
 
-      if (update)
+      if (update) {
         results.statement.executeUpdate()
-      else
+        results.close()
+      } else {
         results.resultset = results.statement.executeQuery()
-
+      }
 
       results
 
@@ -139,7 +138,10 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
       var tables = List[String]()
       while (rs.next()) {
-        tables ::= rs.getString(1)
+        val name = rs.getString(1)
+        if (name.contains("_index")) {
+          tables ::= name.stripSuffix("_index")
+        }
       }
 
       tables
@@ -158,25 +160,31 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   }
 
   private def createTable(table: Table, fullTableName: String) {
-    var sql = "CREATE TABLE `%s` ( ".format(fullTableName) +
-      "`ts` bigint(20) NOT NULL, " +
-      "`tk` bigint(20) NOT NULL, " +
-      "`ec` tinyint(1) NOT NULL DEFAULT '0', "
-
-    sql += (for (i <- 1 to table.depth) yield " k%d varchar(128) NOT NULL ".format(i)).mkString(",") + ","
-
-    val keyList = (for (i <- 1 to table.depth) yield "k%d".format(i)).mkString(",")
-    sql += " `d` blob NULL, " +
-      " PRIMARY KEY (`ts`,`tk`," + keyList + "), " +
-      "	UNIQUE KEY `revkey` (`tk`, " + keyList + ",`ts`) " +
-      ") ENGINE=InnoDB  DEFAULT CHARSET=utf8;"
-
-
-    var results: SqlResults = null
     val connection = this.getConnection
 
     try {
-      results = this.executeSql(connection, true, sql)
+      val keyList = (for (i <- 1 to table.depth) yield "k%d".format(i)).mkString(",")
+
+      // create the index table
+      var indexSql = "CREATE TABLE `%s_index` ( ".format(fullTableName) +
+        "`ts` bigint(20) NOT NULL, " +
+        "`tk` bigint(20) NOT NULL, "
+      indexSql += (for (i <- 1 to table.depth) yield " k%d varchar(128) NOT NULL ".format(i)).mkString(",") + "," +
+        " PRIMARY KEY (`ts`,`tk`," + keyList + "), " +
+        " UNIQUE KEY `revkey` (`tk`," + keyList + ",`ts`) " +
+        ") ENGINE=InnoDB  DEFAULT CHARSET=utf8;"
+      this.executeSql(connection, true, indexSql)
+
+      // create the data table
+      var dataSql = "CREATE TABLE `%s_data` ( ".format(fullTableName) +
+        "`tk` bigint(20) NOT NULL, "
+      dataSql += (for (i <- 1 to table.depth) yield " k%d varchar(128) NOT NULL ".format(i)).mkString(",") + "," +
+        "`ts` bigint(20) NOT NULL, " +
+        "`ec` tinyint(1) NOT NULL DEFAULT '0', " +
+        " `d` blob NULL, " +
+        " PRIMARY KEY (`tk`," + keyList + ",`ts`) " +
+        ") ENGINE=InnoDB  DEFAULT CHARSET=utf8;"
+      this.executeSql(connection, true, dataSql)
 
     } catch {
       case e: Exception =>
@@ -186,20 +194,15 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
     } finally {
       if (connection != null)
         connection.close()
-
-      if (results != null)
-        results.close()
     }
   }
 
   private def dropTable(tableName: String) {
-    val sql = "DROP TABLE `%s`".format(tableName)
-
-    var results: SqlResults = null
     val connection = this.getConnection
 
     try {
-      results = this.executeSql(connection, true, sql)
+      this.executeSql(connection, true, "DROP TABLE `%s_index`".format(tableName))
+      this.executeSql(connection, true, "DROP TABLE `%s_data`".format(tableName))
 
     } catch {
       case e: Exception =>
@@ -209,9 +212,6 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
     } finally {
       if (connection != null)
         connection.close()
-
-      if (results != null)
-        results.close()
     }
   }
 
@@ -241,8 +241,8 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
     private var active = false
     private val tableNextToken = mutable.Map[Table, Long]().withDefaultValue(0)
     private val tableVersionsCache = mutable.Map[Table, mutable.Queue[VersionRecord]]()
-    private val tableLastMutationsCount = mutable.Map[Table, Int]().withDefaultValue(0)
-    private val tableLastCollection = mutable.Map[Table, Int]().withDefaultValue(0) // always force first collection
+    private val tableLastMutationsCount = mutable.Map[Table, Int]().withDefaultValue(1)
+    private val tableLastCollection = mutable.Map[Table, Int]().withDefaultValue(1) // always force first collection
 
     private val scheduledExecutor = new ScheduledThreadPoolExecutor(1)
     private val scheduledTask = scheduledExecutor.scheduleWithFixedDelay(new Runnable {
@@ -344,7 +344,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           metricCollected(table).mark(collectedTotal)
           trx.commit()
         } catch {
-          case e: Exception =>
+          case e: Exception => {
             try {
               if (trx != null)
                 trx.rollback()
@@ -353,6 +353,8 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
             }
 
             error("Caught an exception in garbage collector!", e)
+            throw e
+          }
         }
       })
 

@@ -93,64 +93,85 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     /* Generated SQL looks like:
      *
-     *   INSERT INTO `table1_table1_1_table1_1_1` (`ts`,`tk`,`ec`,k1,k2,k3,`d`)
-     *   VALUES (1343138009222, 2517541033, 0, 'k1', 'k1.2', 'k1.2.1', '...BLOB BYTES...')
+     *   INSERT INTO `table1_table1_1_table1_1_1_data` (`tk`,k1,k2,k3,`ts`)
+     *   VALUES (2517541033, 'k1', 'k1.2', 'k1.2.1', 1343138009222)
+     *   ON DUPLICATE KEY UPDATE ts=VALUES(ts)', with params
+     */
+    val indexSql = "INSERT INTO `%s_index` (`ts`,`tk`,%s) VALUES (?,?,%s) ON DUPLICATE KEY UPDATE ts=VALUES(ts)".format(fullTableName, sqlKeys, sqlValues)
+
+    /* Generated SQL looks like:
+     *
+     *   INSERT INTO `table1_table1_1_table1_1_1_data` (k1,k2,k3,`ts`,`ec`,`d`)
+     *   VALUES ('k1', 'k1.2', 'k1.2.1', 1343138009222, 0, '...BLOB BYTES...')
      *   ON DUPLICATE KEY UPDATE d=VALUES(d)', with params
      */
-    val sql = "INSERT INTO `%s` (`ts`,`tk`,`ec`,%s,`d`) VALUES (?,?,?,%s,?) ON DUPLICATE KEY UPDATE d=VALUES(d)".format(fullTableName, sqlKeys, sqlValues)
+    val dataSql = "INSERT INTO `%s_data` (`ts`,`tk`,%s,`ec`,`d`) VALUES (?,?,%s,?,?) ON DUPLICATE KEY UPDATE d=VALUES(d)".format(fullTableName, sqlKeys, sqlValues)
 
-    var results: SqlResults = null
-    try {
-      optRecord match {
-        case Some(record) =>
-          // there is a value, we set it
-          val value = record.serializeValue(storage.valueSerializer)
-          this.tableMetricSet(table).time {
-            results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ Seq(record.encoding) ++ keysValue ++ Seq(value)): _*)
-          }
+    optRecord match {
+      case Some(record) =>
+        // there is a value, we set it
+        val value = record.serializeValue(storage.valueSerializer)
+        this.tableMetricSet(table).time {
+          storage.executeSql(connection, true, indexSql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue): _*)
+          storage.executeSql(connection, true, dataSql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue ++ Seq(record.encoding) ++ Seq(value)): _*)
+        }
+        this.tableMutationsCount(table).incrementAndGet()
+
+      case None =>
+        // no value, it's a delete
+        this.tableMetricDelete(table).time {
+          storage.executeSql(connection, true, indexSql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue): _*)
+          storage.executeSql(connection, true, dataSql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue ++ Seq(0) ++ Seq(null)): _*)
           this.tableMutationsCount(table).incrementAndGet()
 
-        case None =>
-          // no value, it's a delete
-          this.tableMetricDelete(table).time {
-            results = storage.executeSql(connection, true, sql, (Seq(timestamp.value) ++ Seq(token) ++ Seq(0) ++ keysValue ++ Seq(null)): _*)
-            this.tableMutationsCount(table).incrementAndGet()
+          // delete all rows from children tables
+          for (childTable <- table.allHierarchyTables) {
+            val childFullTableName = childTable.depthName("_")
+            val childSelectKeys = (for (i <- 1 to childTable.depth) yield "k%d".format(i)).mkString(",")
+            val parentWhereKeys = (for (i <- 1 to keysValue.length) yield "k%d = ?".format(i)).mkString(" AND ")
 
-            // delete all rows from children tables
-            for (childTable <- table.allHierarchyTables) {
-              val childFullTableName = childTable.depthName("_")
-              val childSelectKeys = (for (i <- 1 to childTable.depth) yield "k%d".format(i)).mkString(",")
-              val parentWhereKeys = (for (i <- 1 to keysValue.length) yield "k%d = ?".format(i)).mkString(" AND ")
+            this.tableMutationsCount(childTable).incrementAndGet()
 
-              this.tableMutationsCount(childTable).incrementAndGet()
-
-              /* Generated SQL looks like:
-              *
-              *     INSERT INTO `table1_table1_1`
-              *       SELECT 1343138009222 AS ts, tk, ec, k1,k2, NULL AS d
-              *       FROM `table1_table1_1`
-              *       WHERE tk = 2517541033 AND ts <= 1343138009222 AND k1 = 'k1'
-              *       GROUP BY tk, k1, k2
-              *     ON DUPLICATE KEY UPDATE d=VALUES(d)
-              */
-              val childSql = """
-                 INSERT INTO `%1$s`
-                  SELECT ? AS ts, tk, ec, %2$s, NULL AS d
-                  FROM `%1$s`
+            /* Generated SQL looks like:
+            *
+            *     INSERT INTO `table1_table1_1_data`
+            *       SELECT tk, k1, k2, 1343138009222 AS ts, 0 AS ec, NULL AS d
+            *       FROM `table1_table1_1_index`
+            *       WHERE tk = 2517541033 AND ts <= 1343138009222 AND k1 = 'k1'
+            *       GROUP BY tk, k1, k2
+            *     ON DUPLICATE KEY UPDATE d=VALUES(d)
+            */
+            val childDataSql = """
+                 INSERT INTO `%1$s_data`
+                  SELECT tk, %2$s, ? AS ts, 0 AS ec, NULL AS d
+                  FROM `%1$s_index`
                   WHERE tk = ? AND ts <= ? AND %3$s
                   GROUP BY tk, %2$s
                  ON DUPLICATE KEY UPDATE d=VALUES(d)
-                             """.format(childFullTableName, childSelectKeys, parentWhereKeys)
+                               """.format(childFullTableName, childSelectKeys, parentWhereKeys)
+            storage.executeSql(connection, true, childDataSql, (Seq(timestamp.value) ++ Seq(token) ++ Seq(timestamp.value) ++ keysValue): _*)
 
-              results = storage.executeSql(connection, true, childSql, (Seq(timestamp.value) ++ Seq(token) ++ Seq(timestamp.value) ++ keysValue): _*)
-            }
+
+            /* Generated SQL looks like:
+            *
+            *     INSERT INTO `table1_table1_1_index`
+            *       SELECT 1343138009222 AS ts, tk, k1, k2
+            *       FROM `table1_table1_1_index`
+            *       WHERE tk = 2517541033 AND ts <= 1343138009222 AND k1 = 'k1'
+            *       GROUP BY tk, k1, k2
+            *     ON DUPLICATE KEY UPDATE d=VALUES(d)
+            */
+            val childIndexSql = """
+                 INSERT INTO `%1$s_index`
+                  SELECT ? AS ts, tk, %2$s
+                  FROM `%1$s_index`
+                  WHERE tk = ? AND ts <= ? AND %3$s
+                  GROUP BY tk, %2$s
+                 ON DUPLICATE KEY UPDATE ts=VALUES(ts)
+                                """.format(childFullTableName, childSelectKeys, parentWhereKeys)
+            storage.executeSql(connection, true, childIndexSql, (Seq(timestamp.value) ++ Seq(token) ++ Seq(timestamp.value) ++ keysValue): _*)
           }
-      }
-
-
-    } finally {
-      if (results != null)
-        results.close()
+        }
     }
   }
 
@@ -175,30 +196,29 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     /* Generated SQL looks like:
      *
-     *   SELECT o.ts, o.tk, o.ec, o.d, o.k1
-     *   FROM `table1` AS o, (
+     *   SELECT i.max_ts, i.tk, o.ec, o.d, o.k1
+     *   FROM `table1_data` AS o, (
      *       SELECT i.tk, MAX(i.ts) AS max_ts, i.k1
-     *       FROM `table1` AS i
+     *       FROM `table1_index` AS i
      *       WHERE i.ts <= ? AND i.tk = ? AND i.k1 = ?
      *       GROUP BY i.tk, i.k1
      *       LIMIT 0,1000
      *   ) AS i
-     *   WHERE i.tk = o.tk
+     *   WHERE o.tk = i.tk
      *   AND i.k1 = o.k1
      *   AND o.ts = i.max_ts
      *   AND o.d IS NOT NULL
      */
     var sql = """
-        SELECT o.ts, o.tk, o.ec, o.d, %1$s
-        FROM `%2$s` AS o, (
+        SELECT i.max_ts, i.tk, o.ec, o.d, %1$s
+        FROM `%2$s_data` AS o, (
             SELECT i.tk, MAX(i.ts) AS max_ts, %3$s
-            FROM `%2$s` AS i
+            FROM `%2$s_index` AS i
             WHERE i.tk = ? AND %4$s AND i.ts <= ?
             GROUP BY i.tk, %3$s
             %5$s
         ) AS i
-        WHERE i.tk = o.tk
-        AND %6$s
+        WHERE o.tk = i.tk AND %6$s
         AND o.ts = i.max_ts
               """.format(outerProjKeys, fullTableName, innerProjKeys, innerWhereKeys, limitSql, outerWhereKeys)
 
@@ -236,51 +256,53 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
   def getTimeline(table: Table, timestamp: Timestamp, count: Int,
                   selectMode: TimelineSelectMode = TimelineSelectMode.FromTimestamp): Seq[MutationRecord] = {
-    val projKeys = (for (i <- 1 to table.depth) yield "c.k%1$d".format(i)).mkString(",")
-    val whereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = c.k%1$d".format(i)).mkString(" AND ")
-    val joinKeys = (for (i <- 1 to table.depth) yield "c.k%1$d = l.k%1$d".format(i)).mkString(" AND ")
+    val projKeys = (for (i <- 1 to table.depth) yield "ai.k%1$d".format(i)).mkString(",")
+    val whereKeys1 = (for (i <- 1 to table.depth) yield "ai.k%1$d = ad.k%1$d".format(i)).mkString(" AND ")
+    val whereKeys2 = (for (i <- 1 to table.depth) yield "ai.k%1$d = bi.k%1$d".format(i)).mkString(" AND ")
+    val whereKeys3 = (for (i <- 1 to table.depth) yield "ci.k%1$d = ai.k%1$d".format(i)).mkString(" AND ")
+    val whereKeys4 = (for (i <- 1 to table.depth) yield "bi.k%1$d = bd.k%1$d".format(i)).mkString(" AND ")
     val fullTableName = table.depthName("_")
 
     /* Generated SQL looks like:
      *
-     *   SELECT c.tk, c.ts, c.ec, c.d, l.ts, l.ec, l.d, c.k1, c.k2, c.k3, c.g3
-     *   FROM `table1_table1_1_table1_1_1` AS c
-     *   LEFT JOIN `table1_table1_1_table1_1_1` l
-     *      ON (c.tk = l.tk AND c.k1 = l.k1 AND c.k2 = l.k2
-     *          AND l.ts = ( SELECT MAX(i.ts)
-     *                       FROM `table1_table1_1_table1_1_1` AS i USE INDEX(revkey)
-     *                       WHERE i.tk = c.tk AND i.k1 = c.k1
-     *                       AND i.k2 = c.k2
-     *                       AND i.k3 = c.k3
-     *                       AND i.ts < c.ts
-     *                     )
-     *   )
-     *   WHERE c.ts >= 1343135748256
-     *   ORDER BY c.ts ASC
-     *   LIMIT 0, 100;
+     *     SELECT ai.tk, ai.ts, ad.ec, ad.d, bi.ts, bd.ec, bd.d, ai.k1
+     *       FROM `table1_index` AS ai
+     *       JOIN `table1_data` AS ad ON (ai.k1 = ad.k1 AND ai.tk = ad.tk AND ai.ts = ad.ts)
+     *       LEFT JOIN `table1_index` AS bi ON (ai.k1 = bi.k1 AND ai.tk = bi.tk AND bi.ts = (
+     *           SELECT MAX(ci.ts)
+     *           FROM `table1_index` AS ci
+     *           WHERE ci.tk = ai.tk AND ci.k1 = ai.k1
+     *           AND ci.ts < ai.ts
+     *       )) LEFT JOIN `table1_data` AS bd ON (bi.k1 = bd.k1 AND bi.tk = bd.tk AND bi.ts = bd.ts)
+     *     WHERE ai.ts >= 0
+     *     ORDER BY ai.ts ASC
+     *     LIMIT 0, 100;
      */
     var sql = """
-                SELECT c.tk, c.ts, c.ec, c.d, l.ts, l.ec, l.d, %1$s
-                FROM `%2$s` AS c
-                LEFT JOIN `%2$s` l ON (c.tk = l.tk AND %3$s AND l.ts = (
-                 SELECT MAX(i.ts)
-                 FROM `%2$s` AS i USE INDEX(revkey)
-                 WHERE i.tk = c.tk AND %4$s AND i.ts < c.ts))
-              """.format(projKeys, fullTableName, joinKeys, whereKeys)
+                SELECT ai.tk, ai.ts, ad.ec, ad.d, bi.ts, bd.ec, bd.d, %1$s
+                    FROM `%2$s_index` AS ai
+                    JOIN `%2$s_data` AS ad ON (%3$s AND ai.tk = ad.tk AND ai.ts = ad.ts)
+                    LEFT JOIN `%2$s_index` AS bi ON (%4$s AND ai.tk = bi.tk AND bi.ts = (
+                        SELECT MAX(ci.ts)
+                        FROM `%2$s_index` AS ci
+                        WHERE ci.tk = ai.tk AND %5$s
+                        AND ci.ts < ai.ts
+                    )) LEFT JOIN `%2$s_data` AS bd ON (%6$s AND bi.tk = bd.tk AND bi.ts = bd.ts)
+              """.format(projKeys, fullTableName, whereKeys1, whereKeys2, whereKeys3, whereKeys4)
 
     selectMode match {
       case TimelineSelectMode.FromTimestamp => {
         sql +=
           """
-            WHERE c.ts >= %1$d
-            ORDER BY c.ts ASC
+            WHERE ai.ts >= %1$d
+            ORDER BY ai.ts ASC
             LIMIT 0, %2$d;
           """.format(timestamp.value, count)
       }
       case TimelineSelectMode.AtTimestamp => {
         sql +=
           """
-            WHERE c.ts = %1$d;""".format(timestamp.value)
+            WHERE ai.ts = %1$d;""".format(timestamp.value)
       }
     }
 
@@ -312,8 +334,8 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     /*
      * Generated SQL looks like:
      *
-     *    SELECT t.tk, t.ec, COUNT(*) AS nb, GROUP_CONCAT(t.ts SEPARATOR ',') AS timestamps, t.k1,t.k2,t.k3
-     *    FROM `table1_table1_1_table1_1_1` AS t
+     *    SELECT t.tk, COUNT(*) AS nb, GROUP_CONCAT(t.ts SEPARATOR ',') AS timestamps, t.k1,t.k2,t.k3
+     *    FROM `table1_table1_1_table1_1_1_index` AS t
      *    WHERE t.tk >= 0 AND t.tk < 10000
      *    GROUP BY t.tk,t.k1,t.k2,t.k3
      *    HAVING COUNT(*) > 3
@@ -321,8 +343,8 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      */
     val sql =
       """
-         SELECT t.tk, t.ec, COUNT(*) AS nb, GROUP_CONCAT(t.ts SEPARATOR ',') AS timestamps, %1$s
-         FROM `%2$s` AS t
+         SELECT t.tk, COUNT(*) AS nb, GROUP_CONCAT(t.ts SEPARATOR ',') AS timestamps, %1$s
+         FROM `%2$s_index` AS t
          WHERE t.tk >= %3$d AND t.tk < %4$d
          GROUP BY t.tk, %1$s
          HAVING COUNT(*) > %5$d
@@ -359,27 +381,32 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     /*
      * Generated SQL looks like:
      *
-     *     DELETE FROM `table2_table2_1_table2_1_1`
-     *     WHERE tk = ?
-     *     AND k1 = ? AND k2 = ? AND k3 = ?
+     *     DELETE FROM `table2_table2_1_table2_1_1_index`
+     *     WHERE k1 = ? AND k2 = ? AND k3 = ?
      *     AND ts IN (3242343243243, 34243423434);
      */
-    val sql = """
-                DELETE FROM `%1$s`
-                WHERE tk = ?
-                AND %2$s
+    val indexSql = """
+                DELETE FROM `%1$s_index`
+                WHERE %2$s
                 AND ts IN (%3$s);
-              """.format(fullTableName, whereKeys, versions.mkString(","))
+                   """.format(fullTableName, whereKeys, versions.mkString(","))
 
-    var results: SqlResults = null
-    try {
-      this.tableMetricTruncateVersions(table).time {
-        results = storage.executeSql(connection, true, sql, (Seq(token) ++ keysValue): _*)
-      }
+    /*
+     * Generated SQL looks like:
+     *
+     *     DELETE FROM `table2_table2_1_table2_1_1_data`
+     *     WHERE k1 = ? AND k2 = ? AND k3 = ?
+     *     AND ts IN (3242343243243, 34243423434);
+     */
+    val dataSql = """
+                DELETE FROM `%1$s_data`
+                WHERE %2$s
+                AND ts IN (%3$s);
+                  """.format(fullTableName, whereKeys, versions.mkString(","))
 
-    } finally {
-      if (results != null)
-        results.close()
+    this.tableMetricTruncateVersions(table).time {
+      storage.executeSql(connection, true, indexSql, (keysValue): _*)
+      storage.executeSql(connection, true, dataSql, (keysValue): _*)
     }
   }
 
@@ -390,11 +417,11 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      * Generated SQL looks like:
      *
      *     SELECT COUNT(*) AS count
-     *     FROM `table2_1_1`
+     *     FROM `table2_1_1_index`
      */
     val sql = """
                 SELECT COUNT(*) AS count
-                FROM `%1$s`
+                FROM `%1$s_index`
               """.format(fullTableName)
 
     var count: Long = 0
@@ -464,42 +491,42 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     /* Generated SQL looks like:
      *
-     *   SELECT o.ts, o.tk, o.ec, o.d, o.k1
-     *   FROM `table1` AS o, (
+     *   SELECT i.max_ts, i.tk, o.ec, o.d, o.k1
+     *   FROM `table1_data` AS o, (
      *       SELECT i.tk, MAX(i.ts) AS max_ts, i.k1
-     *       FROM `table1` AS i
+     *       FROM `table1_index` AS i
      *       WHERE ((i.tk > 4025886270)) OR ((i.tk = 4025886270) AND (k1 > 'key15'))
      *       GROUP BY i.tk, i.k1
      *       ORDER BY i.tk, i.k1
+     *       LIMIT 0, 100
      *   ) AS i
-     *   WHERE i.tk = o.tk
+     *   WHERE o.tk = i.tk
      *   AND i.k1 = o.k1
      *   AND o.ts = i.max_ts
      *   AND o.d IS NOT NULL
-     *   ORDER BY o.tk, o.k1
-     *   LIMIT 0, 1000
+     *   ORDER BY i.tk, o.k1;
      */
     val sql = """
-        SELECT o.ts, o.tk, o.ec, o.d, %1$s
-        FROM `%2$s` AS o, (
+        SELECT i.max_ts, i.tk, o.ec, o.d, %1$s
+        FROM `%2$s_data` AS o, (
             SELECT i.tk, MAX(i.ts) AS max_ts, %3$s
-            FROM `%2$s` AS i
+            FROM `%2$s_index` AS i
             WHERE %4$s
             GROUP BY i.tk, %3$s
             ORDER BY i.tk, %3$s
+            LIMIT 0, %6$d
         ) AS i
-        WHERE i.tk = o.tk
+        WHERE o.tk = i.tk
         AND %5$s
         AND o.ts = i.max_ts
         AND o.d IS NOT NULL
-        ORDER BY o.tk, %1$s
-        LIMIT 0, ?
-              """.format(outerProjKeys, fullTableName, innerProjKeys, recordPosition._1, outerWhereKeys)
+        ORDER BY i.tk, %1$s
+              """.format(outerProjKeys, fullTableName, innerProjKeys, recordPosition._1, outerWhereKeys, count)
 
     var results: SqlResults = null
     try {
       this.tableMetricGetAllLatest(table).time {
-        results = storage.executeSql(connection, false, sql, (recordPosition._2 ++ Seq(count)): _*)
+        results = storage.executeSql(connection, false, sql, (recordPosition._2): _*)
       }
 
       new RecordIterator(storage, results, table)
@@ -630,17 +657,15 @@ class RecordIterator(storage: MysqlStorage, results: SqlResults, table: Table) e
 
 class VersionRecord {
   var token: Long = 0
-  var encoding: Byte = 0
   var versionsCount: Int = 0
   var versions = Seq[Timestamp]()
   var accessPath = new AccessPath()
 
   def load(resultset: ResultSet, depth: Int) {
     this.token = resultset.getLong(1)
-    this.encoding = resultset.getByte(2)
-    this.versionsCount = resultset.getInt(3)
-    this.versions = resultset.getString(4).split(",").map(vers => Timestamp(vers.toLong))
-    this.accessPath = new AccessPath(for (i <- 1 to depth) yield new AccessKey(resultset.getString(4 + i)))
+    this.versionsCount = resultset.getInt(2)
+    this.versions = resultset.getString(3).split(",").map(vers => Timestamp(vers.toLong))
+    this.accessPath = new AccessPath(for (i <- 1 to depth) yield new AccessKey(resultset.getString(3 + i)))
   }
 }
 
