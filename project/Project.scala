@@ -57,6 +57,8 @@ object MryBuild extends Build {
     .settings(StartScriptPlugin.startScriptForClassesSettings: _*)
     .settings(parallelExecution in IntegrationTest := false)
 
+  import sbtprotobuf.{ProtobufPlugin => PB}
+
   lazy val proto = Project(
     id = "mry-proto",
     base = file("mry-core"),
