@@ -10,6 +10,7 @@ import com.wajam.scn.Timestamp
 import com.wajam.nrv.tracing.Traced
 import java.util.concurrent.atomic.AtomicReference
 import com.wajam.nrv.data.InMessage
+import com.wajam.nrv.utils.{Promise, Future}
 
 
 /**
@@ -30,8 +31,15 @@ class Database(var serviceName: String = "database", val scn: ScnClient)
     context
   }
 
-  def execute(blockCreator: (Block with OperationApi) => Unit) {
-    this.execute(blockCreator, null)
+  def execute(blockCreator: (Block with OperationApi) => Unit): Future[Seq[Value]] = {
+    val p = Promise[Seq[Value]]
+    this.execute(blockCreator(_), (v, optExp) => {
+      optExp match {
+        case Some(e) => p.failure(e)
+        case None => p.success(v)
+      }
+    })
+    p.future
   }
 
   def execute(blockCreator: (Block with OperationApi) => Unit, ret: ((Seq[Value], Option[Exception]) => Unit)) {
@@ -98,7 +106,9 @@ class Database(var serviceName: String = "database", val scn: ScnClient)
 
   protected val remoteReadExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
     lastWriteTimestamp.get() match {
-      case Some(timestamp) => metricExecuteLocal.time {execute(timestamp, req)}
+      case Some(timestamp) => metricExecuteLocal.time {
+        execute(timestamp, req)
+      }
       case None => fetchTimestampAndExecute(req)
     }
   }, ActionMethod.GET))
