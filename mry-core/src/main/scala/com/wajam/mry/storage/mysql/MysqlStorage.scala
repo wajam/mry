@@ -96,6 +96,18 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   }
 
   @throws(classOf[SQLException])
+  def executeSqlUpdate(connection: Connection, sql: String, params: Any*) {
+    var results: SqlResults = null
+    try {
+      results = this.executeSql(connection, true, sql, params: _*)
+    } finally {
+      if (results != null)
+        results.close()
+    }
+  }
+
+
+  @throws(classOf[SQLException])
   def executeSql(connection: Connection, update: Boolean, sql: String, params: Any*): SqlResults = {
     val results = new SqlResults
 
@@ -122,7 +134,6 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
     } catch {
       case e: Exception => {
         error("Couldn't execute SQL query {}", sql, e)
-        results.close()
         throw e
       }
     }
@@ -166,17 +177,17 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       val keyList = (for (i <- 1 to table.depth) yield "k%d".format(i)).mkString(",")
 
       // create the index table
-      var indexSql = "CREATE TABLE `%s_index` ( ".format(fullTableName) +
+      var indexSql = "CREATE TABLE IF NOT EXISTS `%s_index` ( ".format(fullTableName) +
         "`ts` bigint(20) NOT NULL, " +
         "`tk` bigint(20) NOT NULL, "
       indexSql += (for (i <- 1 to table.depth) yield " k%d varchar(128) NOT NULL ".format(i)).mkString(",") + "," +
         " PRIMARY KEY (`ts`,`tk`," + keyList + "), " +
         " UNIQUE KEY `revkey` (`tk`," + keyList + ",`ts`) " +
         ") ENGINE=InnoDB  DEFAULT CHARSET=utf8;"
-      this.executeSql(connection, true, indexSql)
+      this.executeSqlUpdate(connection, indexSql)
 
       // create the data table
-      var dataSql = "CREATE TABLE `%s_data` ( ".format(fullTableName) +
+      var dataSql = "CREATE TABLE IF NOT EXISTS `%s_data` ( ".format(fullTableName) +
         "`tk` bigint(20) NOT NULL, "
       dataSql += (for (i <- 1 to table.depth) yield " k%d varchar(128) NOT NULL ".format(i)).mkString(",") + "," +
         "`ts` bigint(20) NOT NULL, " +
@@ -184,7 +195,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
         " `d` blob NULL, " +
         " PRIMARY KEY (`tk`," + keyList + ",`ts`) " +
         ") ENGINE=InnoDB  DEFAULT CHARSET=utf8;"
-      this.executeSql(connection, true, dataSql)
+      this.executeSqlUpdate(connection, dataSql)
 
     } catch {
       case e: Exception =>
@@ -201,8 +212,8 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
     val connection = this.getConnection
 
     try {
-      this.executeSql(connection, true, "DROP TABLE `%s_index`".format(tableName))
-      this.executeSql(connection, true, "DROP TABLE `%s_data`".format(tableName))
+      this.executeSqlUpdate(connection, "DROP TABLE `%s_index`".format(tableName))
+      this.executeSqlUpdate(connection, "DROP TABLE `%s_data`".format(tableName))
 
     } catch {
       case e: Exception =>
@@ -258,8 +269,9 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
               val lastCollection = tableLastCollection(table)
               if (mutationsDiff > 0 || lastCollection > 0) {
                 val toCollect = math.max(math.max(mutationsDiff, config.gcMinimumCollection), lastCollection) * config.gcCollectionFactor
-                log.info("Collecting {} from table {}", toCollect, table.name)
+                log.debug("Collecting {} from table {}", toCollect, table.name)
                 val collected = collect(table, toCollect.toInt)
+                log.debug("Collected {} from table {}", collected, table.name)
                 tableLastCollection += (table -> collected)
               }
             })
