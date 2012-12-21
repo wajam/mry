@@ -269,8 +269,9 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
               val lastCollection = tableLastCollection(table)
               if (mutationsDiff > 0 || lastCollection > 0) {
                 val toCollect = math.max(math.max(mutationsDiff, config.gcMinimumCollection), lastCollection) * config.gcCollectionFactor
-                log.info("Collecting {} from table {}", toCollect, table.name)
+                log.debug("Collecting {} from table {}", toCollect, table.name)
                 val collected = collect(table, toCollect.toInt)
+                log.debug("Collected {} from table {}", collected, table.name)
                 tableLastCollection += (table -> collected)
               }
             })
