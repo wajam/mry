@@ -382,12 +382,12 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      * Generated SQL looks like:
      *
      *     DELETE FROM `table2_table2_1_table2_1_1_index`
-     *     WHERE k1 = ? AND k2 = ? AND k3 = ?
+     *     WHERE tk = ? AND k1 = ? AND k2 = ? AND k3 = ?
      *     AND ts IN (3242343243243, 34243423434);
      */
     val indexSql = """
                 DELETE FROM `%1$s_index`
-                WHERE %2$s
+                WHERE tk = ? AND %2$s
                 AND ts IN (%3$s);
                    """.format(fullTableName, whereKeys, versions.mkString(","))
 
@@ -395,18 +395,18 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      * Generated SQL looks like:
      *
      *     DELETE FROM `table2_table2_1_table2_1_1_data`
-     *     WHERE k1 = ? AND k2 = ? AND k3 = ?
+     *     WHERE tk = ? AND k1 = ? AND k2 = ? AND k3 = ?
      *     AND ts IN (3242343243243, 34243423434);
      */
     val dataSql = """
                 DELETE FROM `%1$s_data`
-                WHERE %2$s
+                WHERE tk = ? AND %2$s
                 AND ts IN (%3$s);
                   """.format(fullTableName, whereKeys, versions.mkString(","))
 
     this.tableMetricTruncateVersions(table).time {
-      storage.executeSql(connection, true, indexSql, (keysValue): _*)
-      storage.executeSql(connection, true, dataSql, (keysValue): _*)
+      storage.executeSql(connection, true, indexSql, (Seq(token) ++ keysValue): _*)
+      storage.executeSql(connection, true, dataSql, (Seq(token) ++ keysValue): _*)
     }
   }
 
