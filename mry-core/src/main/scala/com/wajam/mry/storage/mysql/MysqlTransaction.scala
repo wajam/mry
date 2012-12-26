@@ -405,8 +405,8 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
                   """.format(fullTableName, whereKeys, versions.mkString(","))
 
     this.tableMetricTruncateVersions(table).time {
-    storage.executeSqlUpdate(connection, indexSql, (Seq(token) ++ keysValue): _*)
-    storage.executeSqlUpdate(connection, dataSql, (Seq(token) ++ keysValue): _*)
+      storage.executeSqlUpdate(connection, indexSql, (Seq(token) ++ keysValue): _*)
+      storage.executeSqlUpdate(connection, dataSql, (Seq(token) ++ keysValue): _*)
     }
   }
 
