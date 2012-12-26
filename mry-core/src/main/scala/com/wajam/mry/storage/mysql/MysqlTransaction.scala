@@ -112,16 +112,16 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         // there is a value, we set it
         val value = record.serializeValue(storage.valueSerializer)
         this.tableMetricSet(table).time {
-          storage.executeSql(connection, true, indexSql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue): _*)
-          storage.executeSql(connection, true, dataSql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue ++ Seq(record.encoding) ++ Seq(value)): _*)
+          storage.executeSqlUpdate(connection, indexSql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue): _*)
+          storage.executeSqlUpdate(connection, dataSql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue ++ Seq(record.encoding) ++ Seq(value)): _*)
         }
         this.tableMutationsCount(table).incrementAndGet()
 
       case None =>
         // no value, it's a delete
         this.tableMetricDelete(table).time {
-          storage.executeSql(connection, true, indexSql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue): _*)
-          storage.executeSql(connection, true, dataSql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue ++ Seq(0) ++ Seq(null)): _*)
+          storage.executeSqlUpdate(connection, indexSql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue): _*)
+          storage.executeSqlUpdate(connection, dataSql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue ++ Seq(0) ++ Seq(null)): _*)
           this.tableMutationsCount(table).incrementAndGet()
 
           // delete all rows from children tables
@@ -149,7 +149,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
                   GROUP BY tk, %2$s
                  ON DUPLICATE KEY UPDATE d=VALUES(d)
                                """.format(childFullTableName, childSelectKeys, parentWhereKeys)
-            storage.executeSql(connection, true, childDataSql, (Seq(timestamp.value) ++ Seq(token) ++ Seq(timestamp.value) ++ keysValue): _*)
+            storage.executeSqlUpdate(connection, childDataSql, (Seq(timestamp.value) ++ Seq(token) ++ Seq(timestamp.value) ++ keysValue): _*)
 
 
             /* Generated SQL looks like:
@@ -169,7 +169,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
                   GROUP BY tk, %2$s
                  ON DUPLICATE KEY UPDATE ts=VALUES(ts)
                                 """.format(childFullTableName, childSelectKeys, parentWhereKeys)
-            storage.executeSql(connection, true, childIndexSql, (Seq(timestamp.value) ++ Seq(token) ++ Seq(timestamp.value) ++ keysValue): _*)
+            storage.executeSqlUpdate(connection, childIndexSql, (Seq(timestamp.value) ++ Seq(token) ++ Seq(timestamp.value) ++ keysValue): _*)
           }
         }
     }
@@ -405,8 +405,8 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
                   """.format(fullTableName, whereKeys, versions.mkString(","))
 
     this.tableMetricTruncateVersions(table).time {
-      storage.executeSql(connection, true, indexSql, (Seq(token) ++ keysValue): _*)
-      storage.executeSql(connection, true, dataSql, (Seq(token) ++ keysValue): _*)
+    storage.executeSqlUpdate(connection, indexSql, (Seq(token) ++ keysValue): _*)
+    storage.executeSqlUpdate(connection, dataSql, (Seq(token) ++ keysValue): _*)
     }
   }
 
