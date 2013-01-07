@@ -12,7 +12,7 @@ class TestTransaction extends FunSuite {
   val storage = new MemoryStorage("memory")
 
   test("token") {
-    var context = new ExecutionContext(Map("memory" -> storage), Some(Timestamp.now))
+    var context = new ExecutionContext(Map("memory" -> storage), Some(Timestamp(0)))
     context.dryMode = true
 
     new Transaction(b => {

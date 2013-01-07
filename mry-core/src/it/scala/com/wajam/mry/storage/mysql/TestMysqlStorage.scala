@@ -10,6 +10,7 @@ import util.Random
 import com.wajam.scn.Timestamp
 import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.mry.storage.mysql.TimelineSelectMode.AtTimestamp
+import com.wajam.scn.storage.ScnTimestamp
 
 /**
  * Test MySQL storage
@@ -255,17 +256,17 @@ class TestMysqlStorage extends TestMysqlBase {
     val transac = new MysqlTransaction(mysqlStorage, None)
     val initRec = new Record(Map("test" -> 1234))
     val path = new AccessPath(Seq(new AccessKey("test1")))
-    transac.set(table1, 1, Timestamp.now, path, Some(initRec))
+    transac.set(table1, 1, createNowTimestamp(), path, Some(initRec))
 
-    val rec1 = transac.get(table1, 1, Timestamp.now, path)
+    val rec1 = transac.get(table1, 1, createNowTimestamp(), path)
     assert(rec1.get.value.asInstanceOf[MapValue]("test").equalsValue(1234))
 
-    transac.set(table1, 1, Timestamp.now, path, None)
+    transac.set(table1, 1, createNowTimestamp(), path, None)
 
-    val rec2 = transac.get(table1, 1, Timestamp.now, path)
+    val rec2 = transac.get(table1, 1, createNowTimestamp(), path)
     assert(rec2.isEmpty)
 
-    val rec3 = transac.get(table1, 1, Timestamp.now, path, includeDeleted = true)
+    val rec3 = transac.get(table1, 1, createNowTimestamp(), path, includeDeleted = true)
     assert(rec3.isDefined)
     assert(rec3.get.value.isNull)
 
@@ -319,7 +320,6 @@ class TestMysqlStorage extends TestMysqlBase {
   }
 
   test("operations should be kept in a history") {
-    val fromTimestamp = Timestamp.now
     exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
