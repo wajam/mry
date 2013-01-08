@@ -3,8 +3,8 @@ package com.wajam.mry.storage.mysql
 import com.wajam.mry.execution._
 import com.wajam.mry.storage.Storage
 import org.scalatest.{BeforeAndAfterEach, FunSuite}
-import com.wajam.scn.Timestamp
 import com.wajam.scn.storage.ScnTimestamp
+import com.wajam.nrv.utils.timestamp.Timestamp
 
 
 abstract class TestMysqlBase extends FunSuite with BeforeAndAfterEach {

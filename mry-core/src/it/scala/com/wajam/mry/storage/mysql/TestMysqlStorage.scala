@@ -7,10 +7,10 @@ import com.wajam.mry.execution._
 import com.wajam.mry.storage.StorageException
 import collection.mutable
 import util.Random
-import com.wajam.scn.Timestamp
 import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.mry.storage.mysql.TimelineSelectMode.AtTimestamp
 import com.wajam.scn.storage.ScnTimestamp
+import com.wajam.nrv.utils.timestamp.Timestamp
 
 /**
  * Test MySQL storage

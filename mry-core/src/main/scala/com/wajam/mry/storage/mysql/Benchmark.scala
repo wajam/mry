@@ -113,7 +113,7 @@ object Benchmark extends App with Instrumented {
     cluster.registerService(scn)
     scn.addMember(0, cluster.localNode)
 
-    val db = new Database(scn = scnClient)
+    val db = new Database(timestampGenerator = scnClient)
     db.applySupport(switchboard = Some(new Switchboard("mry", 10, 50)))
     cluster.registerService(db)
     db.addMember(0, cluster.localNode)
@@ -146,7 +146,7 @@ object Benchmark extends App with Instrumented {
 
 
     // TODO: implement distributed testing
-    new Database(scn = null)
+    new Database(timestampGenerator = null)
   }
 
   def getRandomGenerator(id: Int = 0) = new Object {

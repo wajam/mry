@@ -5,18 +5,17 @@ import storage.Storage
 import com.wajam.nrv.Logging
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service.{ActionMethod, Resolver, Action, Service}
-import com.wajam.scn.client.ScnClient
-import com.wajam.scn.Timestamp
 import com.wajam.nrv.tracing.Traced
 import java.util.concurrent.atomic.AtomicReference
 import com.wajam.nrv.data.InMessage
 import com.wajam.nrv.utils.{Promise, Future}
+import com.wajam.nrv.utils.timestamp.{TimestampGenerator, Timestamp}
 
 
 /**
  * MRY database
  */
-class Database(var serviceName: String = "database", val scn: ScnClient)
+class Database(var serviceName: String = "database", val timestampGenerator: TimestampGenerator)
   extends Service(serviceName) with Logging with Instrumented with Traced {
 
   var storages = Map[String, Storage]()
@@ -116,7 +115,7 @@ class Database(var serviceName: String = "database", val scn: ScnClient)
 
   private def fetchTimestampAndExecute(req: InMessage) {
     val timerContext = this.metricExecuteLocal.timerContext()
-    scn.fetchTimestamps(serviceName, (timestamps: Seq[Timestamp], optException) => {
+    timestampGenerator.fetchTimestamps(serviceName, (timestamps: Seq[Timestamp], optException) => {
       try {
         if (optException.isDefined) {
           info("Exception while fetching timestamps from SCN.", optException.get)

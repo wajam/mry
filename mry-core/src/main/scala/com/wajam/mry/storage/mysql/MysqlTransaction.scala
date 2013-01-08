@@ -6,9 +6,9 @@ import collection.mutable
 import com.wajam.mry.execution._
 import com.wajam.mry.api.ProtocolTranslator
 import com.yammer.metrics.scala.Instrumented
-import com.wajam.scn.Timestamp
 import com.wajam.nrv.tracing.Traced
 import java.util.concurrent.atomic.AtomicInteger
+import com.wajam.nrv.utils.timestamp.Timestamp
 
 /**
  * Mysql storage transaction

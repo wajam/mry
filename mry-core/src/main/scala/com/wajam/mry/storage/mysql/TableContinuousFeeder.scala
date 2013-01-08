@@ -3,7 +3,7 @@ package com.wajam.mry.storage.mysql
 import com.wajam.nrv.Logging
 import com.wajam.spnl.feeder.CachedDataFeeder
 import com.wajam.spnl.TaskContext
-import com.wajam.scn.Timestamp
+import com.wajam.nrv.utils.timestamp.Timestamp
 
 /**
  * Fetches all current defined (not null) data on a table.
