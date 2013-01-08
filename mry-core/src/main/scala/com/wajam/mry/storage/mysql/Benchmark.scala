@@ -13,6 +13,7 @@ import com.wajam.nrv.utils.Future
 import com.wajam.nrv.service.Switchboard
 import com.wajam.nrv.zookeeper.cluster.ZookeeperClusterManager
 import com.wajam.nrv.zookeeper.ZookeeperClient
+import com.wajam.nrv.consistency.ConsistencyMasterSlave
 
 /**
  * MySQL storage benchmarking tool
@@ -113,9 +114,11 @@ object Benchmark extends App with Instrumented {
     cluster.registerService(scn)
     scn.addMember(0, cluster.localNode)
 
-    val db = new Database(timestampGenerator = scnClient)
-    db.applySupport(switchboard = Some(new Switchboard("mry", 10, 50)))
+    val db = new Database()
+    val consistency: ConsistencyMasterSlave = new ConsistencyMasterSlave(scnClient)
+    db.applySupport(switchboard = Some(new Switchboard("mry", 10, 50)), consistency = Some(consistency))
     cluster.registerService(db)
+    consistency.bindService(db)
     db.addMember(0, cluster.localNode)
 
     val mysql = new MysqlStorage(MysqlStorageConfiguration("mysql", Conf.mysqlHost(), Conf.mysqlDatabase(),
@@ -146,7 +149,7 @@ object Benchmark extends App with Instrumented {
 
 
     // TODO: implement distributed testing
-    new Database(timestampGenerator = null)
+    new Database()
   }
 
   def getRandomGenerator(id: Int = 0) = new Object {
