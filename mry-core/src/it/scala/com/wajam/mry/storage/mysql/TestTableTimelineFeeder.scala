@@ -6,6 +6,7 @@ import com.wajam.spnl.TaskContext
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import com.wajam.nrv.utils.ControlableCurrentTime
+import com.wajam.nrv.service.TokenRange
 
 
 class TestTableTimelineFeeder extends TestMysqlBase {
@@ -39,7 +40,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
       }, commit = true, onTimestamp = createTimestamp(i + 4))
     })
 
-    val feeder = new TableTimelineFeeder(mysqlStorage, table1, batchSize)
+    val feeder = new TableTimelineFeeder(mysqlStorage, table1, List(TokenRange.All), batchSize)
     feeder.init(new TaskContext())
     val records = Iterator.continually({
       feeder.next()
@@ -72,7 +73,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
       }, commit = true, onTimestamp = createTimestamp(i + 4))
     })
 
-    val feeder = new TableTimelineFeeder(mysqlStorage, table1, batchSize)
+    val feeder = new TableTimelineFeeder(mysqlStorage, table1, List(TokenRange.All), batchSize)
     feeder.init(new TaskContext())
     val records = Iterator.continually({
       feeder.next()
@@ -80,6 +81,36 @@ class TestTableTimelineFeeder extends TestMysqlBase {
 
     records.size should be(20)
     records should be(records.sorted)
+  }
+
+  test("timeline feeder with ranges") {
+    val batchSize = 10
+
+    // Add records
+    Seq.range(0, 40).foreach(i => {
+      exec(t => {
+        val t1 = t.from("mysql").from("table1")
+        t1.set("key%d".format(i), Map("key" -> "val"))
+      }, commit = true, onTimestamp = createTimestamp(i + 4))
+    })
+
+    val ranges = List(TokenRange(1000000001L, 2000000000L), TokenRange(3000000001L, 4000000000L))
+
+    val feeder = new TableTimelineFeeder(mysqlStorage, table1, ranges, batchSize)
+    feeder.init(new TaskContext())
+    val records = Iterator.continually({
+      feeder.next()
+    }).take(100).flatten.toList
+
+    records.size should be < 40
+    val timestamps = records.map(_("new_timestamp").toString.toLong)
+    timestamps should be(timestamps.sorted)
+
+    // Verify all records tokens are from the expected ranges
+    records.foreach(record => {
+      val actualToken = record("token").toString.toLong
+      ranges.exists(_.contains(actualToken)) should be(true)
+    })
   }
 
   test("should update context on ack") {
@@ -92,7 +123,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
     })
 
     // Load all existing records
-    val feeder1 = new TableTimelineFeeder(mysqlStorage, table1)
+    val feeder1 = new TableTimelineFeeder(mysqlStorage, table1, List(TokenRange.All))
     feeder1.init(new TaskContext())
     var records1 = Iterator.continually({
       feeder1.next()
@@ -103,7 +134,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
     feeder1.ack(records1(0))
 
     // Create another feeder instance with a copy of the context, should resume from the first feeder context
-    val feeder2 = new TableTimelineFeeder(mysqlStorage, table1)
+    val feeder2 = new TableTimelineFeeder(mysqlStorage, table1, List(TokenRange.All))
     feeder2.init(feeder1.context.copy())
     var records2 = Iterator.continually({
       feeder2.next()

@@ -10,6 +10,7 @@ import util.Random
 import com.wajam.scn.Timestamp
 import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.mry.storage.mysql.TimelineSelectMode.AtTimestamp
+import com.wajam.nrv.service.TokenRange
 
 /**
  * Test MySQL storage
@@ -399,16 +400,27 @@ class TestMysqlStorage extends TestMysqlBase {
     limitedTable1Timeline.size should be(2)
 
     val table1TimelineAt10 = mysqlStorage.createStorageTransaction(context).getTimeline(table1, createTimestamp(10),
-      0, AtTimestamp)
+      0, selectMode = AtTimestamp)
     table1TimelineAt10.size should be(3)
 
     val table1TimelineAt100 = mysqlStorage.createStorageTransaction(context).getTimeline(table1, createTimestamp(100),
-      0, AtTimestamp)
+      0, selectMode = AtTimestamp)
     table1TimelineAt100.size should be(0)
 
     val table1TimelineAt200 = mysqlStorage.createStorageTransaction(context).getTimeline(table1, createTimestamp(200),
-      0, AtTimestamp)
+      0, selectMode = AtTimestamp)
     table1TimelineAt200.size should be(3)
+
+    val token1 = context.getToken("key1")
+    val token2 = context.getToken("key2")
+    val ranges = List(TokenRange(token1, token1), TokenRange(token2, token2))
+    val table1RangeTimeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1, createTimestamp(0), 100, ranges)
+    val allKeys = table1Timeline.map(_.accessPath.toString)
+    val expectedRangeKeys = table1Timeline.filter(r => token1 == r.token || token2 == r.token).map(_.accessPath.toString)
+    val actualRangeKeys = table1RangeTimeline.map(_.accessPath.toString)
+    allKeys.size should be > (expectedRangeKeys.size)
+    expectedRangeKeys.size should be >= 2
+    actualRangeKeys should be(expectedRangeKeys)
   }
 
   test("deleted parents should generate deletion history for children") {
@@ -648,6 +660,58 @@ class TestMysqlStorage extends TestMysqlBase {
     recordsKey should be(keys.map(_._2).slice(19, 39).toList)
   }
 
+  test("getAllLatest with token range") {
+    val context = new ExecutionContext(storages)
+    val keys = Seq.range(0, 40).map(i => {
+      val key = "key%d".format(i)
+      (context.getToken(key), key)
+    }).sorted
+
+    exec(t => {
+      val t1 = t.from("mysql").from("table1")
+      keys foreach (tup => t1.set(tup._2, Map(tup._2 -> tup._2)))
+    }, commit = true, onTimestamp = createTimestamp(0))
+
+    val ranges = List(TokenRange(0, 1333333333L), TokenRange(1333333334L, 2666666666L),
+      TokenRange(2666666667L, TokenRange.MaxToken))
+
+    var allRecordKeys: List[String] = List()
+    for (range <- ranges) {
+      val records = mysqlStorage.createStorageTransaction(context).getAllLatest(table1, 40, range).toList
+      val recordsKey = records.map(_.accessPath(0).key)
+      recordsKey should be(keys.filter(key => range.contains(key._1)).map(_._2).toList)
+      allRecordKeys ++= recordsKey
+    }
+
+    allRecordKeys.length should be(40)
+  }
+
+  test("getAllLatest with token range and fromToken") {
+    val context = new ExecutionContext(storages)
+    val keys = Seq.range(0, 40).map(i => {
+      val key = "key%d".format(i)
+      (context.getToken(key), key)
+    }).sorted
+
+    exec(t => {
+      val t1 = t.from("mysql").from("table1")
+      keys foreach (tup => t1.set(tup._2, Map(tup._2 -> tup._2)))
+    }, commit = true, onTimestamp = createTimestamp(0))
+
+    val ranges = List(TokenRange(0, 1333333333L), TokenRange(1333333334L, 2666666666L),
+      TokenRange(2666666667L, TokenRange.MaxToken))
+
+    for (range <- ranges) {
+      var records = mysqlStorage.createStorageTransaction(context).getAllLatest(table1, 40, range).toList
+      var recordsKey = records.map(_.accessPath(0).key)
+      recordsKey should be(keys.filter(key => range.contains(key._1)).map(_._2).toList)
+
+      val middleIndex = records.size / 2
+      records = mysqlStorage.createStorageTransaction(context).getAllLatest(table1, 40, range, Some(records(middleIndex))).toList
+      recordsKey = records.map(_.accessPath(0).key)
+      recordsKey should be(keys.filter(key => range.contains(key._1)).map(_._2).slice(middleIndex, 40).toList)
+    }
+  }
 
   test("calling limit on a multi-record value should offset and limit the number of records returned") {
     val keys = List.range(0, 40).map(i => {
