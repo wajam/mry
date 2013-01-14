@@ -47,6 +47,12 @@ object MryBuild extends Build {
     .settings(StartScriptPlugin.startScriptForClassesSettings: _*)
     .aggregate(core)
 
+  import sbtprotobuf.{ProtobufPlugin => PB}
+
+  val protobufSettings = PB.protobufSettings ++ Seq(
+    javaSource in PB.protobufConfig <<= (sourceDirectory in Compile)(_ / "java")
+  )
+
   lazy val core = Project("mry-core", file("mry-core"))
     .configs(IntegrationTest)
     .settings(defaultSettings: _*)
@@ -56,15 +62,6 @@ object MryBuild extends Build {
     .settings(testOptions in IntegrationTest := Seq(Tests.Filter(s => s.contains("Test"))))
     .settings(StartScriptPlugin.startScriptForClassesSettings: _*)
     .settings(parallelExecution in IntegrationTest := false)
-
-  import sbtprotobuf.{ProtobufPlugin => PB}
-
-  lazy val proto = Project(
-    id = "mry-proto",
-    base = file("mry-core"),
-    settings = defaultSettings ++ PB.protobufSettings ++ Seq(
-      javaSource in PB.protobufConfig <<= (sourceDirectory in Compile)(_ / "java")
-    )
-  ) configs (IntegrationTest)
+    .settings(protobufSettings: _*)
 }
 
