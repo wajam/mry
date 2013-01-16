@@ -5,14 +5,18 @@ import com.wajam.mry.execution.Implicits._
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import com.wajam.mry.execution.{NullValue, Transaction, ExecutionContext}
-import com.wajam.scn.Timestamp
+import com.wajam.nrv.utils.timestamp.Timestamp
 
 @RunWith(classOf[JUnitRunner])
 class TestMemory extends FunSuite {
   val storage = new MemoryStorage("memory")
 
+  def createNowTimestamp() = new Timestamp {
+    val value = System.currentTimeMillis() * 10000
+  }
+
   test("commited get set") {
-    var context = new ExecutionContext(Map("memory" -> storage), Some(Timestamp.now))
+    var context = new ExecutionContext(Map("memory" -> storage), Some(createNowTimestamp()))
     var t = new Transaction()
 
     var store = t.from("memory")
@@ -24,7 +28,7 @@ class TestMemory extends FunSuite {
     assert(context.hasToken("key1"))
 
     t = new Transaction()
-    context = new ExecutionContext(Map("memory" -> storage), Some(Timestamp.now))
+    context = new ExecutionContext(Map("memory" -> storage), Some(createNowTimestamp()))
     store = t.from("memory")
     v = store.get("key1")
     store.set("key2", "value2")
@@ -38,7 +42,7 @@ class TestMemory extends FunSuite {
 
   test("uncommited get set") {
     var t = new Transaction()
-    val context = new ExecutionContext(Map("memory" -> storage), Some(Timestamp.now))
+    val context = new ExecutionContext(Map("memory" -> storage), Some(createNowTimestamp()))
     val store = t.from("memory")
     store.set("key3", "value3")
     val v1 = store.get("key2")
@@ -49,7 +53,7 @@ class TestMemory extends FunSuite {
   }
 
   test("delete item shouldn't exist") {
-    var context = new ExecutionContext(Map("memory" -> storage), Some(Timestamp.now))
+    var context = new ExecutionContext(Map("memory" -> storage), Some(createNowTimestamp()))
     var t = new Transaction()
 
     var store = t.from("memory")
@@ -59,7 +63,7 @@ class TestMemory extends FunSuite {
     context.commit()
 
     t = new Transaction()
-    context = new ExecutionContext(Map("memory" -> storage), Some(Timestamp.now))
+    context = new ExecutionContext(Map("memory" -> storage), Some(createNowTimestamp()))
     store = t.from("memory")
     v = store.delete("key1")
     store.set("key2", "value2")
@@ -69,7 +73,7 @@ class TestMemory extends FunSuite {
     context.commit()
 
     t = new Transaction()
-    context = new ExecutionContext(Map("memory" -> storage), Some(Timestamp.now))
+    context = new ExecutionContext(Map("memory" -> storage), Some(createNowTimestamp()))
     store = t.from("memory")
     store.set("key4", "value4")
     store.delete("key4")
@@ -77,7 +81,7 @@ class TestMemory extends FunSuite {
     context.rollback()
 
     t = new Transaction()
-    context = new ExecutionContext(Map("memory" -> storage), Some(Timestamp.now))
+    context = new ExecutionContext(Map("memory" -> storage), Some(createNowTimestamp()))
     store = t.from("memory")
     var v1 = store.get("key1")
     var v2 = store.get("key2")
@@ -92,4 +96,5 @@ class TestMemory extends FunSuite {
     assert(v3.value.isInstanceOf[NullValue])
     assert(v4.value.isInstanceOf[NullValue])
   }
+
 }
