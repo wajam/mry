@@ -6,11 +6,12 @@ import com.wajam.spnl.TaskContext
 import com.wajam.mry.storage.mysql.TimelineSelectMode.{FromTimestamp, AtTimestamp}
 import com.wajam.nrv.utils.CurrentTime
 import com.wajam.nrv.utils.timestamp.Timestamp
+import com.wajam.nrv.service.TokenRange
 
 /**
  * Table mutation timeline task feeder
  */
-class TableTimelineFeeder(storage: MysqlStorage, table: Table, val batchSize: Int = 100)
+class TableTimelineFeeder(storage: MysqlStorage, table: Table, tokenRanges: List[TokenRange], val batchSize: Int = 100)
   extends CachedDataFeeder with CurrentTime with Logging {
   var context: TaskContext = null
 
@@ -42,13 +43,13 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table, val batchSize: In
     var transaction: MysqlTransaction = null
     try {
       transaction = storage.createStorageTransaction
-      var mutations = transaction.getTimeline(table, timestampCursor, batchSize, FromTimestamp)
+      var mutations = transaction.getTimeline(table, timestampCursor, batchSize, tokenRanges, FromTimestamp)
       lastSelectMode = FromTimestamp
 
       if (mutations.size > 1 && mutations.head.newTimestamp == mutations.last.newTimestamp) {
         // The whole batch has the same timestamp and has thus been inserted together in the same transaction.
         // Reload everything at that timestamp in case some records where drop by the batch size limit.
-        mutations = transaction.getTimeline(table, mutations.head.newTimestamp, 0, AtTimestamp)
+        mutations = transaction.getTimeline(table, mutations.head.newTimestamp, 0, tokenRanges, AtTimestamp)
         lastSelectMode = AtTimestamp
       } else {
         // Filter out already processed records

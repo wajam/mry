@@ -3,17 +3,18 @@ package com.wajam.mry.storage.mysql
 import com.wajam.nrv.Logging
 import com.wajam.spnl.feeder.CachedDataFeeder
 import com.wajam.spnl.TaskContext
-import com.wajam.nrv.utils.timestamp.Timestamp
+import com.wajam.nrv.service.TokenRange
 
 /**
  * Fetches all current defined (not null) data on a table.
  * When it finished, it loops over and starts again with the oldest current data.
  */
-class TableContinuousFeeder(storage: MysqlStorage, table: Table, rowsToFetch: Int = 1000)
+class TableContinuousFeeder(storage: MysqlStorage, table: Table, tokenRanges: Seq[TokenRange], rowsToFetch: Int = 1000)
   extends CachedDataFeeder with Logging {
 
   var context: TaskContext = null
   var lastRecord: Option[Record] = None
+  var currentRange: Option[TokenRange] = None
 
   def init(context: TaskContext) {
     //TODO add elements in context to make sure tests work
@@ -25,8 +26,18 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, rowsToFetch: In
     var transaction: MysqlTransaction = null
     try {
       val fromRecord = lastRecord
+      currentRange = lastRecord match {
+        case Some(record) => tokenRanges.find(_.contains(record.token))
+        case None => {
+          currentRange match {
+            case Some(range) => range.nextRange(tokenRanges)
+            case None => Some(tokenRanges.head)
+          }
+        }
+      }
+
       transaction = storage.createStorageTransaction
-      val recordsIterator = transaction.getAllLatest(table, rowsToFetch, lastRecord)
+      val recordsIterator = transaction.getAllLatest(table, rowsToFetch, currentRange.getOrElse(tokenRanges(0)), lastRecord)
 
       var records = Iterator.continually({
         if (recordsIterator.next()) {

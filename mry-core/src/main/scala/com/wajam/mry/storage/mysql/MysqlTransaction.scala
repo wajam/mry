@@ -9,6 +9,7 @@ import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.tracing.Traced
 import java.util.concurrent.atomic.AtomicInteger
 import com.wajam.nrv.utils.timestamp.Timestamp
+import com.wajam.nrv.service.TokenRange
 
 /**
  * Mysql storage transaction
@@ -254,13 +255,14 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     }
   }
 
-  def getTimeline(table: Table, timestamp: Timestamp, count: Int,
+  def getTimeline(table: Table, timestamp: Timestamp, count: Int, ranges: List[TokenRange] = List(TokenRange.All),
                   selectMode: TimelineSelectMode = TimelineSelectMode.FromTimestamp): Seq[MutationRecord] = {
     val projKeys = (for (i <- 1 to table.depth) yield "ai.k%1$d".format(i)).mkString(",")
     val whereKeys1 = (for (i <- 1 to table.depth) yield "ai.k%1$d = ad.k%1$d".format(i)).mkString(" AND ")
     val whereKeys2 = (for (i <- 1 to table.depth) yield "ai.k%1$d = bi.k%1$d".format(i)).mkString(" AND ")
     val whereKeys3 = (for (i <- 1 to table.depth) yield "ci.k%1$d = ai.k%1$d".format(i)).mkString(" AND ")
     val whereKeys4 = (for (i <- 1 to table.depth) yield "bi.k%1$d = bd.k%1$d".format(i)).mkString(" AND ")
+    val whereRanges = ranges.map(r => "(ai.tk >= %1$d AND ai.tk <= %2$d)".format(r.start, r.end)).mkString("(", "OR ", ")")
     val fullTableName = table.depthName("_")
 
     /* Generated SQL looks like:
@@ -274,7 +276,8 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *           WHERE ci.tk = ai.tk AND ci.k1 = ai.k1
      *           AND ci.ts < ai.ts
      *       )) LEFT JOIN `table1_data` AS bd ON (bi.k1 = bd.k1 AND bi.tk = bd.tk AND bi.ts = bd.ts)
-     *     WHERE ai.ts >= 0
+     *     WHERE ((ai.tk >= 0 AND ai.tk <= 89478485) OR (ai.tk >= 536870910 AND ai.tk <= 626349395))
+     *     AND ai.ts >= 0
      *     ORDER BY ai.ts ASC
      *     LIMIT 0, 100;
      */
@@ -288,13 +291,14 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
                         WHERE ci.tk = ai.tk AND %5$s
                         AND ci.ts < ai.ts
                     )) LEFT JOIN `%2$s_data` AS bd ON (%6$s AND bi.tk = bd.tk AND bi.ts = bd.ts)
-              """.format(projKeys, fullTableName, whereKeys1, whereKeys2, whereKeys3, whereKeys4)
+                WHERE %7$s
+              """.format(projKeys, fullTableName, whereKeys1, whereKeys2, whereKeys3, whereKeys4, whereRanges)
 
     selectMode match {
       case TimelineSelectMode.FromTimestamp => {
         sql +=
           """
-            WHERE ai.ts >= %1$d
+            AND ai.ts >= %1$d
             ORDER BY ai.ts ASC
             LIMIT 0, %2$d;
           """.format(timestamp.value, count)
@@ -302,7 +306,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
       case TimelineSelectMode.AtTimestamp => {
         sql +=
           """
-            WHERE ai.ts = %1$d;""".format(timestamp.value)
+            AND ai.ts = %1$d;""".format(timestamp.value)
       }
     }
 
@@ -468,7 +472,8 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     (ors.map(_._1).mkString("(", ") OR (", ")"), ors.flatMap(_._2))
   }
 
-  def getAllLatest(table: Table, count: Long, optFromRecord: Option[Record] = None): RecordIterator = {
+  def getAllLatest(table: Table, count: Long, range: TokenRange = TokenRange.All,
+                   optFromRecord: Option[Record] = None): RecordIterator = {
 
     val fullTableName = table.depthName("_")
     val outerProjKeys = (for (i <- 1 to table.depth) yield "o.k%1$d".format(i)).mkString(",")
@@ -479,13 +484,13 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
         try {
           val keys = Seq.range(0, fromRecord.accessPath.parts.size).map(i => "i.k%d".format(i + 1)).zip(fromRecord.accessPath.parts.map(_.key))
-          this.genWhereHigherEqualTuple((Seq(("i.tk", fromRecord.token)) ++ keys).toMap)
+          this.genWhereHigherEqualTuple((Seq(("i.tk", scala.math.max(range.start, fromRecord.token))) ++ keys).toMap)
         } catch {
           case e: Exception => e.printStackTrace()
           ("", Seq())
         }
 
-      case None => ("i.tk >= 0", Seq())
+      case None => ("i.tk >= %d".format(range.start), Seq())
     }
 
 
@@ -495,7 +500,8 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *   FROM `table1_data` AS o, (
      *       SELECT i.tk, MAX(i.ts) AS max_ts, i.k1
      *       FROM `table1_index` AS i
-     *       WHERE ((i.tk > 4025886270)) OR ((i.tk = 4025886270) AND (k1 > 'key15'))
+     *       WHERE (((i.tk > 4025886270)) OR ((i.tk = 4025886270) AND (k1 > 'key15')))
+     *       AND i.tk <= 4525886270
      *       GROUP BY i.tk, i.k1
      *       ORDER BY i.tk, i.k1
      *       LIMIT 0, 100
@@ -511,7 +517,8 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         FROM `%2$s_data` AS o, (
             SELECT i.tk, MAX(i.ts) AS max_ts, %3$s
             FROM `%2$s_index` AS i
-            WHERE %4$s
+            WHERE (%4$s)
+            AND i.tk <= %7$d
             GROUP BY i.tk, %3$s
             ORDER BY i.tk, %3$s
             LIMIT 0, %6$d
@@ -521,7 +528,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         AND o.ts = i.max_ts
         AND o.d IS NOT NULL
         ORDER BY i.tk, %1$s
-              """.format(outerProjKeys, fullTableName, innerProjKeys, recordPosition._1, outerWhereKeys, count)
+              """.format(outerProjKeys, fullTableName, innerProjKeys, recordPosition._1, outerWhereKeys, count, range.end)
 
     var results: SqlResults = null
     try {
