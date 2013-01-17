@@ -29,7 +29,7 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, tokenRanges: Se
         val record = new Record()
         record.token = data(Token).toString.toLong
         record.timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data(Timestamp).toString.toLong)
-        val keys = data(Keys).asInstanceOf[Seq[String]]
+        val keys = data(Keys).split(",")
         record.accessPath = new AccessPath(keys.map(new AccessKey(_)))
         Some(record)
       } catch {
@@ -100,7 +100,11 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, tokenRanges: Se
   }
 
   def ack(data: Map[String, Any]) {
-    context.data ++= (data - Value)
+    // Update context with the latest acknowledged record data (excluding its value)
+    context.data = (data - Value).map(entry => entry._1 match {
+      case Keys => (Keys, entry._2.asInstanceOf[Seq[String]].mkString(","))
+      case key => (key, entry._2.toString)
+    })
   }
 
   def kill() {}
