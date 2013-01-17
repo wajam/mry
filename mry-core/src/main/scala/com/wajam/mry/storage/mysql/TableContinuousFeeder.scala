@@ -3,7 +3,6 @@ package com.wajam.mry.storage.mysql
 import com.wajam.nrv.Logging
 import com.wajam.spnl.feeder.CachedDataFeeder
 import com.wajam.spnl.TaskContext
-import com.wajam.scn.Timestamp
 import com.wajam.nrv.service.TokenRange
 
 /**
@@ -13,6 +12,8 @@ import com.wajam.nrv.service.TokenRange
 class TableContinuousFeeder(storage: MysqlStorage, table: Table, tokenRanges: Seq[TokenRange], rowsToFetch: Int = 1000)
   extends CachedDataFeeder with Logging {
 
+  import TableContinuousFeeder._
+
   var context: TaskContext = null
   var lastRecord: Option[Record] = None
   var currentRange: Option[TokenRange] = None
@@ -20,6 +21,26 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, tokenRanges: Se
   def init(context: TaskContext) {
     //TODO add elements in context to make sure tests work
     this.context = context
+
+    val data = context.data
+    lastRecord = if (data.contains(Keys) && data.contains(Token) && data.contains(Timestamp))
+    {
+      try {
+        val record = new Record()
+        record.token = data(Token).toString.toLong
+        record.timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data(Timestamp).toString.toLong)
+        val keys = data(Keys).asInstanceOf[Seq[String]]
+        record.accessPath = new AccessPath(keys.map(new AccessKey(_)))
+        Some(record)
+      } catch {
+        case e: Exception => {
+          warn("Error creating Record for table {} from task context data {}: ", table.depthName("_"), data, e)
+          None
+        }
+      }
+    } else {
+      None
+    }
   }
 
   def loadMore() = {
@@ -61,9 +82,10 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, tokenRanges: Se
       }
 
       records.map(record => Map(
-        "keys" -> record.accessPath.keys,
-        "token" -> record.token.toString,
-        "value" -> record.value
+        Keys -> record.accessPath.keys,
+        Token -> record.token.toString,
+        Value -> record.value,
+        Timestamp -> record.timestamp
       )).toList
     } catch {
       case e: Exception => {
@@ -77,7 +99,16 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, tokenRanges: Se
     }
   }
 
-  def ack(data: Map[String, Any]) {}
+  def ack(data: Map[String, Any]) {
+    context.data ++= (data - Value)
+  }
 
   def kill() {}
+}
+
+object TableContinuousFeeder {
+  val Keys = "keys"
+  val Token = "token"
+  val Value = "value"
+  val Timestamp = "timestamp"
 }
