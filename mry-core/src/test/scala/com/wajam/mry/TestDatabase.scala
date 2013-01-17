@@ -17,6 +17,7 @@ import com.wajam.nrvext.scribe.ScribeTraceRecorder
 import java.util.UUID
 import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.nrv.zookeeper.cluster.ZookeeperTestingClusterDriver
+import com.wajam.nrv.consistency.ConsistencyMasterSlave
 
 @RunWith(classOf[JUnitRunner])
 class TestDatabase extends FunSuite with BeforeAndAfterAll {
@@ -34,10 +35,13 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
     scn.addMember(token, cluster.localNode)
 
     val scnClient = new ScnClient(scn, ScnClientConfig(100)).start()
+    val consistency = new ConsistencyMasterSlave(scnClient)
 
-    val db = new Database("mry", scnClient)
+    val db = new Database("mry")
     cluster.registerService(db)
     db.registerStorage(new MemoryStorage("memory"))
+    db.applySupport(consistency = Some(consistency))
+    consistency.bindService(db)
 
     db.addMember(token, cluster.localNode)
 

@@ -5,24 +5,19 @@ import storage.Storage
 import com.wajam.nrv.Logging
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service.{ActionMethod, Resolver, Action, Service}
-import com.wajam.scn.client.ScnClient
-import com.wajam.scn.Timestamp
 import com.wajam.nrv.tracing.Traced
-import java.util.concurrent.atomic.AtomicReference
 import com.wajam.nrv.data.InMessage
 import com.wajam.nrv.utils.{Promise, Future}
+import com.wajam.nrv.utils.timestamp.Timestamp
 
 
 /**
  * MRY database
  */
-class Database(var serviceName: String = "database", val scn: ScnClient)
+class Database(var serviceName: String = "database")
   extends Service(serviceName) with Logging with Instrumented with Traced {
 
   var storages = Map[String, Storage]()
-
-  private val metricExecuteLocal = tracedTimer("execute-local")
-  private val lastWriteTimestamp = new AtomicReference[Option[Timestamp]](None)
 
   def analyseTransaction(transaction: Transaction): ExecutionContext = {
     val context = new ExecutionContext(storages)
@@ -100,62 +95,18 @@ class Database(var serviceName: String = "database", val scn: ScnClient)
   def getStorage(name: String) = this.storages.get(name).get
 
   protected val remoteWriteExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
-    fetchTimestampAndExecute(req)
+    execute(req)
   }, ActionMethod.POST))
   remoteWriteExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
 
   protected val remoteReadExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
-    lastWriteTimestamp.get() match {
-      case Some(timestamp) => metricExecuteLocal.time {
-        execute(timestamp, req)
-      }
-      case None => fetchTimestampAndExecute(req)
-    }
+    execute(req)
   }, ActionMethod.GET))
   remoteReadExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
 
-  private def fetchTimestampAndExecute(req: InMessage) {
-    val timerContext = this.metricExecuteLocal.timerContext()
-    scn.fetchTimestamps(serviceName, (timestamps: Seq[Timestamp], optException) => {
-      try {
-        if (optException.isDefined) {
-          info("Exception while fetching timestamps from SCN.", optException.get)
-          throw optException.get
-        }
-        val timestamp = timestamps(0)
-        updateLastTimestamp(timestamp)
-        execute(timestamp, req)
-      } catch {
-        case e: Exception => req.replyWithError(e)
-      } finally {
-        timerContext.stop()
-      }
-    }, 1, req.token)
-  }
-
-  /**
-   * Update last timestamp only if greater than the currently saved timestamp. SCN should not give non increasing
-   * timestamps, but concurrent execution could be executed in a different order. Since we need to be certain that
-   * the last timestamp is effectively the last fetched timestamp, this method must try to set the value as long as
-   * either the new value was atomically set or is obsolete.
-   */
-  private def updateLastTimestamp(timestamp: Timestamp) {
-    var updateSuccessful = false
-    do {
-      val savedTimestamp = lastWriteTimestamp.get()
-      updateSuccessful = savedTimestamp match {
-        case Some(prevTimestamp) => if (timestamp > prevTimestamp) {
-          lastWriteTimestamp.compareAndSet(savedTimestamp, Some(timestamp))
-        } else {
-          true //the timestamp is less than the last timestamp so our value is obsolete
-        }
-        case None => lastWriteTimestamp.compareAndSet(savedTimestamp, Some(timestamp))
-      }
-    } while (!updateSuccessful)
-  }
-
-  private def execute(timestamp: Timestamp, req: InMessage) {
+  private def execute(req: InMessage) {
     var values: Seq[Value] = null
+    val timestamp: Timestamp = req.metadata("timestamp").asInstanceOf[Timestamp]
     val context = new ExecutionContext(storages, Some(timestamp))
     context.cluster = Database.this.cluster
 

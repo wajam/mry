@@ -5,14 +5,14 @@ import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 import com.wajam.mry.storage.MemoryStorage
 import com.wajam.mry.execution.Implicits._
-import com.wajam.scn.Timestamp
+import com.wajam.nrv.utils.timestamp.Timestamp
 
 @RunWith(classOf[JUnitRunner])
 class TestTransaction extends FunSuite {
   val storage = new MemoryStorage("memory")
 
   test("token") {
-    var context = new ExecutionContext(Map("memory" -> storage), Some(Timestamp.now))
+    var context = new ExecutionContext(Map("memory" -> storage), Some(Timestamp(0)))
     context.dryMode = true
 
     new Transaction(b => {

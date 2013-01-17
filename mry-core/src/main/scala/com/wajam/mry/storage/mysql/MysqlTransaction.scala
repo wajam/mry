@@ -6,9 +6,9 @@ import collection.mutable
 import com.wajam.mry.execution._
 import com.wajam.mry.api.ProtocolTranslator
 import com.yammer.metrics.scala.Instrumented
-import com.wajam.scn.Timestamp
 import com.wajam.nrv.tracing.Traced
 import java.util.concurrent.atomic.AtomicInteger
+import com.wajam.nrv.utils.timestamp.Timestamp
 import com.wajam.nrv.service.TokenRange
 
 /**
@@ -277,7 +277,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *           AND ci.ts < ai.ts
      *       )) LEFT JOIN `table1_data` AS bd ON (bi.k1 = bd.k1 AND bi.tk = bd.tk AND bi.ts = bd.ts)
      *     WHERE ((ai.tk >= 0 AND ai.tk <= 89478485) OR (ai.tk >= 536870910 AND ai.tk <= 626349395))
-    **     AND ai.ts >= 0
+     *     AND ai.ts >= 0
      *     ORDER BY ai.ts ASC
      *     LIMIT 0, 100;
      */
