@@ -3,7 +3,7 @@ package com.wajam.mry.storage.mysql
 import com.wajam.mry.execution._
 import com.wajam.mry.storage.Storage
 import org.scalatest.{BeforeAndAfterEach, FunSuite}
-import com.wajam.scn.Timestamp
+import com.wajam.nrv.utils.timestamp.Timestamp
 
 
 abstract class TestMysqlBase extends FunSuite with BeforeAndAfterEach {
@@ -38,7 +38,7 @@ abstract class TestMysqlBase extends FunSuite with BeforeAndAfterEach {
     mysqlStorage.stop()
   }
 
-  def exec(cb: (Transaction => Unit), commit: Boolean = true, onTimestamp: Timestamp = Timestamp.now): Seq[Value] = {
+  def exec(cb: (Transaction => Unit), commit: Boolean = true, onTimestamp: Timestamp = createNowTimestamp()): Seq[Value] = {
     val context = new ExecutionContext(storages, Some(onTimestamp))
 
     try {
@@ -56,7 +56,9 @@ abstract class TestMysqlBase extends FunSuite with BeforeAndAfterEach {
   }
 
   def createTimestamp(time: Long) = new Timestamp {
-    def value = time
+    val value = time
   }
+
+  def createNowTimestamp() = createTimestamp(System.currentTimeMillis() * 10000)
 
 }

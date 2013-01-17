@@ -3,9 +3,9 @@ package com.wajam.mry.storage.mysql
 import com.wajam.nrv.Logging
 import com.wajam.spnl.feeder.CachedDataFeeder
 import com.wajam.spnl.TaskContext
-import com.wajam.scn.Timestamp
 import com.wajam.mry.storage.mysql.TimelineSelectMode.{FromTimestamp, AtTimestamp}
 import com.wajam.nrv.utils.CurrentTime
+import com.wajam.nrv.utils.timestamp.Timestamp
 import com.wajam.nrv.service.TokenRange
 
 /**
