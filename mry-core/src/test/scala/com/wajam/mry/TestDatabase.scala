@@ -13,11 +13,11 @@ import com.wajam.scn.client.{ScnClientConfig, ScnClient}
 import com.wajam.scn.{ScnConfig, Scn}
 import com.wajam.scn.storage.StorageType
 import com.wajam.nrv.tracing.Tracer
-import com.wajam.nrvext.scribe.ScribeTraceRecorder
 import java.util.UUID
 import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.nrv.zookeeper.cluster.ZookeeperTestingClusterDriver
 import com.wajam.nrv.consistency.ConsistencyMasterSlave
+import com.wajam.nrv.scribe.ScribeTraceRecorder
 
 @RunWith(classOf[JUnitRunner])
 class TestDatabase extends FunSuite with BeforeAndAfterAll {
