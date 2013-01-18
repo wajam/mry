@@ -50,7 +50,7 @@ class TestTableContinuousFeeder extends TestMysqlBase {
       }, commit = true, onTimestamp = createTimestamp(i))
     }
 
-    // Should load records from context data
+    // Should load records starting from context data record
     val feeder = new TableContinuousFeeder(mysqlStorage, table1, List(TokenRange.All))
     val feederContext = new TaskContext()
     feederContext.data += (Token -> keys(5)._1)
