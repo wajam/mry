@@ -146,7 +146,9 @@ class TestTableContinuousFeeder extends TestMysqlBase {
 
     // Create another feeder instance with a copy of the context, should resume from the previous feeder context
     val feeder2 = new TableContinuousFeeder(mysqlStorage, table1_1, List(TokenRange.All))
-    feeder2.init(feeder1.context.copy())
+    val context2 = new TaskContext()
+    context2.updateFromJson(feeder1.context.toJson)
+    feeder2.init(context2)
     var records2 = Iterator.continually({
       feeder2.next()
     }).take(10).flatten.toList
