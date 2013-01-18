@@ -53,9 +53,9 @@ class TestTableContinuousFeeder extends TestMysqlBase {
     // Should load records from context data
     val feeder = new TableContinuousFeeder(mysqlStorage, table1, List(TokenRange.All))
     val feederContext = new TaskContext()
-    feederContext.data += (Token -> keys(5)._1.toString)
-    feederContext.data += (Keys -> keys(5)._2.toString)
-    feederContext.data += (Timestamp -> createTimestamp(5).toString)
+    feederContext.data += (Token -> keys(5)._1)
+    feederContext.data += (Keys -> Seq(keys(5)._2))
+    feederContext.data += (Timestamp -> createTimestamp(5))
     feeder.init(feederContext)
     val records = Iterator.continually({
       feeder.next()
@@ -81,8 +81,8 @@ class TestTableContinuousFeeder extends TestMysqlBase {
     // Should load records from start
     val feeder = new TableContinuousFeeder(mysqlStorage, table1, List(TokenRange.All))
     val feederContext = new TaskContext()
-    feederContext.data += (Token -> keys(5)._1.toString)
-    feederContext.data += (Keys -> keys(5)._2.toString)
+    feederContext.data += (Token -> keys(5))
+    feederContext.data += (Keys -> Seq(keys(5)._2))
     feederContext.data += (Timestamp -> "abc") // Invalid timestamp
     feeder.init(feederContext)
     val records = Iterator.continually({

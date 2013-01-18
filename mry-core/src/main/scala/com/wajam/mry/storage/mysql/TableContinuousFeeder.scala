@@ -19,7 +19,6 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, tokenRanges: Se
   var currentRange: Option[TokenRange] = None
 
   def init(context: TaskContext) {
-    //TODO add elements in context to make sure tests work
     this.context = context
 
     val data = context.data
@@ -29,7 +28,7 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, tokenRanges: Se
         val record = new Record()
         record.token = data(Token).toString.toLong
         record.timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data(Timestamp).toString.toLong)
-        val keys = data(Keys).split(",")
+        val keys = data(Keys).asInstanceOf[Seq[String]]
         record.accessPath = new AccessPath(keys.map(new AccessKey(_)))
         Some(record)
       } catch {
@@ -102,7 +101,7 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, tokenRanges: Se
   def ack(data: Map[String, Any]) {
     // Update context with the latest acknowledged record data (excluding its value)
     context.data = (data - Value).map(entry => entry._1 match {
-      case Keys => (Keys, entry._2.asInstanceOf[Seq[String]].mkString(","))
+      case Keys => (Keys, entry._2.asInstanceOf[Seq[String]])
       case key => (key, entry._2.toString)
     })
   }
