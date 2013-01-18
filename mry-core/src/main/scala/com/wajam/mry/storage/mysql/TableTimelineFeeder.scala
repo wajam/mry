@@ -36,7 +36,7 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table, tokenRanges: List
         else ts
       }
       case None => {
-        Timestamp(context.data.get("from_timestamp").getOrElse("0").toLong)
+        Timestamp(context.data.get("from_timestamp").getOrElse("0").toString.toLong)
       }
     }
 
