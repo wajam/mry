@@ -17,6 +17,7 @@ import java.util.concurrent.{TimeUnit, ScheduledThreadPoolExecutor}
 class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean = true)
   extends Storage(config.name) with Logging with Value with Instrumented {
   var model: Model = _
+  var transactionMetrics: MysqlTransaction.Metrics = _
   var tablesMutationsCount = Map[Table, AtomicInteger]()
   val valueSerializer = new ProtobufTranslator
 
@@ -29,9 +30,9 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   datasource.setMaxPoolSize(config.maxPoolSize)
   datasource.setNumHelperThreads(config.numhelperThread)
 
-  def createStorageTransaction(context: ExecutionContext) = new MysqlTransaction(this, Some(context))
+  def createStorageTransaction(context: ExecutionContext) = new MysqlTransaction(this, Some(context), transactionMetrics)
 
-  def createStorageTransaction = new MysqlTransaction(this, None)
+  def createStorageTransaction = new MysqlTransaction(this, None, transactionMetrics)
 
   def closeStorageTransaction(trx: MysqlTransaction) {
     model.allHierarchyTables.map(table => {
@@ -71,6 +72,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       }
     }
 
+    transactionMetrics = new MysqlTransaction.Metrics(this)
     tablesMutationsCount = allTables.map(table => (table, new AtomicInteger(0))).toMap
   }
 

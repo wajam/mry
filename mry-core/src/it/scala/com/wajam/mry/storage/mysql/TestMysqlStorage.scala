@@ -252,7 +252,7 @@ class TestMysqlStorage extends TestMysqlBase {
   }
 
   test("deletion should be a tombstone record") {
-    val transac = new MysqlTransaction(mysqlStorage, None)
+    val transac = new MysqlTransaction(mysqlStorage, None, new MysqlTransaction.Metrics(mysqlStorage))
     val initRec = new Record(Map("test" -> 1234))
     val path = new AccessPath(Seq(new AccessKey("test1")))
     transac.set(table1, 1, createNowTimestamp(), path, Some(initRec))

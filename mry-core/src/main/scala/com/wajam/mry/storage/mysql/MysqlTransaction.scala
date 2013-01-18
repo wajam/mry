@@ -14,21 +14,11 @@ import com.wajam.nrv.service.TokenRange
 /**
  * Mysql storage transaction
  */
-class MysqlTransaction(private val storage: MysqlStorage, private val context: Option[ExecutionContext]) extends StorageTransaction with Instrumented with Traced {
-  private val tableMetricTimeline = generateTablesTimers("mysql-timeline")
-  private val tableMetricGetAllLatest = generateTablesTimers("mysql-timeline")
-  private val tableMetricTopMostVersions = generateTablesTimers("mysql-topmosversions")
-  private val tableMetricSet = generateTablesTimers("mysql-set")
-  private val tableMetricGet = generateTablesTimers("mysql-get")
-  private val tableMetricDelete = generateTablesTimers("mysql-delete")
-  private val metricCommit = tracedTimer("mysql-commit")
-  private val metricRollback = tracedTimer("mysql-rollback")
-  private val tableMetricTruncateVersions = generateTablesTimers("mysql-truncateversions")
-  private val tableMetricSize = generateTablesTimers("mysql-size")
+class MysqlTransaction(private val storage: MysqlStorage, private val context: Option[ExecutionContext],
+                       private val metrics: MysqlTransaction.Metrics) extends StorageTransaction {
 
   private[mry] val tableMutationsCount = storage.model.allHierarchyTables.map(table => (table, new AtomicInteger(0))).toMap
   private var lazilyReadValues = List[Value]()
-
 
   val connection = storage.getConnection
   try {
@@ -42,12 +32,9 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     }
   }
 
-  private def generateTablesTimers(timerName: String) = storage.model.allHierarchyTables.map(table =>
-    (table, tracedTimer(timerName, table.uniqueName))).toMap
-
   def rollback() {
     if (this.connection != null) {
-      this.metricRollback.time {
+      metrics.metricRollback.time {
         try {
           this.connection.rollback()
         } finally {
@@ -70,7 +57,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
   def commit() {
     if (this.connection != null) {
-      this.metricCommit.time {
+      metrics.metricCommit.time {
         try {
           this.connection.commit()
         } finally {
@@ -112,7 +99,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
       case Some(record) =>
         // there is a value, we set it
         val value = record.serializeValue(storage.valueSerializer)
-        this.tableMetricSet(table).time {
+        metrics.tableMetricSet(table).time {
           storage.executeSqlUpdate(connection, indexSql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue): _*)
           storage.executeSqlUpdate(connection, dataSql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue ++ Seq(record.encoding) ++ Seq(value)): _*)
         }
@@ -120,7 +107,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
       case None =>
         // no value, it's a delete
-        this.tableMetricDelete(table).time {
+        metrics.tableMetricDelete(table).time {
           storage.executeSqlUpdate(connection, indexSql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue): _*)
           storage.executeSqlUpdate(connection, dataSql, (Seq(timestamp.value) ++ Seq(token) ++ keysValue ++ Seq(0) ++ Seq(null)): _*)
           this.tableMutationsCount(table).incrementAndGet()
@@ -229,7 +216,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     var results: SqlResults = null
     try {
-      this.tableMetricGet(table).time {
+      metrics.tableMetricGet(table).time {
         results = storage.executeSql(connection, false, sql, (Seq(token) ++ keysValue ++ Seq(timestamp.value)): _*)
       }
 
@@ -313,7 +300,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     var ret = mutable.LinkedList[MutationRecord]()
     var results: SqlResults = null
     try {
-      this.tableMetricTimeline(table).time {
+      metrics.tableMetricTimeline(table).time {
         results = storage.executeSql(connection, false, sql)
 
         while (results.resultset.next()) {
@@ -359,7 +346,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     var ret = mutable.LinkedList[VersionRecord]()
     var results: SqlResults = null
     try {
-      this.tableMetricTopMostVersions(table).time {
+      metrics.tableMetricTopMostVersions(table).time {
         results = storage.executeSql(connection, false, sql)
 
         while (results.resultset.next()) {
@@ -408,7 +395,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
                 AND ts IN (%3$s);
                   """.format(fullTableName, whereKeys, versions.mkString(","))
 
-    this.tableMetricTruncateVersions(table).time {
+    metrics.tableMetricTruncateVersions(table).time {
       storage.executeSqlUpdate(connection, indexSql, (Seq(token) ++ keysValue): _*)
       storage.executeSqlUpdate(connection, dataSql, (Seq(token) ++ keysValue): _*)
     }
@@ -431,7 +418,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     var count: Long = 0
     var results: SqlResults = null
     try {
-      this.tableMetricSize(table).time {
+      metrics.tableMetricSize(table).time {
         results = storage.executeSql(connection, false, sql)
       }
 
@@ -532,7 +519,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     var results: SqlResults = null
     try {
-      this.tableMetricGetAllLatest(table).time {
+      metrics.tableMetricGetAllLatest(table).time {
         results = storage.executeSql(connection, false, sql, (recordPosition._2): _*)
       }
 
@@ -544,6 +531,26 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
           results.close()
         throw e
     }
+  }
+}
+
+object MysqlTransaction {
+  class Metrics(storage: MysqlStorage) extends Traced {
+    val tableMetricTimeline = generateTablesTimers("mysql-timeline")
+    val tableMetricGetAllLatest = generateTablesTimers("mysql-timeline")
+    val tableMetricTopMostVersions = generateTablesTimers("mysql-topmosversions")
+    val tableMetricSet = generateTablesTimers("mysql-set")
+    val tableMetricGet = generateTablesTimers("mysql-get")
+    val tableMetricDelete = generateTablesTimers("mysql-delete")
+    val metricCommit = tracedTimer("mysql-commit")
+    val metricRollback = tracedTimer("mysql-rollback")
+    val tableMetricTruncateVersions = generateTablesTimers("mysql-truncateversions")
+    val tableMetricSize = generateTablesTimers("mysql-size")
+
+    private def generateTablesTimers(timerName: String) = storage.model.allHierarchyTables.map(table =>
+      (table, tracedTimer(timerName, table.uniqueName))).toMap
+
+    protected override def getTracedClass = classOf[MysqlTransaction]
   }
 }
 
