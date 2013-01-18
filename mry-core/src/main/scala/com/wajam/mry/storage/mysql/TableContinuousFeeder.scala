@@ -100,10 +100,7 @@ class TableContinuousFeeder(storage: MysqlStorage, table: Table, tokenRanges: Se
 
   def ack(data: Map[String, Any]) {
     // Update context with the latest acknowledged record data (excluding its value)
-    context.data = (data - Value).map(entry => entry._1 match {
-      case Keys => (Keys, entry._2.asInstanceOf[Seq[String]])
-      case key => (key, entry._2.toString)
-    })
+    context.data = (data - Value)
   }
 
   def kill() {}
