@@ -10,6 +10,7 @@ import com.yammer.metrics.scala.Instrumented
 import java.util.concurrent.atomic.AtomicInteger
 import collection.mutable
 import java.util.concurrent.{TimeUnit, ScheduledThreadPoolExecutor}
+import com.wajam.nrv.service.TokenRange
 
 /**
  * MySQL backed storage
@@ -247,14 +248,18 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
     @volatile
     private var active = false
-    private val tableCollectors = mutable.Map[Table, TableCollector]().withDefault(t => new TableCollector(t))
+    private var tokenRanges: List[TokenRange] = List(TokenRange.All)
+    private val tableCollectors = mutable.Map[Table, TableCollector]()
 
     private val scheduledExecutor = new ScheduledThreadPoolExecutor(1)
     private val scheduledTask = scheduledExecutor.scheduleWithFixedDelay(new Runnable {
       def run() {
         try {
           if (active) {
-            allTables.foreach(table => tableCollectors(table).tryCollect())
+            val collectors = tableCollectors.synchronized {
+              allTables.map(table => getTableCollector(table)).toList
+            }
+            collectors.foreach(_.tryCollect())
           }
         } catch {
           case e: Exception => log.error("Got an error in GC scheduler", e)
@@ -270,21 +275,40 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       this.active = false
     }
 
+    def setCollectedRanges(collectedRanges: List[TokenRange]) {
+      tableCollectors.synchronized {
+        tokenRanges = collectedRanges
+        tableCollectors.clear()
+      }
+    }
+
     private[mysql] def kill() {
       this.stop()
       this.scheduledTask.cancel(true)
     }
 
     private[mysql] def collectAll(toCollect: Int): Int = {
-      allTables.foldLeft(0)((sum, table) => sum + tableCollectors(table).collect(toCollect))
+      val collectors = tableCollectors.synchronized {
+        allTables.map(table => getTableCollector(table)).toList
+      }
+      collectors.foldLeft(0)((sum, collector) => sum + collector.collect(toCollect))
+    }
+
+    /**
+     * Returns the cached table collector. A new collector is created and put in the cache if none is already cached.
+     * The method caller MUST hold a lock on the tableCollectors map prior calling this method.
+     */
+    private def getTableCollector(table: Table): TableCollector = {
+      tableCollectors.getOrElseUpdate(table, new TableCollector(table, tokenRanges))
     }
   }
 
-  class TableCollector(table: Table) {
+  class TableCollector(table: Table, tokenRanges: List[TokenRange]) {
     private val metricCollect = metrics.timer("gc-collect", table.uniqueName)
     private val metricCollected = metrics.meter("gc-collected-record", "records", table.uniqueName)
 
-    private var tableNextToken: Long = 0L
+    private var tableNextRange: TokenRange = tokenRanges.head
+    private var tableNextToken: Long = tokenRanges.head.start
     private var tableVersionsCache = mutable.Queue[VersionRecord]()
     private var tableLastMutationsCount: Int = 1
     private var tableLastCollection: Int = 1 // always force first collection
@@ -323,11 +347,12 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           trx = createStorageTransaction
 
           val lastToken = tableNextToken
+          val lastRange = tableNextRange
           val recordsVersions: mutable.Queue[VersionRecord] = tableVersionsCache
-          val toToken = lastToken + config.gcTokenStep
+          val toToken = math.min(lastToken + config.gcTokenStep, lastRange.end)
 
           // no more versions in cache, fetch new batch
-          var nextToken: Long = 0
+          var nextToken = lastToken
           if (recordsVersions.size == 0) {
             val fetched = trx.getTopMostVersions(table, lastToken, toToken, config.gcVersionsBatch)
             recordsVersions ++= fetched
@@ -351,10 +376,13 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
               nextToken = record.token
           }
 
-          if (nextToken >= Int.MaxValue.toLong * 2)
-            nextToken = 0
-
-          tableNextToken = nextToken
+          if (recordsVersions.size == 0 && nextToken >= lastRange.end) {
+            tableNextRange = lastRange.nextRange(tokenRanges).getOrElse(tokenRanges.head)
+            tableNextToken = tableNextRange.start
+          } else {
+            tableNextRange = lastRange
+            tableNextToken = nextToken
+          }
           tableVersionsCache = recordsVersions
           collectedTotal += collectedVersions
 

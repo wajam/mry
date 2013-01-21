@@ -504,6 +504,75 @@ class TestMysqlStorage extends TestMysqlBase {
     }
   }
 
+  test("forced garbage collections with ranges") {
+    val context = new ExecutionContext(storages)
+    val keys = List.range(0, 20).map(i => {
+      val key = "key%d".format(i)
+      (context.getToken(key), key)
+    }).sorted
+
+    def createRecords(seed: Long, ver: Int = 5) {
+      for (((token, key), i) <- keys.zipWithIndex) {
+        Seq.range(0, ver).foreach(j => {
+          exec(t => {
+            val t1 = t.from("mysql").from("table1")
+            t1.set(key, Map(key -> "%d_%d_%d".format(seed, i, j)))
+          }, commit = true, onTimestamp = createTimestamp(seed + i * ver + j))
+        })
+      }
+    }
+
+    val ranges = List(TokenRange(1000000001L, 2000000000L), TokenRange(3000000001L, 4000000000L))
+    mysqlStorage.GarbageCollector.setCollectedRanges(ranges)
+
+    // Create 5 versions for each token/keys tupple
+    createRecords(0, 5)
+    verifyRecordsCollectedForRanges(List())
+
+    // Force collection once, should collect records of the first range
+    mysqlStorage.GarbageCollector.collectAll(100) should be > 0
+    verifyRecordsCollectedForRanges(ranges.slice(0, 1))
+
+    // Force collection again, should collect records of the second and last range
+    mysqlStorage.GarbageCollector.collectAll(100) should be > 0
+    verifyRecordsCollectedForRanges(ranges)
+
+    // Create 5 more versions for each token/keys tupple
+    createRecords(5000, 5)
+    verifyRecordsCollectedForRanges(List())
+
+    // Force more collect. Collect should start over from the first range. Do a few small collects on the first range
+    // and then the entire range
+    mysqlStorage.GarbageCollector.collectAll(5) should be > 0
+    mysqlStorage.GarbageCollector.collectAll(5) should be > 0
+    mysqlStorage.GarbageCollector.collectAll(100) should be > 0
+    verifyRecordsCollectedForRanges(ranges.slice(0, 1))
+
+    // Yet another collect on the second and last range
+    mysqlStorage.GarbageCollector.collectAll(100) should be > 0
+    verifyRecordsCollectedForRanges(ranges)
+
+    // Final collection when there are nothing to be collected
+    mysqlStorage.GarbageCollector.collectAll(100) should be(0)
+
+    def verifyRecordsCollectedForRanges(collectedRanges: List[TokenRange]) {
+      var trx = mysqlStorage.createStorageTransaction
+      keys.foreach(entry => {
+        val (t, k) = entry
+        val versions = trx.getTopMostVersions(table1, t, t, 10)
+
+        if (collectedRanges.exists(_.contains(t))) {
+          // tupple is in the collected range, no extra version should be available
+          versions.size should be(0)
+        } else {
+          // not in collected range, some extra version should exists
+          versions.size should be > 0
+        }
+      })
+      trx.rollback()
+    }
+  }
+
   test("should be able to set the same key twice and keep the last version") {
     exec(t => {
       val storage = t.from("mysql")
