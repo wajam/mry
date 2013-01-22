@@ -4,6 +4,7 @@ import com.wajam.mry.execution._
 import com.wajam.mry.storage.Storage
 import org.scalatest.{BeforeAndAfterEach, FunSuite}
 import com.wajam.nrv.utils.timestamp.Timestamp
+import com.wajam.nrv.service.TokenRange
 
 
 abstract class TestMysqlBase extends FunSuite with BeforeAndAfterEach {
@@ -23,7 +24,7 @@ abstract class TestMysqlBase extends FunSuite with BeforeAndAfterEach {
 
   def newStorageInstance() = {
     val storage = new MysqlStorage(
-      MysqlStorageConfiguration("mysql", "localhost", "mry", "mry", "mry", gcTokenStep = 4300000000l),
+      MysqlStorageConfiguration("mysql", "localhost", "mry", "mry", "mry", gcTokenStep = TokenRange.MaxToken),
       garbageCollection = false)
     storages = Map(("mysql" -> storage))
 
