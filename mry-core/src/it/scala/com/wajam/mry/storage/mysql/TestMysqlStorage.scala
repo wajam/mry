@@ -556,8 +556,12 @@ class TestMysqlStorage extends TestMysqlBase {
     mysqlStorage.GarbageCollector.collectAll(100) should be(0)
 
     // Just for fun, try with an empty range
+    // Create 5 more versions for each token/keys tupple
+    createRecords(10000, 5)
+    verifyRecordsCollectedForRanges(List())
     mysqlStorage.GarbageCollector.setCollectedRanges(List())
     mysqlStorage.GarbageCollector.collectAll(100) should be(0)
+    verifyRecordsCollectedForRanges(List())
 
     def verifyRecordsCollectedForRanges(collectedRanges: List[TokenRange]) {
       var trx = mysqlStorage.createStorageTransaction
