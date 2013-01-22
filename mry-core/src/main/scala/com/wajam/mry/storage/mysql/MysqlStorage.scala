@@ -6,7 +6,7 @@ import java.sql.{PreparedStatement, ResultSet, SQLException, Connection}
 import com.wajam.mry.execution._
 import com.wajam.mry.api.protobuf.ProtobufTranslator
 import com.wajam.mry.storage._
-import com.yammer.metrics.scala.Instrumented
+import com.yammer.metrics.scala.{Meter, Timer, Instrumented}
 import java.util.concurrent.atomic.AtomicInteger
 import collection.mutable
 import java.util.concurrent.{TimeUnit, ScheduledThreadPoolExecutor}
@@ -243,7 +243,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
     }
   }
 
-  object GarbageCollector extends Instrumented {
+  object GarbageCollector {
     private val allTables: Iterable[Table] = model.allHierarchyTables
 
     @volatile
@@ -311,14 +311,16 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
     }
   }
 
-  class TableCollector(table: Table, tokenRanges: List[TokenRange]) {
+  class TableCollector(table: Table, tokenRanges: List[TokenRange]) extends Instrumented {
 
     if (tokenRanges.size == 0) {
       throw new IllegalArgumentException("Requires at least one token range.")
     }
 
-    private val metricCollect = metrics.timer("gc-collect", table.uniqueName)
-    private val metricCollected = metrics.meter("gc-collected-record", "records", table.uniqueName)
+    private val metricCollect = new Timer(metrics.metricsRegistry.newTimer(GarbageCollector.getClass,
+      "gc-collect", table.uniqueName))
+    private val metricCollected = new Meter(metrics.metricsRegistry.newMeter(GarbageCollector.getClass,
+      "gc-collected-record", table.uniqueName, "records", TimeUnit.SECONDS))
 
     private var tableNextRange: TokenRange = tokenRanges.head
     private var tableNextToken: Long = tokenRanges.head.start
