@@ -257,7 +257,11 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
         try {
           if (active) {
             val collectors = tableCollectors.synchronized {
-              allTables.map(table => getTableCollector(table))
+              if (tokenRanges.size > 0) {
+                allTables.map(table => getTableCollector(table))
+              } else {
+                Seq[TableCollector]()
+              }
             }
             collectors.foreach(_.tryCollect())
           }
@@ -289,7 +293,11 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
     private[mysql] def collectAll(toCollect: Int): Int = {
       val collectors = tableCollectors.synchronized {
-        allTables.map(table => getTableCollector(table))
+        if (tokenRanges.size > 0) {
+          allTables.map(table => getTableCollector(table))
+        } else {
+          Seq[TableCollector]()
+        }
       }
       collectors.foldLeft(0)((sum, collector) => sum + collector.collect(toCollect))
     }
@@ -304,6 +312,11 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   }
 
   class TableCollector(table: Table, tokenRanges: List[TokenRange]) {
+
+    if (tokenRanges.size == 0) {
+      throw new IllegalArgumentException("Requires at least one token range.")
+    }
+
     private val metricCollect = metrics.timer("gc-collect", table.uniqueName)
     private val metricCollected = metrics.meter("gc-collected-record", "records", table.uniqueName)
 

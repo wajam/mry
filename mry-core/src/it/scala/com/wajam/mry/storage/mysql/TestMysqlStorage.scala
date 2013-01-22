@@ -555,6 +555,10 @@ class TestMysqlStorage extends TestMysqlBase {
     // Final collection when there are nothing to be collected
     mysqlStorage.GarbageCollector.collectAll(100) should be(0)
 
+    // Just for fun, try with an empty range
+    mysqlStorage.GarbageCollector.setCollectedRanges(List())
+    mysqlStorage.GarbageCollector.collectAll(100) should be(0)
+
     def verifyRecordsCollectedForRanges(collectedRanges: List[TokenRange]) {
       var trx = mysqlStorage.createStorageTransaction
       keys.foreach(entry => {
