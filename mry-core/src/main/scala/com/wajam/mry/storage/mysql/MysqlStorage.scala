@@ -257,7 +257,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
         try {
           if (active) {
             val collectors = tableCollectors.synchronized {
-              allTables.map(table => getTableCollector(table)).toList
+              allTables.map(table => getTableCollector(table))
             }
             collectors.foreach(_.tryCollect())
           }
@@ -289,7 +289,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
     private[mysql] def collectAll(toCollect: Int): Int = {
       val collectors = tableCollectors.synchronized {
-        allTables.map(table => getTableCollector(table)).toList
+        allTables.map(table => getTableCollector(table))
       }
       collectors.foldLeft(0)((sum, collector) => sum + collector.collect(toCollect))
     }
@@ -309,7 +309,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
     private var tableNextRange: TokenRange = tokenRanges.head
     private var tableNextToken: Long = tokenRanges.head.start
-    private var tableVersionsCache = mutable.Queue[VersionRecord]()
+    private val tableVersionsCache = mutable.Queue[VersionRecord]()
     private var tableLastMutationsCount: Int = 1
     private var tableLastCollection: Int = 1 // always force first collection
 
@@ -348,14 +348,13 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
           val lastToken = tableNextToken
           val lastRange = tableNextRange
-          val recordsVersions: mutable.Queue[VersionRecord] = tableVersionsCache
           val toToken = math.min(lastToken + config.gcTokenStep, lastRange.end)
 
           // no more versions in cache, fetch new batch
           var nextToken = lastToken
-          if (recordsVersions.size == 0) {
+          if (tableVersionsCache.size == 0) {
             val fetched = trx.getTopMostVersions(table, lastToken, toToken, config.gcVersionsBatch)
-            recordsVersions ++= fetched
+            tableVersionsCache ++= fetched
 
             if (fetched.size < config.gcVersionsBatch) {
               nextToken = toToken
@@ -363,8 +362,8 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           }
 
           var collectedVersions = 0
-          while (recordsVersions.size > 0 && collectedVersions < toCollect) {
-            val record = recordsVersions.dequeue()
+          while (tableVersionsCache.size > 0 && collectedVersions < toCollect) {
+            val record = tableVersionsCache.dequeue()
             val versions = record.versions
             val toDeleteVersions = versions.sortBy(_.value).slice(0, versions.size - table.maxVersions)
 
@@ -376,14 +375,13 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
               nextToken = record.token
           }
 
-          if (recordsVersions.size == 0 && nextToken >= lastRange.end) {
+          if (tableVersionsCache.size == 0 && nextToken >= lastRange.end) {
             tableNextRange = lastRange.nextRange(tokenRanges).getOrElse(tokenRanges.head)
             tableNextToken = tableNextRange.start
           } else {
             tableNextRange = lastRange
             tableNextToken = nextToken
           }
-          tableVersionsCache = recordsVersions
           collectedTotal += collectedVersions
 
           metricCollected.mark(collectedTotal)
