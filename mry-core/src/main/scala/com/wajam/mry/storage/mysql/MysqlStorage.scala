@@ -10,6 +10,7 @@ import com.yammer.metrics.scala.Instrumented
 import java.util.concurrent.atomic.AtomicInteger
 import collection.mutable
 import java.util.concurrent.{TimeUnit, ScheduledThreadPoolExecutor}
+import com.wajam.nrv.service.TokenRange
 
 /**
  * MySQL backed storage
@@ -245,38 +246,24 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   object GarbageCollector extends Instrumented {
     private val allTables: Iterable[Table] = model.allHierarchyTables
 
-    private val metricCollect = allTables.map(table =>
-      (table, metrics.timer("gc-collect", table.uniqueName))).toMap
-    private val metricCollected = allTables.map(table =>
-      (table, metrics.meter("gc-collected-record", "records", table.uniqueName))).toMap
-
     @volatile
     private var active = false
-    private val tableNextToken = mutable.Map[Table, Long]().withDefaultValue(0)
-    private val tableVersionsCache = mutable.Map[Table, mutable.Queue[VersionRecord]]()
-    private val tableLastMutationsCount = mutable.Map[Table, Int]().withDefaultValue(1)
-    private val tableLastCollection = mutable.Map[Table, Int]().withDefaultValue(1) // always force first collection
+    private var tokenRanges: List[TokenRange] = List(TokenRange.All)
+    private val tableCollectors = mutable.Map[Table, TableCollector]()
 
     private val scheduledExecutor = new ScheduledThreadPoolExecutor(1)
     private val scheduledTask = scheduledExecutor.scheduleWithFixedDelay(new Runnable {
       def run() {
         try {
           if (active) {
-            allTables.foreach(table => {
-              val currentMutations = tablesMutationsCount(table).get()
-              val lastMutations = tableLastMutationsCount(table)
-              val mutationsDiff = currentMutations - lastMutations
-              tableLastMutationsCount += (table -> currentMutations)
-
-              val lastCollection = tableLastCollection(table)
-              if (mutationsDiff > 0 || lastCollection > 0) {
-                val toCollect = math.max(math.max(mutationsDiff, config.gcMinimumCollection), lastCollection) * config.gcCollectionFactor
-                log.debug("Collecting {} from table {}", toCollect, table.name)
-                val collected = collect(table, toCollect.toInt)
-                log.debug("Collected {} from table {}", collected, table.name)
-                tableLastCollection += (table -> collected)
+            val collectors = tableCollectors.synchronized {
+              if (tokenRanges.size > 0) {
+                allTables.map(table => getTableCollector(table))
+              } else {
+                Seq[TableCollector]()
               }
-            })
+            }
+            collectors.foreach(_.tryCollect())
           }
         } catch {
           case e: Exception => log.error("Got an error in GC scheduler", e)
@@ -292,42 +279,95 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       this.active = false
     }
 
+    def setCollectedRanges(collectedRanges: List[TokenRange]) {
+      tableCollectors.synchronized {
+        tokenRanges = collectedRanges
+        tableCollectors.clear()
+      }
+    }
+
     private[mysql] def kill() {
       this.stop()
       this.scheduledTask.cancel(true)
     }
 
     private[mysql] def collectAll(toCollect: Int): Int = {
-      allTables.foldLeft(0)((sum, table) => sum + collect(table, toCollect))
+      val collectors = tableCollectors.synchronized {
+        if (tokenRanges.size > 0) {
+          allTables.map(table => getTableCollector(table))
+        } else {
+          Seq[TableCollector]()
+        }
+      }
+      collectors.foldLeft(0)((sum, collector) => sum + collector.collect(toCollect))
+    }
+
+    /**
+     * Returns the cached table collector. A new collector is created and put in the cache if none is already cached.
+     * The method caller MUST hold a lock on the tableCollectors map prior calling this method.
+     */
+    private def getTableCollector(table: Table): TableCollector = {
+      tableCollectors.getOrElseUpdate(table, new TableCollector(table, tokenRanges))
+    }
+  }
+
+  class TableCollector(table: Table, tokenRanges: List[TokenRange]) {
+
+    if (tokenRanges.size == 0) {
+      throw new IllegalArgumentException("Requires at least one token range.")
+    }
+
+    private val metricCollect = metrics.timer("gc-collect", table.uniqueName)
+    private val metricCollected = metrics.meter("gc-collected-record", "records", table.uniqueName)
+
+    private var tableNextRange: TokenRange = tokenRanges.head
+    private var tableNextToken: Long = tokenRanges.head.start
+    private val tableVersionsCache = mutable.Queue[VersionRecord]()
+    private var tableLastMutationsCount: Int = 1
+    private var tableLastCollection: Int = 1 // always force first collection
+
+    private[mysql] def tryCollect() {
+      val currentMutations = tablesMutationsCount(table).get()
+      val lastMutations = tableLastMutationsCount
+      val mutationsDiff = currentMutations - lastMutations
+      tableLastMutationsCount = currentMutations
+
+      val lastCollection = tableLastCollection
+      if (mutationsDiff > 0 || lastCollection > 0) {
+        val toCollect = math.max(math.max(mutationsDiff, config.gcMinimumCollection), lastCollection) * config.gcCollectionFactor
+        log.debug("Collecting {} from table {}", toCollect, table.name)
+        val collected = collect(toCollect.toInt)
+        log.debug("Collected {} from table {}", collected, table.name)
+        tableLastCollection = collected
+      }
     }
 
     /**
      * Garbage collect at least specified versions (if any can be collected) from a table
      * Not thread safe! Call from 1 thread at the time!
      *
-     * @param table Table to collect
      * @param toCollect Number of versions to collect
      * @return Collected versions
      */
-    private[mysql] def collect(table: Table, toCollect: Int): Int = {
-      debug("GCing iteration starting, need {} to be collected", toCollect)
+    private[mysql] def collect(toCollect: Int): Int = {
+      debug("GCing {} iteration starting, need {} to be collected", table.uniqueName, toCollect)
 
       var trx: MysqlTransaction = null
       var collectedTotal = 0
 
-      metricCollect(table).time({
+      metricCollect.time({
         try {
           trx = createStorageTransaction
 
-          val lastToken = tableNextToken(table)
-          val recordsVersions: mutable.Queue[VersionRecord] = tableVersionsCache.getOrElse(table, mutable.Queue())
-          val toToken = lastToken + config.gcTokenStep
+          val lastToken = tableNextToken
+          val lastRange = tableNextRange
+          val toToken = math.min(lastToken + config.gcTokenStep, lastRange.end)
 
           // no more versions in cache, fetch new batch
-          var nextToken: Long = 0
-          if (recordsVersions.size == 0) {
+          var nextToken = lastToken
+          if (tableVersionsCache.size == 0) {
             val fetched = trx.getTopMostVersions(table, lastToken, toToken, config.gcVersionsBatch)
-            recordsVersions ++= fetched
+            tableVersionsCache ++= fetched
 
             if (fetched.size < config.gcVersionsBatch) {
               nextToken = toToken
@@ -335,8 +375,8 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           }
 
           var collectedVersions = 0
-          while (recordsVersions.size > 0 && collectedVersions < toCollect) {
-            val record = recordsVersions.dequeue()
+          while (tableVersionsCache.size > 0 && collectedVersions < toCollect) {
+            val record = tableVersionsCache.dequeue()
             val versions = record.versions
             val toDeleteVersions = versions.sortBy(_.value).slice(0, versions.size - table.maxVersions)
 
@@ -348,14 +388,16 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
               nextToken = record.token
           }
 
-          if (nextToken >= Int.MaxValue.toLong * 2)
-            nextToken = 0
-
-          tableNextToken += (table -> nextToken)
-          tableVersionsCache += (table -> recordsVersions)
+          if (tableVersionsCache.size == 0 && nextToken >= lastRange.end) {
+            tableNextRange = lastRange.nextRange(tokenRanges).getOrElse(tokenRanges.head)
+            tableNextToken = tableNextRange.start
+          } else {
+            tableNextRange = lastRange
+            tableNextToken = nextToken
+          }
           collectedTotal += collectedVersions
 
-          metricCollected(table).mark(collectedTotal)
+          metricCollected.mark(collectedTotal)
           trx.commit()
         } catch {
           case e: Exception => {
@@ -366,17 +408,16 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
               case _ =>
             }
 
-            error("Caught an exception in garbage collector!", e)
+            error("Caught an exception in {} garbage collector!", table.uniqueName, e)
             throw e
           }
         }
       })
 
-      debug("GCing iteration done! Collected {} versions", collectedTotal)
+      debug("GCing iteration done on {}! Collected {} versions", table.uniqueName, collectedTotal)
       collectedTotal
     }
   }
-
 }
 
 case class MysqlStorageConfiguration(name: String,

@@ -327,7 +327,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *
      *    SELECT t.tk, COUNT(*) AS nb, GROUP_CONCAT(t.ts SEPARATOR ',') AS timestamps, t.k1,t.k2,t.k3
      *    FROM `table1_table1_1_table1_1_1_index` AS t
-     *    WHERE t.tk >= 0 AND t.tk < 10000
+     *    WHERE t.tk >= 0 AND t.tk <= 10000
      *    GROUP BY t.tk,t.k1,t.k2,t.k3
      *    HAVING COUNT(*) > 3
      *    LIMIT 0, 100
@@ -336,7 +336,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
       """
          SELECT t.tk, COUNT(*) AS nb, GROUP_CONCAT(t.ts SEPARATOR ',') AS timestamps, %1$s
          FROM `%2$s_index` AS t
-         WHERE t.tk >= %3$d AND t.tk < %4$d
+         WHERE t.tk >= %3$d AND t.tk <= %4$d
          GROUP BY t.tk, %1$s
          HAVING COUNT(*) > %5$d
          LIMIT 0, %6$d
