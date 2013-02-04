@@ -40,7 +40,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
       }, commit = true, onTimestamp = createTimestamp(i + 4))
     })
 
-    val feeder = new TableTimelineFeeder(mysqlStorage, table1, List(TokenRange.All), batchSize)
+    val feeder = new TableTimelineFeeder("test", mysqlStorage, table1, List(TokenRange.All), batchSize)
     feeder.init(new TaskContext())
     val records = Iterator.continually({
       feeder.next()
@@ -73,7 +73,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
       }, commit = true, onTimestamp = createTimestamp(i + 4))
     })
 
-    val feeder = new TableTimelineFeeder(mysqlStorage, table1, List(TokenRange.All), batchSize)
+    val feeder = new TableTimelineFeeder("test", mysqlStorage, table1, List(TokenRange.All), batchSize)
     feeder.init(new TaskContext())
     val records = Iterator.continually({
       feeder.next()
@@ -96,7 +96,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
 
     val ranges = List(TokenRange(1000000001L, 2000000000L), TokenRange(3000000001L, 4000000000L))
 
-    val feeder = new TableTimelineFeeder(mysqlStorage, table1, ranges, batchSize)
+    val feeder = new TableTimelineFeeder("test", mysqlStorage, table1, ranges, batchSize)
     feeder.init(new TaskContext())
     val records = Iterator.continually({
       feeder.next()
@@ -123,7 +123,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
     })
 
     // Load all existing records
-    val feeder1 = new TableTimelineFeeder(mysqlStorage, table1, List(TokenRange.All))
+    val feeder1 = new TableTimelineFeeder("test", mysqlStorage, table1, List(TokenRange.All))
     feeder1.init(new TaskContext())
     var records1 = Iterator.continually({
       feeder1.next()
@@ -134,7 +134,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
     feeder1.ack(records1(0))
 
     // Create another feeder instance with a copy of the context, should resume from the first feeder context
-    val feeder2 = new TableTimelineFeeder(mysqlStorage, table1, List(TokenRange.All))
+    val feeder2 = new TableTimelineFeeder("test", mysqlStorage, table1, List(TokenRange.All))
     feeder2.init(feeder1.context.copy())
     var records2 = Iterator.continually({
       feeder2.next()
