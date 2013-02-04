@@ -35,7 +35,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
     scn.addMember(token, cluster.localNode)
 
     val scnClient = new ScnClient(scn, ScnClientConfig(100)).start()
-    val consistency = new ConsistencyMasterSlave(scnClient)
+    val consistency = new ConsistencyMasterSlave(scnClient, "", txLogEnabled = false)
 
     val db = new Database("mry")
     cluster.registerService(db)
