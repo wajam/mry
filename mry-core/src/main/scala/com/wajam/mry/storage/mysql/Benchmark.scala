@@ -115,7 +115,7 @@ object Benchmark extends App with Instrumented {
     scn.addMember(0, cluster.localNode)
 
     val db = new Database()
-    val consistency: ConsistencyMasterSlave = new ConsistencyMasterSlave(scnClient)
+    val consistency: ConsistencyMasterSlave = new ConsistencyMasterSlave(scnClient, "", txLogEnabled = false)
     db.applySupport(switchboard = Some(new Switchboard("mry", 10, 50)), consistency = Some(consistency))
     cluster.registerService(db)
     consistency.bindService(db)

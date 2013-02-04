@@ -6,16 +6,17 @@ import com.wajam.nrv.Logging
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service.{ActionMethod, Resolver, Action, Service}
 import com.wajam.nrv.tracing.Traced
-import com.wajam.nrv.data.InMessage
+import com.wajam.nrv.data.{Message, InMessage}
 import com.wajam.nrv.utils.{Promise, Future}
 import com.wajam.nrv.utils.timestamp.Timestamp
+import com.wajam.nrv.consistency.ConsistentStore
 
 
 /**
  * MRY database
  */
 class Database(var serviceName: String = "database")
-  extends Service(serviceName) with Logging with Instrumented with Traced {
+  extends Service(serviceName) with ConsistentStore with Logging with Instrumented with Traced {
 
   var storages = Map[String, Storage]()
 
@@ -126,6 +127,15 @@ class Database(var serviceName: String = "database")
     req.reply(
       Seq("values" -> values)
     )
+  }
+
+  def requiresConsistency(message: Message) : Boolean = {
+    findAction(message.path, message.method) match {
+      case Some(action) => {
+        action == remoteWriteExecuteToken || action == remoteReadExecuteToken
+      }
+      case _ => false
+    }
   }
 }
 
