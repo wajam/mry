@@ -40,7 +40,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
       }, commit = true, onTimestamp = createTimestamp(i + 4))
     })
 
-    val feeder = new TableTimelineFeeder(mysqlStorage, table1, List(TokenRange.All), batchSize)
+    val feeder = new TableTimelineFeeder("test", mysqlStorage, table1, List(TokenRange.All), batchSize)
     feeder.init(new TaskContext())
     val records = Iterator.continually({
       feeder.next()
@@ -73,7 +73,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
       }, commit = true, onTimestamp = createTimestamp(i + 4))
     })
 
-    val feeder = new TableTimelineFeeder(mysqlStorage, table1, List(TokenRange.All), batchSize)
+    val feeder = new TableTimelineFeeder("test", mysqlStorage, table1, List(TokenRange.All), batchSize)
     feeder.init(new TaskContext())
     val records = Iterator.continually({
       feeder.next()
@@ -96,7 +96,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
 
     val ranges = List(TokenRange(1000000001L, 2000000000L), TokenRange(3000000001L, 4000000000L))
 
-    val feeder = new TableTimelineFeeder(mysqlStorage, table1, ranges, batchSize)
+    val feeder = new TableTimelineFeeder("test", mysqlStorage, table1, ranges, batchSize)
     feeder.init(new TaskContext())
     val records = Iterator.continually({
       feeder.next()
@@ -123,7 +123,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
     })
 
     // Load all existing records
-    val feeder1 = new TableTimelineFeeder(mysqlStorage, table1, List(TokenRange.All))
+    val feeder1 = new TableTimelineFeeder("test", mysqlStorage, table1, List(TokenRange.All))
     feeder1.init(new TaskContext())
     var records1 = Iterator.continually({
       feeder1.next()
@@ -134,7 +134,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
     feeder1.ack(records1(0))
 
     // Create another feeder instance with a copy of the context, should resume from the first feeder context
-    val feeder2 = new TableTimelineFeeder(mysqlStorage, table1, List(TokenRange.All))
+    val feeder2 = new TableTimelineFeeder("test", mysqlStorage, table1, List(TokenRange.All))
     feeder2.init(feeder1.context.copy())
     var records2 = Iterator.continually({
       feeder2.next()
@@ -143,4 +143,34 @@ class TestTableTimelineFeeder extends TestMysqlBase {
     records2 should not contain(records1(0))
   }
 
+  test("context cache") {
+    val name1 = "name1"
+    val context1_1 = new TaskContext(data = Map("k1" -> 1))
+    val context1_2 = new TaskContext(data = Map("k1" -> 2))
+    val context1_3 = new TaskContext(data = Map("k1" -> 3))
+
+    val name2 = "name2"
+    val context2_1 = new TaskContext(data = Map("k2" -> 1))
+
+    // Register
+    TimelineFeederContextCache.register(name1, context1_1)
+    TimelineFeederContextCache.register(name1, context1_2)
+    TimelineFeederContextCache.register(name1, context1_3)
+    TimelineFeederContextCache.register(name2, context2_1)
+    TimelineFeederContextCache.contexts(name1) should be(List(context1_3, context1_2, context1_1))
+    TimelineFeederContextCache.contexts(name2) should be(List(context2_1))
+    TimelineFeederContextCache.contexts("unknown") should be(List[TaskContext]())
+
+    // Unregister
+    TimelineFeederContextCache.unregister(name1, context1_2)
+    TimelineFeederContextCache.unregister(name2, context2_1)
+    TimelineFeederContextCache.contexts(name1) should be(List(context1_3, context1_1))
+    TimelineFeederContextCache.contexts(name2) should be(List[TaskContext]())
+
+    // Unregister non-registered context
+    TimelineFeederContextCache.unregister(name1, context2_1)
+    TimelineFeederContextCache.unregister("unknown", context2_1)
+    TimelineFeederContextCache.contexts(name1) should be(List(context1_3, context1_1))
+    TimelineFeederContextCache.contexts(name2) should be(List[TaskContext]())
+  }
 }
