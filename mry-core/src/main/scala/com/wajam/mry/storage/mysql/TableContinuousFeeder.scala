@@ -9,8 +9,9 @@ import com.wajam.nrv.service.TokenRange
  * Fetches all current defined (not null) data on a table.
  * When it finished, it loops over and starts again with the oldest current data.
  */
-class TableContinuousFeeder(storage: MysqlStorage, table: Table, tokenRanges: Seq[TokenRange], rowsToFetch: Int = 1000)
-  extends CachedDataFeeder with Logging {
+class TableContinuousFeeder(name: String ,storage: MysqlStorage, table: Table, tokenRanges: Seq[TokenRange],
+                            rowsToFetch: Int = 1000)
+  extends CachedDataFeeder(name) with Logging {
 
   import TableContinuousFeeder._
 

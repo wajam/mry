@@ -11,16 +11,23 @@ import com.wajam.nrv.service.TokenRange
 /**
  * Table mutation timeline task feeder
  */
-class TableTimelineFeeder(storage: MysqlStorage, table: Table, tokenRanges: List[TokenRange], val batchSize: Int = 100)
-  extends CachedDataFeeder with CurrentTime with Logging {
-  var context: TaskContext = null
+class TableTimelineFeeder(name: String, storage: MysqlStorage, table: Table, tokenRanges: List[TokenRange],
+                          val batchSize: Int = 100)
+  extends CachedDataFeeder(name) with CurrentTime with Logging {
 
+  private val contextTimestampGauge = metrics.gauge("context-timestamp", name) {
+    val contexts = TimelineFeederContextCache.contexts(name)
+    if (contexts.isEmpty) 0 else contexts.map(_.data.getOrElse("from_timestamp", 0).toString.toLong).min
+  }
+
+  var context: TaskContext = null
   var currentTimestamps: List[(Timestamp, Seq[String])] = Nil
   var lastElement: Option[(Timestamp, Seq[String])] = None
   var lastSelectMode: TimelineSelectMode =  FromTimestamp
 
   def init(context: TaskContext) {
     this.context = context
+    TimelineFeederContextCache.register(name, context)
   }
 
   def loadMore() = {
@@ -112,12 +119,42 @@ class TableTimelineFeeder(storage: MysqlStorage, table: Table, tokenRanges: List
     }
   }
 
-  def kill() {}
+  def kill() {
+    TimelineFeederContextCache.unregister(name, context)
+  }
 
   private def getTimestampKey(data: Map[String, Any]) = {
     val timestamp = data("new_timestamp").asInstanceOf[Timestamp]
     val keys = data("keys").asInstanceOf[Seq[String]]
     (timestamp, keys)
   }
+}
 
+/**
+ * Singleton object used to cache task contexts per feeder name for metrics. This object is thread safe.
+ */
+private[mysql] object TimelineFeederContextCache {
+  private object Lock
+  private var contextsCache = Map[String, List[TaskContext]]()
+
+  def register(name: String, context: TaskContext) {
+    Lock.synchronized {
+      val cachedContexts = contextsCache.getOrElse(name, List())
+      contextsCache += (name -> (context :: cachedContexts))
+    }
+  }
+
+  def unregister(name: String, context: TaskContext) {
+    Lock.synchronized {
+      val cachedContexts = contextsCache.getOrElse(name, List())
+      contextsCache += (name -> cachedContexts.filterNot(_ == context))
+    }
+  }
+
+  /**
+   * Returns the list of contexts registered with the specified feeder name
+   */
+  def contexts(name: String): List[TaskContext] = {
+    contextsCache.getOrElse(name, List())
+  }
 }
