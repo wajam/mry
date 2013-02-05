@@ -143,4 +143,34 @@ class TestTableTimelineFeeder extends TestMysqlBase {
     records2 should not contain(records1(0))
   }
 
+  test("context cache") {
+    val name1 = "name1"
+    val context1_1 = new TaskContext(data = Map("k1" -> 1))
+    val context1_2 = new TaskContext(data = Map("k1" -> 2))
+    val context1_3 = new TaskContext(data = Map("k1" -> 3))
+
+    val name2 = "name2"
+    val context2_1 = new TaskContext(data = Map("k2" -> 1))
+
+    // Register
+    TimelineFeederContextCache.register(name1, context1_1)
+    TimelineFeederContextCache.register(name1, context1_2)
+    TimelineFeederContextCache.register(name1, context1_3)
+    TimelineFeederContextCache.register(name2, context2_1)
+    TimelineFeederContextCache.contexts(name1) should be(List(context1_3, context1_2, context1_1))
+    TimelineFeederContextCache.contexts(name2) should be(List(context2_1))
+    TimelineFeederContextCache.contexts("unknown") should be(List[TaskContext]())
+
+    // Unregister
+    TimelineFeederContextCache.unregister(name1, context1_2)
+    TimelineFeederContextCache.unregister(name2, context2_1)
+    TimelineFeederContextCache.contexts(name1) should be(List(context1_3, context1_1))
+    TimelineFeederContextCache.contexts(name2) should be(List[TaskContext]())
+
+    // Unregister non-registered context
+    TimelineFeederContextCache.unregister(name1, context2_1)
+    TimelineFeederContextCache.unregister("unknown", context2_1)
+    TimelineFeederContextCache.contexts(name1) should be(List(context1_3, context1_1))
+    TimelineFeederContextCache.contexts(name2) should be(List[TaskContext]())
+  }
 }
