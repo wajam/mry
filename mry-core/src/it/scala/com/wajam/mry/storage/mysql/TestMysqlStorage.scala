@@ -504,6 +504,77 @@ class TestMysqlStorage extends TestMysqlBase {
     }
   }
 
+  test("force garbage collections should delete all extra versions of a token before going to the next token") {
+    val context = new ExecutionContext(storages)
+    val keys = 0.to(5).map(i => {
+      val key = "key%d".format(i)
+      (context.getToken(key), key)
+    }).sorted
+
+    def createRecords(key: String, ver: Int) {
+      println("createRecords " + key)
+      for (i <- 0.until(ver)) {
+        exec(t => {
+          val t1 = t.from("mysql").from("table1")
+          t1.set(key, Map(key -> i.toString))
+        }, commit = true, onTimestamp = createTimestamp(i))
+      }
+    }
+
+    createRecords(key = keys(0)._2, ver = 5)
+    createRecords(key = keys(1)._2, ver = 10)
+    createRecords(key = keys(2)._2, ver = 100)
+    createRecords(key = keys(3)._2, ver = 500)
+    createRecords(key = keys(4)._2, ver = 5)
+
+    // Verify versions before GC
+    getTokenVersion(token = keys(0)._1).get.versionsCount should be(5)
+    getTokenVersion(token = keys(1)._1).get.versionsCount should be(10)
+    getTokenVersion(token = keys(2)._1).get.versionsCount should be(100)
+    getTokenVersion(token = keys(3)._1) match {
+      // Validate that we don't get all versions in one call
+      case Some(v) => {
+        v.versionsCount should be(500)
+        v.versions.size should be < v.versionsCount
+      }
+      case _ => fail("All versions loaded in one call. Need to be in multiple calls for this test to be useful.")
+    }
+    getTokenVersion(token = keys(4)._1).get.versionsCount should be(5)
+
+    // Force collection once, should collect the versions of the first 3 tokens
+    mysqlStorage.GarbageCollector.collectAll(100) should be > 0
+    getTokenVersion(token = keys(0)._1) should be(None)
+    getTokenVersion(token = keys(1)._1) should be(None)
+    getTokenVersion(token = keys(2)._1) should be(None)
+    getTokenVersion(token = keys(3)._1).get.versionsCount should be(500)
+    getTokenVersion(token = keys(4)._1).get.versionsCount should be(5)
+
+    // Force collection again, should collect most but not all versions of the 4th token
+    mysqlStorage.GarbageCollector.collectAll(100) should be > 0
+    getTokenVersion(token = keys(0)._1) should be(None)
+    getTokenVersion(token = keys(1)._1) should be(None)
+    getTokenVersion(token = keys(2)._1) should be(None)
+    getTokenVersion(token = keys(3)._1).get.versionsCount should (be > 0 and be < 500)
+    getTokenVersion(token = keys(4)._1).get.versionsCount should be(5)
+
+    // This time all versions of the 4th token should have been collected
+    mysqlStorage.GarbageCollector.collectAll(100) should be > 0
+    getTokenVersion(token = keys(0)._1) should be(None)
+    getTokenVersion(token = keys(1)._1) should be(None)
+    getTokenVersion(token = keys(2)._1) should be(None)
+    getTokenVersion(token = keys(3)._1) should be(None)
+    getTokenVersion(token = keys(4)._1).get.versionsCount should be(5)
+
+    def getTokenVersion(token: Long): Option[VersionRecord] = {
+      var trx = mysqlStorage.createStorageTransaction
+      val versions = trx.getTopMostVersions(table1, token, token, 10)
+      trx.rollback()
+
+      versions.size should be <= 1
+      versions.headOption
+    }
+  }
+
   test("forced garbage collections with ranges") {
     val context = new ExecutionContext(storages)
     val keys = List.range(0, 20).map(i => {
