@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import collection.mutable
 import java.util.concurrent.{TimeUnit, ScheduledThreadPoolExecutor}
 import com.wajam.nrv.service.TokenRange
+import com.yammer.metrics.core.Gauge
 
 /**
  * MySQL backed storage
@@ -317,12 +318,19 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       throw new IllegalArgumentException("Requires at least one token range.")
     }
 
-    private val metricCollect = new Timer(metrics.metricsRegistry.newTimer(GarbageCollector.getClass,
+    lazy private val collectTimer = new Timer(metrics.metricsRegistry.newTimer(GarbageCollector.getClass,
       "gc-collect", table.uniqueName))
-    private val metricCollected = new Meter(metrics.metricsRegistry.newMeter(GarbageCollector.getClass,
+    lazy private val collectedVersionsMeter = new Meter(metrics.metricsRegistry.newMeter(GarbageCollector.getClass,
       "gc-collected-record", table.uniqueName, "records", TimeUnit.SECONDS))
+    lazy private val extraVersionsLoadedMeter = new Meter(metrics.metricsRegistry.newMeter(GarbageCollector.getClass,
+      "gc-extra-record-loaded", table.uniqueName, "extra-record-loaded", TimeUnit.SECONDS))
+    private val collectedTokenGauge = metrics.metricsRegistry.newGauge(GarbageCollector.getClass,
+      "gc-collected-token", table.uniqueName, new Gauge[Long] {
+        def value = tableNextToken
+      })
 
     private var tableNextRange: TokenRange = tokenRanges.head
+    @volatile
     private var tableNextToken: Long = tokenRanges.head.start
     private val tableVersionsCache = mutable.Queue[VersionRecord]()
     private var tableLastMutationsCount: Int = 1
@@ -357,7 +365,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       var trx: MysqlTransaction = null
       var collectedTotal = 0
 
-      metricCollect.time({
+      collectTimer.time({
         try {
           trx = createStorageTransaction
 
@@ -378,7 +386,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
           var collectedVersions = 0
           while (tableVersionsCache.size > 0 && collectedVersions < toCollect) {
-            val record = tableVersionsCache.dequeue()
+            val record = tableVersionsCache.front // peek only, record is dequeued only once completed
             val versions = record.versions
             val toDeleteVersions = versions.sortBy(_.value).slice(0, versions.size - table.maxVersions)
 
@@ -386,6 +394,25 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
               trx.truncateVersions(table, record.token, record.accessPath, toDeleteVersions)
               collectedVersions += toDeleteVersions.size
             }
+
+            if (record.versionsCount <= versions.size) {
+              // All extra record versions has been truncated, officialy dequeue it
+              tableVersionsCache.dequeue()
+            } else {
+              // More versions need to be truncated, reload and update record
+              trx.getTopMostVersions(table, record.token, record.token, config.gcVersionsBatch).find(
+                _.accessPath == record.accessPath) match {
+                case Some(reloaded) => {
+                  extraVersionsLoadedMeter.mark(reloaded.versions.size)
+                  record.versions = reloaded.versions
+                  record.versionsCount = reloaded.versionsCount
+                }
+                case _ => {
+                  warn("Record version not found found (tk={}, path={})", record.token, record.accessPath)
+                }
+              }
+            }
+
             if (record.token > nextToken)
               nextToken = record.token
           }
@@ -399,7 +426,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           }
           collectedTotal += collectedVersions
 
-          metricCollected.mark(collectedTotal)
+          collectedVersionsMeter.mark(collectedTotal)
           trx.commit()
         } catch {
           case e: Exception => {
