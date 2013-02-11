@@ -33,7 +33,8 @@ class TableContinuousFeeder(name: String, storage: MysqlStorage, table: Table, t
         record.token = data(Token).toString.toLong
         record.timestamp = NrvTimestamp(data.getValueOldOrFromString(Timestamp, (v: Seq[String]) => {NrvTimestamp(v(0))}).asInstanceOf[NrvTimestamp])
         val keys = data(Keys).asInstanceOf[Seq[String]]
-        record.accetd)
+        record.accessPath = new AccessPath(keys.map(new AccessKey(_)))
+        Some(record)
       } catch {
         case e: Exception => {
           warn("Error creating Record for table {} from task context data {}: ", table.depthName("_"), data, e)
