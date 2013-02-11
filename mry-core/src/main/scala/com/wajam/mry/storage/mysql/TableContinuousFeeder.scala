@@ -4,6 +4,7 @@ import com.wajam.nrv.Logging
 import com.wajam.spnl.feeder.CachedDataFeeder
 import com.wajam.spnl.TaskContext
 import com.wajam.nrv.service.TokenRange
+import com.wajam.nrv.utils.timestamp.{Timestamp => NrvTimestamp}
 import com.wajam.nrv.data.MessageMigration._
 
 /**
@@ -30,10 +31,9 @@ class TableContinuousFeeder(name: String, storage: MysqlStorage, table: Table, t
       try {
         val record = new Record()
         record.token = data(Token).toString.toLong
-        record.timestamp = data.getValueOldOrFromString(Timestamp, (v: Seq[String]) => {Timestamp(v(0))}).clone()
+        record.timestamp = NrvTimestamp(data.getValueOldOrFromString(Timestamp, (v: Seq[String]) => {NrvTimestamp(v(0))}).asInstanceOf[NrvTimestamp])
         val keys = data(Keys).asInstanceOf[Seq[String]]
-        record.accessPath = new AccessPath(keys.map(new AccessKey(_)))
-        Some(record)
+        record.accetd)
       } catch {
         case e: Exception => {
           warn("Error creating Record for table {} from task context data {}: ", table.depthName("_"), data, e)
