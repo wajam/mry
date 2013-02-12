@@ -5,13 +5,12 @@ import com.wajam.spnl.feeder.CachedDataFeeder
 import com.wajam.spnl.TaskContext
 import com.wajam.nrv.service.TokenRange
 import com.wajam.nrv.utils.timestamp.{Timestamp => NrvTimestamp}
-import com.wajam.nrv.data.MessageMigration._
 
 /**
  * Fetches all current defined (not null) data on a table.
  * When it finished, it loops over and starts again with the oldest current data.
  */
-class TableContinuousFeeder(name: String, storage: MysqlStorage, table: Table, tokenRanges: Seq[TokenRange],
+class TableContinuousFeeder(name: String ,storage: MysqlStorage, table: Table, tokenRanges: Seq[TokenRange],
                             rowsToFetch: Int = 1000)
   extends CachedDataFeeder(name) with Logging {
 
@@ -25,13 +24,12 @@ class TableContinuousFeeder(name: String, storage: MysqlStorage, table: Table, t
     this.context = context
 
     val data = context.data
-    val bool: Boolean = data.containsEither(Timestamp)
-    lastRecord = if (data.contains(Keys) && data.contains(Token) && bool)
+    lastRecord = if (data.contains(Keys) && data.contains(Token) && data.contains(Timestamp))
     {
       try {
         val record = new Record()
         record.token = data(Token).toString.toLong
-        record.timestamp = NrvTimestamp(data.getValueOldOrFromString(Timestamp, (v: Seq[String]) => {NrvTimestamp(v(0))}).asInstanceOf[NrvTimestamp])
+        record.timestamp = NrvTimestamp(data(Timestamp))
         val keys = data(Keys).asInstanceOf[Seq[String]]
         record.accessPath = new AccessPath(keys.map(new AccessKey(_)))
         Some(record)
