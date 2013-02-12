@@ -554,9 +554,9 @@ object MysqlTransaction {
   }
 }
 
-class AccessKey(var key: String)
+case class AccessKey(var key: String)
 
-class AccessPath(val parts: Seq[AccessKey] = Seq()) {
+case class AccessPath(parts: Seq[AccessKey] = Seq()) {
   def last = parts.last
 
   def length = parts.length
