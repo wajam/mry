@@ -4,7 +4,6 @@ import com.wajam.nrv.Logging
 import com.wajam.spnl.feeder.CachedDataFeeder
 import com.wajam.spnl.TaskContext
 import com.wajam.nrv.service.TokenRange
-import com.wajam.nrv.utils.timestamp.{Timestamp => NrvTimestamp}
 
 /**
  * Fetches all current defined (not null) data on a table.
