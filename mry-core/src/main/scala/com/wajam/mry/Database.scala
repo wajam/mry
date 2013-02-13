@@ -114,6 +114,7 @@ class Database(var serviceName: String = "database")
       transaction.execute(context)
       values = context.returnValues
       context.commit()
+      transaction.reset()
 
     } catch {
       case e: Exception => {
