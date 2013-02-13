@@ -108,7 +108,7 @@ class Database(var serviceName: String = "database")
 
   private def execute(req: InMessage) {
     var values: Seq[Value] = null
-    val timestamp: Timestamp = req.metadata.getValueOldOrFromString("timestamp", (v: Seq[String]) => {Timestamp(v(0))}).asInstanceOf[Timestamp]
+    val timestamp: Timestamp = req.metadata.getValueOrBuildFromString("timestamp", (v: Seq[String]) => {Timestamp(v(0))}).asInstanceOf[Timestamp]
     val context = new ExecutionContext(storages, Some(timestamp))
     context.cluster = Database.this.cluster
 

@@ -29,7 +29,7 @@ class TableContinuousFeeder(name: String ,storage: MysqlStorage, table: Table, t
       try {
         val record = new Record()
         record.token = data(Token).toString.toLong
-        record.timestamp = NrvTimestamp(data(Timestamp))
+        record.timestamp = NrvTimestamp(data(Timestamp).asInstanceOf[NrvTimestamp])
         val keys = data(Keys).asInstanceOf[Seq[String]]
         record.accessPath = new AccessPath(keys.map(new AccessKey(_)))
         Some(record)
