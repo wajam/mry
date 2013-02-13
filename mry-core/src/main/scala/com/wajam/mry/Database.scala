@@ -10,6 +10,7 @@ import com.wajam.nrv.data.{Message, InMessage}
 import com.wajam.nrv.utils.{Promise, Future}
 import com.wajam.nrv.utils.timestamp.Timestamp
 import com.wajam.nrv.consistency.ConsistentStore
+import com.wajam.nrv.data.MessageMigration._
 
 
 /**
@@ -107,7 +108,7 @@ class Database(var serviceName: String = "database")
 
   private def execute(req: InMessage) {
     var values: Seq[Value] = null
-    val timestamp: Timestamp = req.metadata("timestamp").asInstanceOf[Timestamp]
+    val timestamp: Timestamp = req.metadata.getValueOrBuildFromString("timestamp", (v: Seq[String]) => {Timestamp(v(0))}).asInstanceOf[Timestamp]
     val context = new ExecutionContext(storages, Some(timestamp))
     context.cluster = Database.this.cluster
 
