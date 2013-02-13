@@ -250,7 +250,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
     @volatile
     private var active = false
     private var tokenRanges: List[TokenRange] = List(TokenRange.All)
-    private val tableCollectors = mutable.Map[Table, TableCollector]()
+    private[MysqlStorage] val tableCollectors = mutable.Map[Table, TableCollector]()
 
     private val scheduledExecutor = new ScheduledThreadPoolExecutor(1)
     private val scheduledTask = scheduledExecutor.scheduleWithFixedDelay(new Runnable {
@@ -326,7 +326,13 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       "gc-extra-record-loaded", table.uniqueName, "extra-record-loaded", TimeUnit.SECONDS))
     private val collectedTokenGauge = metrics.metricsRegistry.newGauge(GarbageCollector.getClass,
       "gc-collected-token", table.uniqueName, new Gauge[Long] {
-        def value = tableNextToken
+        def value = {
+          // Use token from the current table collector
+          GarbageCollector.tableCollectors.get(table) match {
+            case Some(collector) => collector.tableNextToken
+            case _ => 0
+          }
+        }
       })
 
     private var tableNextRange: TokenRange = tokenRanges.head
