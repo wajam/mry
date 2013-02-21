@@ -88,21 +88,20 @@ class ProtobufTranslator extends ProtocolTranslator {
         new DoubleValue(protoVal.getDoubleValue)
 
       case PTransactionValue.Type.MAP =>
-        var map = Map[String, Value]()
         val protoMap = protoVal.getMap
-        for (protoVal <- protoMap.getValuesList) {
-          map += (protoVal.getKey -> this.fromProtoValue(protoVal.getValue))
-        }
+        val map: Map[String, Value] = (for {
+          protoVal <- protoMap.getValuesList
+        } yield (protoVal.getKey -> this.fromProtoValue(protoVal.getValue))).toMap // TODO HotSpot hates that toMap
+
         new MapValue(map)
 
       case PTransactionValue.Type.ARRAY =>
-        var list = List[Value]()
         val protoMap = protoVal.getMap
-        for (protoVal <- protoMap.getValuesList) {
-          list :+= this.fromProtoValue(protoVal.getValue)
-        }
-        new ListValue(list)
+        val list = for {
+          protoVal <- protoMap.getValuesList
+        } yield this.fromProtoValue(protoVal.getValue)
 
+        new ListValue(list)
       case PTransactionValue.Type.NULL =>
         new NullValue
 
@@ -114,7 +113,7 @@ class ProtobufTranslator extends ProtocolTranslator {
   def decodeValue(data: Array[Byte]): Value = this.fromProtoValue(PTransactionValue.parseFrom(data))
 
   def encodeTransaction(transaction: MryTransaction): Array[Byte] = {
-    return null
+    null
   }
 
   def decodeTransaction(data: Array[Byte]): MryTransaction = {
