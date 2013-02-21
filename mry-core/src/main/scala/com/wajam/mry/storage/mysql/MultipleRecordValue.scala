@@ -31,21 +31,17 @@ class MultipleRecordValue(storage: MysqlStorage, context: ExecutionContext, tabl
 
   lazy val innerValue = {
     this.iterator match {
-      case Some(iter) =>
+      case Some(iter) => {
         try {
-          var list = List[Value]()
-          while (iter.next()) {
-            val record = iter.record
-            list :+= new RecordValue(storage, context, table, token, record.accessPath, Some(transaction), Some(record))
+          val list = iter map {
+            (record) => new RecordValue(storage, context, table, token, record.accessPath, Some(transaction), Some(record))
           }
-
-          new ListValue(list)
+          new ListValue(list.toList)
         } finally {
           iter.close()
         }
-
-      case None =>
-        new ListValue(Seq())
+      }
+      case None => new ListValue(Nil)
     }
   }
 

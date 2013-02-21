@@ -20,7 +20,8 @@ class NullValue extends Value with Serializable {
 
 object NullValue extends NullValue
 
-class MapValue(var mapValue: Map[String, Value]) extends Value with Serializable {
+@SerialVersionUID(3469418720141064443L)
+class MapValue(val mapValue: Map[String, Value]) extends Value with Serializable {
 
   def apply(key: String) = {
     mapValue.getOrElse(key, new NullValue)
@@ -32,7 +33,12 @@ class MapValue(var mapValue: Map[String, Value]) extends Value with Serializable
   }
 }
 
-class ListValue(var listValue: Seq[Value]) extends Value with Serializable {
+object MapValue {
+  def unapply(mv: MapValue) = Some(mv.mapValue)
+}
+
+@SerialVersionUID(3729883700870722479L)
+class ListValue(val listValue: Seq[Value]) extends Value with Serializable {
 
   def apply(index: Int) = {
     listValue(index)
@@ -44,7 +50,13 @@ class ListValue(var listValue: Seq[Value]) extends Value with Serializable {
   }
 }
 
-class StringValue(var strValue: String) extends Value with Serializable {
+object ListValue {
+  def unapply(lv: ListValue) = Some(lv.listValue)
+}
+
+@SerialVersionUID(-3026000576636973393L)
+class StringValue(val strValue: String) extends Value with Serializable {
+
   override def toString = strValue
 
   override def equalsValue(that: Value): Boolean = {
@@ -55,7 +67,12 @@ class StringValue(var strValue: String) extends Value with Serializable {
   }
 }
 
-class IntValue(var intValue: Long) extends Value with Serializable {
+object StringValue {
+  def unapply(s: StringValue) = Some(s.strValue)
+}
+
+@SerialVersionUID(6885681030783170441L)
+class IntValue(val intValue: Long) extends Value with Serializable {
   override def toString = String.valueOf(intValue)
 
   override def equalsValue(that: Value): Boolean = {
@@ -66,7 +83,12 @@ class IntValue(var intValue: Long) extends Value with Serializable {
   }
 }
 
-class BoolValue(var boolValue: Boolean) extends Value with Serializable {
+object IntValue {
+  def unapply(i: IntValue) = Some(i.intValue)
+}
+
+@SerialVersionUID(3071120965134758093L)
+class BoolValue(val boolValue: Boolean) extends Value with Serializable {
   override def toString = String.valueOf(boolValue)
 
   override def equalsValue(that: Value): Boolean = {
@@ -77,7 +99,12 @@ class BoolValue(var boolValue: Boolean) extends Value with Serializable {
   }
 }
 
-class DoubleValue(var doubleValue: Double) extends Value with Serializable {
+object BoolValue {
+  def unapply(b: BoolValue) = Some(b.boolValue)
+}
+
+@SerialVersionUID(-4318700849067154549L)
+class DoubleValue(val doubleValue: Double) extends Value with Serializable {
   override def toString = String.valueOf(doubleValue)
 
   override def equalsValue(that: Value): Boolean = {
@@ -88,3 +115,6 @@ class DoubleValue(var doubleValue: Double) extends Value with Serializable {
   }
 }
 
+object DoubleValue {
+  def unapply(d: DoubleValue) = Some(d.doubleValue)
+}
