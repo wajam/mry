@@ -119,7 +119,7 @@ class Database(var serviceName: String = "database")
         if (req.messageData != null)
           req.messageData.asInstanceOf[Transaction]
         else
-          req.parameters("trx").asInstanceOf[Transaction]  // TODO: MigrationDuplicate: Remove
+          req.parameters("trx").asInstanceOf[MMigrationCatchAll].value.asInstanceOf[Transaction]  // TODO: MigrationDuplicate: Remove
 
       transaction.execute(context)
       values = context.returnValues
