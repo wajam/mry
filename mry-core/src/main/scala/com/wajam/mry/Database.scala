@@ -128,6 +128,7 @@ class Database(var serviceName: String = "database")
 
     } catch {
       case e: Exception => {
+        debug("Got an exception executing transaction", e)
         context.rollback()
         throw e
       }
