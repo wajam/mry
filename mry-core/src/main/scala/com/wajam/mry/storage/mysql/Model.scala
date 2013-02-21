@@ -30,7 +30,7 @@ trait TableCollection {
   def getTable(name: String): Option[Table] = this.tables.get(name)
 }
 
-class Table(var name: String, var parent: Option[Table] = None, var maxVersions: Int = 3) extends TableCollection {
+class Table(val name: String, var parent: Option[Table] = None, val maxVersions: Int = 3) extends TableCollection {
   override def currentTable = Some(this)
 
   def depthName(glue: String): String = {
