@@ -4,11 +4,12 @@ import execution._
 import storage.Storage
 import com.wajam.nrv.Logging
 import com.yammer.metrics.scala.Instrumented
-import com.wajam.nrv.service.{ActionMethod, Resolver, Action, Service}
+import com.wajam.nrv.service._
 import com.wajam.nrv.tracing.Traced
 import com.wajam.nrv.data.{Message, InMessage}
 import com.wajam.nrv.utils.{Promise, Future}
 import com.wajam.nrv.consistency.{Consistency, ConsistentStore}
+import com.wajam.nrv.utils.timestamp.Timestamp
 
 
 /**
@@ -135,6 +136,20 @@ class Database(var serviceName: String = "database")
       }
       case _ => false
     }
+  }
+
+  /**
+   * Truncate all records at the given timestamp for the specified token.
+   */
+  def truncateAt(timestamp: Timestamp, token: Long) {
+    throw new Exception("Not implemented!")
+  }
+
+  /**
+   * Truncate all records from the given timestamp inclusively for the specified token ranges.
+   */
+  def truncateFrom(timestamp: Timestamp, tokens: Seq[TokenRange]) {
+    throw new Exception("Not implemented!")
   }
 }
 
