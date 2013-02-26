@@ -43,6 +43,10 @@ trait OperationSource {
     getProxiedSource.execGet(context, into, keys: _*)
   }
 
+  def execGetKeys(context: ExecutionContext, into: Variable) {
+    getProxiedSource.execGetKeys(context, into)
+  }
+
   def execSet(context: ExecutionContext, into: Variable, data: Object*) {
     getProxiedSource.execSet(context, into, data: _*)
   }
