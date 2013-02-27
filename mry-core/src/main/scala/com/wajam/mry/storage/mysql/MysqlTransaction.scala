@@ -165,7 +165,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
   def getMultiple(table: Table, token: Long, timestamp: Timestamp, accessPath: AccessPath,
                   includeDeleted: Boolean = false, optOffset: Option[Long] = None,
-                  optCount: Option[Long] = None): RecordIterator = {
+                  optCount: Option[Long] = None): RecordIterator[Record] = {
     assert(accessPath.length >= 1)
 
     val keysValue = accessPath.keys
@@ -220,7 +220,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         results = storage.executeSql(connection, false, sql, (Seq(token) ++ keysValue ++ Seq(timestamp.value)): _*)
       }
 
-      new RecordIterator(storage, results, table)
+      new RecordIterator[Record](results, (resultSet) => Record.load(storage, resultSet, table))
 
     } catch {
       case e: Exception =>
@@ -232,7 +232,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
   def getKeys(table: Table, token: Long, timestamp: Timestamp, accessPath: AccessPath,
                   includeDeleted: Boolean = false, optOffset: Option[Long] = None,
-                  optCount: Option[Long] = None): KeyIterator = {
+                  optCount: Option[Long] = None): RecordIterator[Key] = {
     assert(accessPath.length >= 1)
 
     val keysValue = accessPath.keys
@@ -287,7 +287,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         results = storage.executeSql(connection, false, sql, (Seq(token) ++ keysValue ++ Seq(timestamp.value)): _*)
       }
 
-      new KeyIterator(storage, results, table)
+      new RecordIterator[Key](results, (resultSet) => Key.load(resultSet, table.depth))
 
     } catch {
       case e: Exception =>
@@ -315,7 +315,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     val iter = getKeys(table, token, timestamp, accessPath, includeDeleted)
 
     if (iter.next()) {
-      Some(iter.key)
+      Some(iter.record)
     } else {
       None
     }
@@ -539,7 +539,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
   }
 
   def getAllLatest(table: Table, count: Long, range: TokenRange = TokenRange.All,
-                   optFromRecord: Option[Record] = None): RecordIterator = {
+                   optFromRecord: Option[Record] = None): RecordIterator[Record] = {
 
     val fullTableName = table.depthName("_")
     val outerProjKeys = (for (i <- 1 to table.depth) yield "o.k%1$d".format(i)).mkString(",")
@@ -602,7 +602,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         results = storage.executeSql(connection, false, sql, (recordPosition._2): _*)
       }
 
-      new RecordIterator(storage, results, table)
+      new RecordIterator[Record](results, (resultSet) => Record.load(storage, resultSet, table))
 
     } catch {
       case e: Exception =>
@@ -648,7 +648,10 @@ case class AccessPath(parts: Seq[AccessKey] = Seq()) {
   override def toString: String = (for (part <- parts) yield part.key).mkString("/")
 }
 
-case class Key(value: StringValue)
+trait WithValue {
+  def value: Value
+}
+case class Key(value: StringValue) extends WithValue
 
 object Key {
   def apply(value: String) = new Key(new StringValue(value))
@@ -658,7 +661,7 @@ object Key {
   }
 }
 
-class Record(var value: Value = new MapValue(Map())) {
+class Record(var value: Value = new MapValue(Map())) extends WithValue{
   var accessPath = new AccessPath()
   var token: Long = 0
   var encoding: Byte = 0
@@ -687,6 +690,14 @@ class Record(var value: Value = new MapValue(Map())) {
       this.value = serializer.decodeValue(bytes).asInstanceOf[MapValue]
     else
       this.value = NullValue
+  }
+}
+
+object Record {
+  def load(storage: MysqlStorage, resultSet: ResultSet, table: Table): Record = {
+    val record = new Record
+    record.load(storage.valueSerializer, resultSet, table.depth)
+    record
   }
 }
 
@@ -725,43 +736,13 @@ class MutationRecord {
   }
 }
 
-class KeyIterator(storage: MysqlStorage, results: SqlResults, table: Table) extends Traversable[Key] {
+class RecordIterator[RecordType](results: SqlResults, loadFunction: (ResultSet) => RecordType)
+  extends Traversable[RecordType] {
+
   private var hasNext = false
   private var closed = false
 
-  def foreach[U](f: (Key) => U) {
-    while (this.next()) {
-      f(key)
-    }
-    this.close()
-  }
-
-  def next(): Boolean = {
-    this.hasNext = results.resultset.next()
-    this.hasNext
-  }
-
-  def key: Key = {
-    if (hasNext) {
-      Key.load(results.resultset, table.depth)
-    } else {
-      null
-    }
-  }
-
-  def close() {
-    if (!closed) {
-      results.close()
-      closed = true
-    }
-  }
-}
-
-class RecordIterator(storage: MysqlStorage, results: SqlResults, table: Table) extends Traversable[Record] {
-  private var hasNext = false
-  private var closed = false
-
-  def foreach[U](f: (Record) => U) {
+  def foreach[U](f: (RecordType) => U) {
     while (this.next()) {
       f(record)
     }
@@ -773,13 +754,11 @@ class RecordIterator(storage: MysqlStorage, results: SqlResults, table: Table) e
     this.hasNext
   }
 
-  def record: Record = {
+  def record: RecordType = {
     if (hasNext) {
-      val record = new Record
-      record.load(storage.valueSerializer, results.resultset, table.depth)
-      record
+      loadFunction(results.resultset)
     } else {
-      null
+      null.asInstanceOf[RecordType]
     }
   }
 
