@@ -165,7 +165,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
   def getMultiple(table: Table, token: Long, timestamp: Timestamp, accessPath: AccessPath,
                   includeDeleted: Boolean = false, optOffset: Option[Long] = None,
-                  optCount: Option[Long] = None): RecordIterator = {
+                  optCount: Option[Long] = None): RecordIterator[Record] = {
     assert(accessPath.length >= 1)
 
     val keysValue = accessPath.keys
@@ -220,7 +220,74 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         results = storage.executeSql(connection, false, sql, (Seq(token) ++ keysValue ++ Seq(timestamp.value)): _*)
       }
 
-      new RecordIterator(storage, results, table)
+      new RecordIterator[Record](results, (resultSet) => Record.load(storage, resultSet, table))
+
+    } catch {
+      case e: Exception =>
+        if (results != null)
+          results.close()
+        throw e
+    }
+  }
+
+  def getKeys(table: Table, token: Long, timestamp: Timestamp, accessPath: AccessPath,
+                  includeDeleted: Boolean = false, optOffset: Option[Long] = None,
+                  optCount: Option[Long] = None): RecordIterator[Key] = {
+    assert(accessPath.length >= 1)
+
+    val keysValue = accessPath.keys
+    val fullTableName = table.depthName("_")
+    val outerProjKeys = (for (i <- 1 to table.depth) yield "o.k%1$d".format(i)).mkString(",")
+    val innerProjKeys = (for (i <- 1 to table.depth) yield "i.k%1$d".format(i)).mkString(",")
+    val outerWhereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = o.k%1$d".format(i)).mkString(" AND ")
+    val innerWhereKeys = (for (i <- 1 to accessPath.parts.length) yield "i.k%d = ?".format(i)).mkString(" AND ")
+
+    val limitSql = (optOffset, optCount) match {
+      case (Some(offset), Some(count)) => "LIMIT %d, %d".format(offset, count)
+      case (Some(offset), None) => "LIMIT %d".format(offset)
+      case (None, Some(count)) => "LIMIT 0, %d".format(count)
+      case (None, None) => ""
+    }
+
+    /* Generated SQL looks like:
+     *
+     *   SELECT o.k1
+     *   FROM `table1_data` AS o, (
+     *       SELECT i.tk, MAX(i.ts) AS max_ts, i.k1
+     *       FROM `table1_index` AS i
+     *       WHERE i.ts <= ? AND i.tk = ? AND i.k1 = ?
+     *       GROUP BY i.tk, i.k1
+     *       LIMIT 0,1000
+     *   ) AS i
+     *   WHERE o.tk = i.tk
+     *   AND i.k1 = o.k1
+     *   AND o.ts = i.max_ts
+     *   AND o.d IS NOT NULL
+     */
+    var sql = """
+        SELECT %1$s
+        FROM `%2$s_data` AS o, (
+            SELECT i.tk, MAX(i.ts) AS max_ts, %3$s
+            FROM `%2$s_index` AS i
+            WHERE i.tk = ? AND %4$s AND i.ts <= ?
+            GROUP BY i.tk, %3$s
+            %5$s
+        ) AS i
+        WHERE o.tk = i.tk AND %6$s
+        AND o.ts = i.max_ts
+              """.format(outerProjKeys, fullTableName, innerProjKeys, innerWhereKeys, limitSql, outerWhereKeys)
+
+
+    if (!includeDeleted)
+      sql += " AND o.d IS NOT NULL "
+
+    var results: SqlResults = null
+    try {
+      metrics.tableMetricGetKeys(table).time {
+        results = storage.executeSql(connection, false, sql, (Seq(token) ++ keysValue ++ Seq(timestamp.value)): _*)
+      }
+
+      new RecordIterator[Key](results, (resultSet) => Key.load(resultSet, table.depth))
 
     } catch {
       case e: Exception =>
@@ -234,6 +301,18 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     assert(accessPath.length == table.depth)
 
     val iter = getMultiple(table, token, timestamp, accessPath, includeDeleted)
+
+    if (iter.next()) {
+      Some(iter.record)
+    } else {
+      None
+    }
+  }
+
+  def getKey(table: Table, token: Long, timestamp: Timestamp, accessPath: AccessPath, includeDeleted: Boolean = false): Option[Key] = {
+    assert(accessPath.length == table.depth)
+
+    val iter = getKeys(table, token, timestamp, accessPath, includeDeleted)
 
     if (iter.next()) {
       Some(iter.record)
@@ -460,7 +539,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
   }
 
   def getAllLatest(table: Table, count: Long, range: TokenRange = TokenRange.All,
-                   optFromRecord: Option[Record] = None): RecordIterator = {
+                   optFromRecord: Option[Record] = None): RecordIterator[Record] = {
 
     val fullTableName = table.depthName("_")
     val outerProjKeys = (for (i <- 1 to table.depth) yield "o.k%1$d".format(i)).mkString(",")
@@ -523,7 +602,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         results = storage.executeSql(connection, false, sql, (recordPosition._2): _*)
       }
 
-      new RecordIterator(storage, results, table)
+      new RecordIterator[Record](results, (resultSet) => Record.load(storage, resultSet, table))
 
     } catch {
       case e: Exception =>
@@ -541,6 +620,7 @@ object MysqlTransaction {
     val tableMetricTopMostVersions = generateTablesTimers("mysql-topmosversions")
     val tableMetricSet = generateTablesTimers("mysql-set")
     val tableMetricGet = generateTablesTimers("mysql-get")
+    val tableMetricGetKeys = generateTablesTimers("mysql-get-keys")
     val tableMetricDelete = generateTablesTimers("mysql-delete")
     val metricCommit = tracedTimer("mysql-commit")
     val metricRollback = tracedTimer("mysql-rollback")
@@ -568,7 +648,21 @@ case class AccessPath(parts: Seq[AccessKey] = Seq()) {
   override def toString: String = (for (part <- parts) yield part.key).mkString("/")
 }
 
-class Record(var value: Value = new MapValue(Map())) {
+trait WithValue {
+  def value: Value
+}
+
+case class Key(value: StringValue) extends WithValue
+
+object Key {
+  def apply(value: String) = new Key(new StringValue(value))
+
+  def load(resultSet: ResultSet, depth: Int) = {
+    Key(resultSet.getString(depth))
+  }
+}
+
+class Record(var value: Value = new MapValue(Map())) extends WithValue {
   var accessPath = new AccessPath()
   var token: Long = 0
   var encoding: Byte = 0
@@ -597,6 +691,14 @@ class Record(var value: Value = new MapValue(Map())) {
       this.value = serializer.decodeValue(bytes).asInstanceOf[MapValue]
     else
       this.value = NullValue
+  }
+}
+
+object Record {
+  def load(storage: MysqlStorage, resultSet: ResultSet, table: Table): Record = {
+    val record = new Record
+    record.load(storage.valueSerializer, resultSet, table.depth)
+    record
   }
 }
 
@@ -635,11 +737,13 @@ class MutationRecord {
   }
 }
 
-class RecordIterator(storage: MysqlStorage, results: SqlResults, table: Table) extends Traversable[Record] {
+class RecordIterator[RecordType](results: SqlResults, loadFunction: (ResultSet) => RecordType)
+  extends Traversable[RecordType] {
+
   private var hasNext = false
   private var closed = false
 
-  def foreach[U](f: (Record) => U) {
+  def foreach[U](f: (RecordType) => U) {
     while (this.next()) {
       f(record)
     }
@@ -651,13 +755,11 @@ class RecordIterator(storage: MysqlStorage, results: SqlResults, table: Table) e
     this.hasNext
   }
 
-  def record: Record = {
+  def record: RecordType = {
     if (hasNext) {
-      val record = new Record
-      record.load(storage.valueSerializer, results.resultset, table.depth)
-      record
+      loadFunction(results.resultset)
     } else {
-      null
+      null.asInstanceOf[RecordType]
     }
   }
 

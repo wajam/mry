@@ -7,9 +7,9 @@ import com.wajam.mry.storage.StorageException
 /**
  * MRY value representing a mysql record
  */
-class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table, token: Long,
+abstract class BaseRecordValue[RecordType <: WithValue](storage: MysqlStorage, context: ExecutionContext, table: Table, token: Long,
                   accessPath: AccessPath, var optTransaction: Option[MysqlTransaction] = None,
-                  var optRecord: Option[Record] = None) extends Value {
+                  var optRecord: Option[RecordType] = None) extends Value {
 
   if (optTransaction.isEmpty) {
     if (!context.dryMode) {
@@ -19,7 +19,7 @@ class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table
 
   lazy val innerValue = {
     if (optRecord.isEmpty && !context.dryMode) {
-      optRecord = optTransaction.get.get(table, token, context.timestamp.get, accessPath)
+      optRecord = executeTransaction()
     }
 
     this.optRecord match {
@@ -35,6 +35,16 @@ class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table
 
   // Operations are executed on record data (map or null)
   override def proxiedSource: Option[OperationSource] = Some(this.innerValue)
+
+  def executeTransaction(): Option[RecordType]
+}
+
+class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table, token: Long,
+                   accessPath: AccessPath, var transaction: Option[MysqlTransaction] = None,
+                   var record: Option[Record] = None)
+  extends BaseRecordValue[Record](storage, context, table, token, accessPath, transaction, record) {
+
+  def executeTransaction() = optTransaction.get.get(table, token, context.timestamp.get, accessPath)
 
   override def execFrom(context: ExecutionContext, into: Variable, keys: Object*) {
     val tableName = param[StringValue](keys, 0).strValue
@@ -52,6 +62,14 @@ class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table
 
     }
   }
+}
+
+class KeyValue(storage: MysqlStorage, context: ExecutionContext, table: Table, token: Long,
+                  accessPath: AccessPath, var transaction: Option[MysqlTransaction] = None,
+                  var record: Option[Key] = None)
+  extends BaseRecordValue[Key](storage, context, table, token, accessPath, transaction, record) {
+
+  def executeTransaction() = optTransaction.get.getKey(table, token, context.timestamp.get, accessPath)
 }
 
 

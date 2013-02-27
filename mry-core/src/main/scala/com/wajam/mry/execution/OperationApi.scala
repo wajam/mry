@@ -36,6 +36,15 @@ trait OperationApi extends OperationSource {
     into
   }
 
+  def getKeys(): Variable = {
+    this.getKeysInto(this.sourceBlock.defineVariable())
+  }
+
+  def getKeysInto(into: Variable): Variable = {
+    sourceBlock.addOperation(new GetKeys(this, into))
+    into
+  }
+
   def set(data: Object*): Variable = {
     this.setInto(this.sourceBlock.defineVariable(), data: _*)
   }

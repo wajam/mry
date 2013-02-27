@@ -36,6 +36,15 @@ class TableValue(storage: MysqlStorage, table: Table, accessPrefix: AccessPath =
     }
   }
 
+  override def execGetKeys(context: ExecutionContext, into: Variable) {
+    if (accessPrefix.length == 0)
+      throw new InvalidParameter("Can't get multiple keys on first level tables")
+
+    val keysSeq = accessPrefix
+    val token = context.getToken(keysSeq(0).key)
+    into.value = new MultipleKeyValue(storage, context, table, token, accessPrefix)
+  }
+
   override def execSet(context: ExecutionContext, into: Variable, data: Object*) {
     val key = param[StringValue](data, 0).strValue
     val mapVal = param[MapValue](data, 1)

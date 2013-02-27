@@ -32,6 +32,14 @@ object Operation {
     def reset() {}
   }
 
+  class GetKeys(source: OperationSource, into: Variable) extends Operation(source) with Serializable {
+    def execute(context: ExecutionContext) {
+      source.execGetKeys(context, into)
+    }
+
+    def reset() {}
+  }
+
   class Set(source: OperationSource, into: Variable, data: Object*) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execSet(context, into, data: _*)

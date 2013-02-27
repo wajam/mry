@@ -889,6 +889,58 @@ class TestMysqlStorage extends TestMysqlBase {
     ld should be(keys.slice(10, 20))
   }
 
+  test("should not return keys on first level tables") {
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", Map("mapk" -> toVal("value1")))
+    }, commit = true)
+
+    intercept[InvalidParameter] {
+      exec(t => {
+        val storage = t.from("mysql")
+        val table = storage.from("table1")
+        t.returns(table.getKeys())
+      })
+    }
+  }
+
+  test("should return keys for subtables") {
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key3", Map("k" -> "value3"))
+      table.get("key3").from("table1_1").set("key3.1", Map("k" -> "value3.1"))
+      table.get("key3").from("table1_1").set("key3.2", Map("k" -> "value3.2"))
+      table.get("key3").from("table1_1").get("key3.1").from("table1_1_1").set("key3.1.1", Map("k" -> "value3.1.1"))
+      table.get("key3").from("table1_1").get("key3.1").from("table1_1_1").set("key3.1.2", Map("k" -> "value3.1.2"))
+      table.get("key3").from("table1_1").get("key3.2").from("table1_1_1").set("key3.3.1", Map("k" -> "value3.3.1"))
+    }, commit = true)
+
+    val table1_1Keys = exec(t => {
+      val table = t.from("mysql").from("table1").get("key3").from("table1_1")
+      t.returns(table.getKeys())
+    })
+
+    assertKeyList(List("key3.1", "key3.2"), table1_1Keys(0).asInstanceOf[ListValue])
+
+    val table1_1_1Keys = exec(t => {
+      val table = t.from("mysql").from("table1").get("key3").from("table1_1").get("key3.2").from("table1_1_1")
+      t.returns(table.getKeys())
+    })
+
+    assertKeyList(List("key3.3.1"), table1_1_1Keys(0).asInstanceOf[ListValue])
+  }
+
   test("make sure junit doesn't get stuck") {
+  }
+
+  private def assertKeyList(expectedKeys: List[String], actualKeys: ListValue) {
+    actualKeys.length should be(expectedKeys.length)
+    for (i <- 0 until actualKeys.length) {
+      actualKeys(i) match {
+        case s: StringValue => s.strValue should be(expectedKeys(i))
+      }
+    }
   }
 }
