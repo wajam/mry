@@ -651,6 +651,7 @@ case class AccessPath(parts: Seq[AccessKey] = Seq()) {
 trait WithValue {
   def value: Value
 }
+
 case class Key(value: StringValue) extends WithValue
 
 object Key {

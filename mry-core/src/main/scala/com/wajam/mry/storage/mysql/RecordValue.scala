@@ -36,6 +36,16 @@ abstract class BaseRecordValue[RecordType <: WithValue](storage: MysqlStorage, c
   // Operations are executed on record data (map or null)
   override def proxiedSource: Option[OperationSource] = Some(this.innerValue)
 
+  def executeTransaction(): Option[RecordType]
+}
+
+class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table, token: Long,
+                   accessPath: AccessPath, var transaction: Option[MysqlTransaction] = None,
+                   var record: Option[Record] = None)
+  extends BaseRecordValue[Record](storage, context, table, token, accessPath, transaction, record) {
+
+  def executeTransaction() = optTransaction.get.get(table, token, context.timestamp.get, accessPath)
+
   override def execFrom(context: ExecutionContext, into: Variable, keys: Object*) {
     val tableName = param[StringValue](keys, 0).strValue
     val optTable = table.getTable(tableName)
@@ -52,16 +62,6 @@ abstract class BaseRecordValue[RecordType <: WithValue](storage: MysqlStorage, c
 
     }
   }
-
-  def executeTransaction(): Option[RecordType]
-}
-
-class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table, token: Long,
-                   accessPath: AccessPath, var transaction: Option[MysqlTransaction] = None,
-                   var record: Option[Record] = None)
-  extends BaseRecordValue[Record](storage, context, table, token, accessPath, transaction, record) {
-
-  def executeTransaction() = optTransaction.get.get(table, token, context.timestamp.get, accessPath)
 }
 
 class KeyValue(storage: MysqlStorage, context: ExecutionContext, table: Table, token: Long,

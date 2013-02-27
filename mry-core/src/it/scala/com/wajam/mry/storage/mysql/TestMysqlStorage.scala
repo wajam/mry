@@ -905,12 +905,10 @@ class TestMysqlStorage extends TestMysqlBase {
     }
   }
 
-  test("should keys only level 2") {
+  test("should return keys for subtables") {
     exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
-      table.set("key1", Map("k" -> "value1"))
-      table.set("key2", Map("k" -> "value2"))
       table.set("key3", Map("k" -> "value3"))
       table.get("key3").from("table1_1").set("key3.1", Map("k" -> "value3.1"))
       table.get("key3").from("table1_1").set("key3.2", Map("k" -> "value3.2"))
@@ -919,37 +917,30 @@ class TestMysqlStorage extends TestMysqlBase {
       table.get("key3").from("table1_1").get("key3.2").from("table1_1_1").set("key3.3.1", Map("k" -> "value3.3.1"))
     }, commit = true)
 
-    val layer2Values = exec(t => {
+    val table1_1Keys = exec(t => {
       val table = t.from("mysql").from("table1").get("key3").from("table1_1")
       t.returns(table.getKeys())
     })
 
-    val layer2ExpectedKeys = List("key3.1", "key3.2")
+    assertKeyList(List("key3.1", "key3.2"), table1_1Keys(0).asInstanceOf[ListValue])
 
-    layer2Values(0) match {
-      case l: ListValue => for (i <- 0 until l.listValue.length) {
-        l(i) match {
-          case s: StringValue => s.strValue should be(layer2ExpectedKeys(i))
-        }
-      }
-    }
-
-    val layer3Values = exec(t => {
+    val table1_1_1Keys = exec(t => {
       val table = t.from("mysql").from("table1").get("key3").from("table1_1").get("key3.2").from("table1_1_1")
       t.returns(table.getKeys())
     })
 
-    val layer3ExpectedKeys = List("key3.3.1")
-
-    layer3Values(0) match {
-      case l: ListValue => for (i <- 0 until l.listValue.length) {
-        l(i) match {
-          case s: StringValue => s.strValue should be(layer3ExpectedKeys(i))
-        }
-      }
-    }
+    assertKeyList(List("key3.3.1"), table1_1_1Keys(0).asInstanceOf[ListValue])
   }
 
   test("make sure junit doesn't get stuck") {
+  }
+
+  private def assertKeyList(expectedKeys: List[String], actualKeys: ListValue) {
+    actualKeys.length should be(expectedKeys.length)
+    for (i <- 0 until actualKeys.length) {
+      actualKeys(i) match {
+        case s: StringValue => s.strValue should be(expectedKeys(i))
+      }
+    }
   }
 }
