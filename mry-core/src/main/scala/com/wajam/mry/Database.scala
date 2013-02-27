@@ -76,7 +76,7 @@ class Database(var serviceName: String = "database")
             if (resp.messageData != null)
               ret(resp.messageData.asInstanceOf[Seq[Value]], None)
             else
-              ret(resp.parameters("values").asInstanceOf[Seq[Value]], None) // TODO: MigrationDuplicate: Remove
+              ret(resp.parameters("values").asInstanceOf[MMigrationCatchAll].value.asInstanceOf[Seq[Value]], None) // TODO: MigrationDuplicate: Remove
           else
             ret(Seq(), optException)
         }
