@@ -33,13 +33,10 @@ class MultipleRecordValue(storage: MysqlStorage, context: ExecutionContext, tabl
     this.iterator match {
       case Some(iter) =>
         try {
-          var list = List[Value]()
-          while (iter.next()) {
-            val record = iter.record
-            list :+= new RecordValue(storage, context, table, token, record.accessPath, Some(transaction), Some(record))
+          val list: Traversable[RecordValue] = iter map {
+            (record) => new RecordValue(storage, context, table, token, record.accessPath, Some(transaction), Some(record))
           }
-
-          new ListValue(list)
+          new ListValue(list.toList)
         } finally {
           iter.close()
         }
