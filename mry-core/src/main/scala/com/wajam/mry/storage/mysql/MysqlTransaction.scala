@@ -662,7 +662,7 @@ object Key {
   }
 }
 
-class Record(var value: Value = new MapValue(Map())) extends WithValue{
+class Record(var value: Value = new MapValue(Map())) extends WithValue {
   var accessPath = new AccessPath()
   var token: Long = 0
   var encoding: Byte = 0
