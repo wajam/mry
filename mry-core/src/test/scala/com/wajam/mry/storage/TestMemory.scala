@@ -48,7 +48,7 @@ class TestMemory extends FunSuite {
     val v1 = store.get("key2")
     val v2 = store.get("key3")
     t.execute(context)
-    assert(v1.value.isInstanceOf[NullValue])
+    assert(v1.value.isNull)
     assert(v2.value.equalsValue("value3"))
   }
 
@@ -91,10 +91,10 @@ class TestMemory extends FunSuite {
     t.execute(context)
     context.commit()
 
-    assert(v1.value.isInstanceOf[NullValue])
+    assert(v1.value.isNull)
     assert(v2.value.equalsValue("value2"))
-    assert(v3.value.isInstanceOf[NullValue])
-    assert(v4.value.isInstanceOf[NullValue])
+    assert(v3.value.isNull)
+    assert(v4.value.isNull)
   }
 
 }

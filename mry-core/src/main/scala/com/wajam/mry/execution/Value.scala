@@ -11,19 +11,21 @@ trait Value extends Object with OperationSource {
 
   def equalsValue(that: Value): Boolean = this == that
 
-  def isNull = this.equalsValue(NullValue)
+  def isNull = false
 }
 
 class NullValue extends Value with Serializable {
-  override def equalsValue(that: Value): Boolean = this.isInstanceOf[NullValue]
+  override def equalsValue(that: Value): Boolean = that.isNull
+  override def isNull = true
 }
 
 object NullValue extends NullValue
 
-class MapValue(var mapValue: Map[String, Value]) extends Value with Serializable {
+@SerialVersionUID(3469418720141064443L)
+case class MapValue(mapValue: Map[String, Value]) extends Value {
 
   def apply(key: String) = {
-    mapValue.getOrElse(key, new NullValue)
+    mapValue.getOrElse(key, NullValue)
   }
 
   override def serializableValue: Value = {
@@ -32,7 +34,8 @@ class MapValue(var mapValue: Map[String, Value]) extends Value with Serializable
   }
 }
 
-class ListValue(var listValue: Seq[Value]) extends Value with Serializable {
+@SerialVersionUID(3729883700870722479L)
+case class ListValue(listValue: Seq[Value]) extends Value {
 
   def apply(index: Int) = {
     listValue(index)
@@ -44,45 +47,49 @@ class ListValue(var listValue: Seq[Value]) extends Value with Serializable {
   }
 }
 
-class StringValue(var strValue: String) extends Value with Serializable {
+@SerialVersionUID(-3026000576636973393L)
+case class StringValue(strValue: String) extends Value {
   override def toString = strValue
 
   override def equalsValue(that: Value): Boolean = {
     that match {
-      case s: StringValue => s.strValue == strValue
+      case StringValue(s) => s == strValue
       case _ => false
     }
   }
 }
 
-class IntValue(var intValue: Long) extends Value with Serializable {
+@SerialVersionUID(6885681030783170441L)
+case class IntValue(intValue: Long) extends Value {
   override def toString = String.valueOf(intValue)
 
   override def equalsValue(that: Value): Boolean = {
     that match {
-      case i: IntValue => i.intValue == this.intValue
+      case IntValue(i) => i == this.intValue
       case _ => false
     }
   }
 }
 
-class BoolValue(var boolValue: Boolean) extends Value with Serializable {
+@SerialVersionUID(3071120965134758093L)
+case class BoolValue(boolValue: Boolean) extends Value {
   override def toString = String.valueOf(boolValue)
 
   override def equalsValue(that: Value): Boolean = {
     that match {
-      case b: BoolValue => b.boolValue == this.boolValue
+      case BoolValue(b) => b == this.boolValue
       case _ => false
     }
   }
 }
 
-class DoubleValue(var doubleValue: Double) extends Value with Serializable {
+@SerialVersionUID(-4318700849067154549L)
+case class DoubleValue(doubleValue: Double) extends Value {
   override def toString = String.valueOf(doubleValue)
 
   override def equalsValue(that: Value): Boolean = {
     that match {
-      case d: DoubleValue => d.doubleValue == this.doubleValue
+      case DoubleValue(d) => d == this.doubleValue
       case _ => false
     }
   }
