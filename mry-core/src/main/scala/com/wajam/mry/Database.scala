@@ -6,7 +6,7 @@ import com.wajam.nrv.Logging
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service.{ActionMethod, Resolver, Action, Service}
 import com.wajam.nrv.tracing.Traced
-import com.wajam.nrv.data.{Message, InMessage}
+import com.wajam.nrv.data.{MMigrationCatchAll, Message, InMessage}
 import com.wajam.nrv.utils.{Promise, Future}
 import com.wajam.nrv.consistency.{Consistency, ConsistentStore}
 
@@ -68,10 +68,15 @@ class Database(var serviceName: String = "database")
         remoteReadExecuteToken
       }
 
-      remoteAction.call(Map(Database.TOKEN_KEY -> context.tokens(0), "trx" -> transaction), onReply = (resp, optException) => {
+      remoteAction.call(Map(Database.TOKEN_KEY -> context.tokens(0), "trx" -> MMigrationCatchAll(transaction)), // TODO: MigrationDuplicate: Remove trx
+                        data = transaction,
+                        onReply = (resp, optException) => {
         if (ret != null) {
           if (optException.isEmpty)
-            ret(resp.parameters("values").asInstanceOf[Seq[Value]], None)
+            if (resp.hasData)
+              ret(resp.getData[Seq[Value]], None)
+            else
+              ret(resp.parameters("values").asInstanceOf[MMigrationCatchAll].value.asInstanceOf[Seq[Value]], None) // TODO: MigrationDuplicate: Remove
           else
             ret(Seq(), optException)
         }
@@ -110,7 +115,12 @@ class Database(var serviceName: String = "database")
     context.cluster = Database.this.cluster
 
     try {
-      val transaction = req.parameters("trx").asInstanceOf[Transaction]
+      val transaction =
+        if (req.hasData)
+          req.getData[Transaction]
+        else
+          req.parameters("trx").asInstanceOf[MMigrationCatchAll].value.asInstanceOf[Transaction]  // TODO: MigrationDuplicate: Remove
+
       transaction.execute(context)
       values = context.returnValues
       context.commit()
@@ -118,13 +128,15 @@ class Database(var serviceName: String = "database")
 
     } catch {
       case e: Exception => {
+        debug("Got an exception executing transaction", e)
         context.rollback()
         throw e
       }
     }
 
     req.reply(
-      Seq("values" -> values)
+      Seq("values" -> MMigrationCatchAll(values)), // TODO: MigrationDuplicate: Remove
+      data = values
     )
   }
 
