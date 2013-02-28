@@ -73,8 +73,8 @@ class Database(var serviceName: String = "database")
                         onReply = (resp, optException) => {
         if (ret != null) {
           if (optException.isEmpty)
-            if (resp.messageData != null)
-              ret(resp.messageData.asInstanceOf[Seq[Value]], None)
+            if (resp.hasData)
+              ret(resp.getData[Seq[Value]], None)
             else
               ret(resp.parameters("values").asInstanceOf[MMigrationCatchAll].value.asInstanceOf[Seq[Value]], None) // TODO: MigrationDuplicate: Remove
           else
@@ -116,8 +116,8 @@ class Database(var serviceName: String = "database")
 
     try {
       val transaction =
-        if (req.messageData != null)
-          req.messageData.asInstanceOf[Transaction]
+        if (req.hasData)
+          req.getData[Transaction]
         else
           req.parameters("trx").asInstanceOf[MMigrationCatchAll].value.asInstanceOf[Transaction]  // TODO: MigrationDuplicate: Remove
 
