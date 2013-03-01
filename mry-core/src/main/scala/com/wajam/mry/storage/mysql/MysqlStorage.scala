@@ -292,7 +292,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       this.scheduledTask.cancel(true)
     }
 
-    private[mysql] def collectAll(toCollect: Int): Int = {
+    private[mysql] def collectAll(toCollect: Int, versionBatchSize: Int = config.gcVersionsBatch): Int = {
       val collectors = tableCollectors.synchronized {
         if (tokenRanges.size > 0) {
           allTables.map(table => getTableCollector(table))
@@ -300,7 +300,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           Seq[TableCollector]()
         }
       }
-      collectors.foldLeft(0)((sum, collector) => sum + collector.collect(toCollect))
+      collectors.foldLeft(0)((sum, collector) => sum + collector.collect(toCollect, versionBatchSize))
     }
 
     /**
@@ -352,7 +352,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       if (mutationsDiff > 0 || lastCollection > 0) {
         val toCollect = math.max(math.max(mutationsDiff, config.gcMinimumCollection), lastCollection) * config.gcCollectionFactor
         log.debug("Collecting {} from table {}", toCollect, table.name)
-        val collected = collect(toCollect.toInt)
+        val collected = collect(toCollect.toInt, config.gcVersionsBatch)
         log.debug("Collected {} from table {}", collected, table.name)
         tableLastCollection = collected
       }
@@ -365,7 +365,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
      * @param toCollect Number of versions to collect
      * @return Collected versions
      */
-    private[mysql] def collect(toCollect: Int): Int = {
+    private[mysql] def collect(toCollect: Int, versionBatchSize: Int): Int = {
       debug("GCing {} iteration starting, need {} to be collected", table.uniqueName, toCollect)
 
       var trx: MysqlTransaction = null
@@ -382,10 +382,10 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           // no more versions in cache, fetch new batch
           var nextToken = lastToken
           if (tableVersionsCache.size == 0) {
-            val fetched = trx.getTopMostVersions(table, lastToken, toToken, config.gcVersionsBatch)
+            val fetched = trx.getTopMostVersions(table, lastToken, toToken, versionBatchSize)
             tableVersionsCache ++= fetched
 
-            if (fetched.size < config.gcVersionsBatch) {
+            if (fetched.size < versionBatchSize) {
               nextToken = toToken
             }
           }
@@ -406,7 +406,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
               tableVersionsCache.dequeue()
             } else {
               // More versions need to be truncated, reload and update record
-              trx.getTopMostVersions(table, record.token, record.token, config.gcVersionsBatch).find(
+              trx.getTopMostVersions(table, record.token, record.token, versionBatchSize).find(
                 _.accessPath == record.accessPath) match {
                 case Some(reloaded) => {
                   extraVersionsLoadedMeter.mark(reloaded.versions.size)
@@ -414,7 +414,12 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
                   record.versionsCount = reloaded.versionsCount
                 }
                 case _ => {
-                  warn("Record version not found found (tk={}, path={})", record.token, record.accessPath)
+                  warn("Record version not found (table={}, tk={}, path={})", table.name, record.token, record.accessPath)
+
+                  // The access path we were trying to GC is beyond the version batch size i.e. if the batch is 100,
+                  // we were trying the GC the 101st or later. Clearing the cache, will restart GC to the first range
+                  // of access path for the same token.
+                  tableVersionsCache.clear()
                 }
               }
             }
