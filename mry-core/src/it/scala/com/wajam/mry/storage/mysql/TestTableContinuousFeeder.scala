@@ -6,7 +6,10 @@ import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.nrv.service.TokenRange
 import com.wajam.spnl.TaskContext
 import com.wajam.mry.storage.mysql.TableContinuousFeeder._
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
 
+@RunWith(classOf[JUnitRunner])
 class TestTableContinuousFeeder extends TestMysqlBase {
 
   test("continuous feeder should feed in loop a table and in token+key order") {
