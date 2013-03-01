@@ -7,8 +7,10 @@ import org.mockito.Matchers._
 import org.mockito.Mockito._
 import com.wajam.nrv.utils.ControlableCurrentTime
 import com.wajam.nrv.service.TokenRange
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
 
-
+@RunWith(classOf[JUnitRunner])
 class TestTableTimelineFeeder extends TestMysqlBase {
 
   test("timeline feeder should feed the table once in timestamp order") {
@@ -172,5 +174,42 @@ class TestTableTimelineFeeder extends TestMysqlBase {
     TimelineFeederContextCache.unregister("unknown", context2_1)
     TimelineFeederContextCache.contexts(name1) should be(List(context1_3, context1_1))
     TimelineFeederContextCache.contexts(name2) should be(List[TaskContext]())
+  }
+
+  test("timeline feeder with single token over batch size should not load records more than once") {
+    val batchSize = 10
+
+    // Add a batch of records ( > batch size) with the same timestamp
+    exec(t => {
+      val t1 = t.from("mysql").from("table1")
+      0.until(batchSize * 2).foreach(i => t1.set("a_%d".format(i), Map("key" -> "val")))
+    }, commit = true, onTimestamp = createTimestamp(1))
+
+    val feeder = new TableTimelineFeeder("test", mysqlStorage, table1, List(TokenRange.All), batchSize)
+    feeder.init(new TaskContext())
+
+    // Verify the batch is loaded once
+    val records = Iterator.continually({
+      feeder.next().map(record => {
+        feeder.ack(record)
+        record
+      })
+    }).take(100).flatten.toList
+    records.size should be(batchSize * 2)
+
+    // Add an extra record
+    exec(t => {
+      val t1 = t.from("mysql").from("table1")
+      t1.set("b", Map("key" -> "val"))
+    }, commit = true, onTimestamp = createTimestamp(2))
+
+    // The extra record should be loaded
+    val records2 = Iterator.continually({
+      feeder.next().map(record => {
+        feeder.ack(record)
+        record
+      })
+    }).take(100).flatten.toList
+    records2.size should be(1)
   }
 }
