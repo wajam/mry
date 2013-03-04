@@ -26,7 +26,7 @@ class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table
       case Some(r) =>
         r.value
       case None =>
-        new NullValue
+        NullValue
     }
   }
 

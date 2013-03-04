@@ -15,9 +15,9 @@ class TestProtobufTranslator extends FunSuite {
     var value = translator.decodeValue(bytes)
     assert(value.equalsValue("testvalue"))
 
-    bytes = translator.encodeValue(new NullValue)
+    bytes = translator.encodeValue(NullValue)
     value = translator.decodeValue(bytes)
-    assert(value.equalsValue(new NullValue))
+    assert(value.equalsValue(NullValue))
 
     bytes = translator.encodeValue(3423)
     value = translator.decodeValue(bytes)
