@@ -6,7 +6,7 @@ import com.wajam.nrv.Logging
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service._
 import com.wajam.nrv.tracing.Traced
-import com.wajam.nrv.data.{MMigrationCatchAll, Message, InMessage}
+import com.wajam.nrv.data.{Message, InMessage}
 import com.wajam.nrv.utils.{Promise, Future}
 import com.wajam.nrv.consistency.{Consistency, ConsistentStore}
 import com.wajam.nrv.utils.timestamp.Timestamp
@@ -69,15 +69,12 @@ class Database(var serviceName: String = "database")
         remoteReadExecuteToken
       }
 
-      remoteAction.call(Map(Database.TOKEN_KEY -> context.tokens(0), "trx" -> MMigrationCatchAll(transaction)), // TODO: MigrationDuplicate: Remove trx
+      remoteAction.call(Map(Database.TOKEN_KEY -> context.tokens(0)),
                         data = transaction,
                         onReply = (resp, optException) => {
         if (ret != null) {
           if (optException.isEmpty)
-            if (resp.hasData)
               ret(resp.getData[Seq[Value]], None)
-            else
-              ret(resp.parameters("values").asInstanceOf[MMigrationCatchAll].value.asInstanceOf[Seq[Value]], None) // TODO: MigrationDuplicate: Remove
           else
             ret(Seq(), optException)
         }
@@ -116,11 +113,7 @@ class Database(var serviceName: String = "database")
     context.cluster = Database.this.cluster
 
     try {
-      val transaction =
-        if (req.hasData)
-          req.getData[Transaction]
-        else
-          req.parameters("trx").asInstanceOf[MMigrationCatchAll].value.asInstanceOf[Transaction]  // TODO: MigrationDuplicate: Remove
+      val transaction = req.getData[Transaction]
 
       transaction.execute(context)
       values = context.returnValues
@@ -136,7 +129,7 @@ class Database(var serviceName: String = "database")
     }
 
     req.reply(
-      Seq("values" -> MMigrationCatchAll(values)), // TODO: MigrationDuplicate: Remove
+      null,
       data = values
     )
   }
