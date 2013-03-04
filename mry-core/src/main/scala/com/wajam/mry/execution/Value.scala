@@ -15,7 +15,7 @@ trait Value extends Object with OperationSource {
 }
 
 class NullValue extends Value with Serializable {
-  override def equalsValue(that: Value): Boolean = that.isNull
+  override def equalsValue(that: Value): Boolean = this.isInstanceOf[NullValue]
   override def isNull = true
 }
 
