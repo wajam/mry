@@ -51,32 +51,34 @@ class TableTimelineFeeder(name: String, storage: MysqlStorage, table: Table, tok
     try {
       transaction = storage.createStorageTransaction
       var mutations = transaction.getTimeline(table, timestampCursor, batchSize, tokenRanges, FromTimestamp)
-      lastSelectMode = FromTimestamp
+      if (!mutations.isEmpty) {
+        if (mutations.head.newTimestamp == mutations.last.newTimestamp) {
+          // The whole batch has the same timestamp and has thus been inserted together in the same transaction.
+          // Reload everything at that timestamp in case some records where drop by the batch size limit.
+          mutations = transaction.getTimeline(table, mutations.head.newTimestamp, 0, tokenRanges, AtTimestamp)
+          lastSelectMode = AtTimestamp
+        } else {
+          lastSelectMode = FromTimestamp
 
-      if (mutations.size > 1 && mutations.head.newTimestamp == mutations.last.newTimestamp) {
-        // The whole batch has the same timestamp and has thus been inserted together in the same transaction.
-        // Reload everything at that timestamp in case some records where drop by the batch size limit.
-        mutations = transaction.getTimeline(table, mutations.head.newTimestamp, 0, tokenRanges, AtTimestamp)
-        lastSelectMode = AtTimestamp
-      } else {
-        // Filter out already processed records
-        for ((ts, keys) <- lastElement) {
-          val foundLastElement = mutations.find(mut => mut.newTimestamp == ts && mut.accessPath.keys == keys)
+          // Filter out already processed records
+          for ((ts, keys) <- lastElement) {
+            val foundLastElement = mutations.find(mut => mut.newTimestamp == ts && mut.accessPath.keys == keys)
 
-          val before = mutations.size
-          if (foundLastElement.isDefined) {
-            var found = false
-            mutations = mutations.filter(mut => {
-              if (mut.newTimestamp == ts && mut.accessPath.keys == keys) {
-                found = true
-                false
-              } else {
-                found
-              }
-            })
+            val before = mutations.size
+            if (foundLastElement.isDefined) {
+              var found = false
+              mutations = mutations.filter(mut => {
+                if (mut.newTimestamp == ts && mut.accessPath.keys == keys) {
+                  found = true
+                  false
+                } else {
+                  found
+                }
+              })
+            }
+            val after = mutations.size
+            debug("Before {} after {}", before.asInstanceOf[Object], after.asInstanceOf[Object])
           }
-          val after = mutations.size
-          debug("Before {} after {}", before.asInstanceOf[Object], after.asInstanceOf[Object])
         }
       }
 
