@@ -130,7 +130,7 @@ class TestMysqlStorage extends TestMysqlBase {
       val table = storage.from("table1")
       t.ret(table.get("key2"))
     }, commit = false)
-    assert(v.value.serializableValue.equalsValue(new NullValue))
+    assert(v.value.serializableValue.equalsValue(NullValue))
   }
 
   test("should support multi hierarchy table") {
@@ -245,11 +245,11 @@ class TestMysqlStorage extends TestMysqlBase {
       t.ret(v1, v2, v3, v4, v5)
     }, commit = true)
 
-    assert(v1.equalsValue(new NullValue))
-    assert(v2.equalsValue(new NullValue))
-    assert(!v3.equalsValue(new NullValue))
-    assert(v4.equalsValue(new NullValue))
-    assert(!v5.equalsValue(new NullValue))
+    assert(v1.equalsValue(NullValue))
+    assert(v2.equalsValue(NullValue))
+    assert(!v3.equalsValue(NullValue))
+    assert(v4.equalsValue(NullValue))
+    assert(!v5.equalsValue(NullValue))
   }
 
   test("deletion should be a tombstone record") {

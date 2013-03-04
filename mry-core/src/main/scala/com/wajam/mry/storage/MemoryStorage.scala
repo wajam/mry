@@ -45,7 +45,7 @@ class MemoryStorage(name: String) extends Storage(name) {
         val value = transaction.data.getOrElse(key, globData.get(key))
         value match {
           case Some(v) => into.value = v
-          case None => into.value = new NullValue
+          case None => into.value = NullValue
         }
       }
     }

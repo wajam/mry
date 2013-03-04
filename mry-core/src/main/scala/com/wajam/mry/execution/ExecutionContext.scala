@@ -66,11 +66,11 @@ class ExecutionContext(var storages: Map[String, Storage], val timestamp: Option
 
       key.strValue match {
         case "tokens" =>
-          into.value = new ListValue(for (token <- context.tokens) yield new IntValue(token))
+          into.value = ListValue(for (token <- context.tokens) yield IntValue(token))
 
         case "local_node" =>
           if (context.cluster != null)
-            into.value = new StringValue(context.cluster.localNode.uniqueKey)
+            into.value = StringValue(context.cluster.localNode.uniqueKey)
 
         case _ =>
           throw new ExecutionException("Only 'tokens' can be get from transaction block")

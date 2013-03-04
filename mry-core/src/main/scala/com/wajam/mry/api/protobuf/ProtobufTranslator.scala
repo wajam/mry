@@ -61,7 +61,7 @@ class ProtobufTranslator extends ProtocolTranslator {
           .setMap(collection)
           .build()
 
-      case n: NullValue =>
+      case _: NullValue =>
         PTransactionValue.newBuilder()
           .setType(PTransactionValue.Type.NULL)
           .build()
@@ -76,16 +76,16 @@ class ProtobufTranslator extends ProtocolTranslator {
   def fromProtoValue(protoVal: PTransactionValue): Value = {
     protoVal.getType match {
       case PTransactionValue.Type.STRING =>
-        new StringValue(protoVal.getStringValue)
+        StringValue(protoVal.getStringValue)
 
       case PTransactionValue.Type.INT =>
-        new IntValue(protoVal.getIntValue)
+        IntValue(protoVal.getIntValue)
 
       case PTransactionValue.Type.BOOL =>
-        new BoolValue(protoVal.getBoolValue)
+        BoolValue(protoVal.getBoolValue)
 
       case PTransactionValue.Type.DOUBLE =>
-        new DoubleValue(protoVal.getDoubleValue)
+        DoubleValue(protoVal.getDoubleValue)
 
       case PTransactionValue.Type.MAP =>
         var map = Map[String, Value]()
@@ -96,15 +96,14 @@ class ProtobufTranslator extends ProtocolTranslator {
         new MapValue(map)
 
       case PTransactionValue.Type.ARRAY =>
-        var list = List[Value]()
         val protoMap = protoVal.getMap
-        for (protoVal <- protoMap.getValuesList) {
-          list :+= this.fromProtoValue(protoVal.getValue)
-        }
-        new ListValue(list)
+        val list = for {
+          protoVal <- protoMap.getValuesList
+        } yield this.fromProtoValue(protoVal.getValue)
 
+        new ListValue(list)
       case PTransactionValue.Type.NULL =>
-        new NullValue
+        NullValue
 
       case _ =>
         throw new TranslationException("Unsupported protobuf value type '%s'".format(protoVal.getType))
@@ -114,7 +113,7 @@ class ProtobufTranslator extends ProtocolTranslator {
   def decodeValue(data: Array[Byte]): Value = this.fromProtoValue(PTransactionValue.parseFrom(data))
 
   def encodeTransaction(transaction: MryTransaction): Array[Byte] = {
-    return null
+    null
   }
 
   def decodeTransaction(data: Array[Byte]): MryTransaction = {
