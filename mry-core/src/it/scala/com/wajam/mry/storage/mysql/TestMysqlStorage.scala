@@ -10,6 +10,7 @@ import util.Random
 import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.mry.storage.mysql.TimelineSelectMode.AtTimestamp
 import com.wajam.nrv.service.TokenRange
+import com.wajam.nrv.utils.TimestampIdGenerator
 
 /**
  * Test MySQL storage
@@ -572,6 +573,65 @@ class TestMysqlStorage extends TestMysqlBase {
 
       versions.size should be <= 1
       versions.headOption
+    }
+  }
+
+  test("force garbage collections should delete all extra versions of a token with multiple access path") {
+
+    val idGenerator = new TimestampIdGenerator()
+    val context = new ExecutionContext(storages)
+    val k1 = "key"
+    val token = context.getToken(k1)
+
+    // Create master table record
+    exec(t => {
+      t.from("mysql").from("table2").set(k1, Map("k1" -> k1))
+    }, commit = true, onTimestamp = createTimestamp(idGenerator.nextId))
+
+    // Create secondary table records
+    createSecondaryRecords(k2 = 0, ver = 5)
+    createSecondaryRecords(k2 = 1, ver = 200)
+    getSecondaryLoadedVersionCount(k2 = 1) should be < 200
+
+    // GC first key and second key partially
+    mysqlStorage.GarbageCollector.collectAll(20) should be > 0
+    getSecondaryLoadedVersionCount(k2 = 0) should be(0)
+    getSecondaryLoadedVersionCount(k2 = 1) should be > 0
+
+    // Create new versions for first key and from now on limit GC to only one key at a time
+    createSecondaryRecords(k2 = 0, ver = 5)
+    getSecondaryLoadedVersionCount(k2 = 0) should be > 5
+    mysqlStorage.GarbageCollector.collectAll(200, versionBatchSize = 1) should be > 0
+
+    // Now GC everything remaining
+    mysqlStorage.GarbageCollector.collectAll(200, versionBatchSize = 1) should be > 0
+    mysqlStorage.GarbageCollector.collectAll(200, versionBatchSize = 1) should be > 0
+    getSecondaryVersionCount should be(0)
+
+    def createSecondaryRecords(k2: Int, ver: Int) {
+      println("createRecords k2=%s".format(k2))
+      for (i <- 0.until(ver)) {
+        exec(t => {
+          t.from("mysql").from("table2").get(k1).from("table2_1").set(k2.toString, Map("k1" -> k1, "k2" -> i.toString))
+        }, commit = true, onTimestamp = createTimestamp(idGenerator.nextId))
+      }
+    }
+
+    def getSecondaryVersionCount: Int = {
+      var trx = mysqlStorage.createStorageTransaction
+      val versions = trx.getTopMostVersions(table2_1, token, token, 1000)
+      trx.rollback()
+
+      versions.foldLeft(0)((count, version) => count + version.versionsCount)
+    }
+
+    def getSecondaryLoadedVersionCount(k2: Int): Int = {
+      var trx = mysqlStorage.createStorageTransaction
+      val versions = trx.getTopMostVersions(table2_1, token, token, 1000)
+      trx.rollback()
+
+      val path = "%s/%d".format(k1, k2)
+      versions.find(_.accessPath.toString == path).map(_.versions.size).getOrElse(0)
     }
   }
 
