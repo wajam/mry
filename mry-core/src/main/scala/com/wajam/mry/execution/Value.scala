@@ -15,6 +15,7 @@ trait Value extends Object with OperationSource {
 }
 
 class NullValue extends Value with Serializable {
+  override def equalsValue(that: Value): Boolean = this.isInstanceOf[NullValue]
   override def isNull = true
 }
 
@@ -49,20 +50,48 @@ case class ListValue(listValue: Seq[Value]) extends Value {
 @SerialVersionUID(-3026000576636973393L)
 case class StringValue(strValue: String) extends Value {
   override def toString = strValue
+
+  override def equalsValue(that: Value): Boolean = {
+    that match {
+      case StringValue(s) => s == strValue
+      case _ => false
+    }
+  }
 }
 
 @SerialVersionUID(6885681030783170441L)
 case class IntValue(intValue: Long) extends Value {
   override def toString = String.valueOf(intValue)
+
+  override def equalsValue(that: Value): Boolean = {
+    that match {
+      case IntValue(i) => i == this.intValue
+      case _ => false
+    }
+  }
 }
 
 @SerialVersionUID(3071120965134758093L)
 case class BoolValue(boolValue: Boolean) extends Value {
   override def toString = String.valueOf(boolValue)
+
+  override def equalsValue(that: Value): Boolean = {
+    that match {
+      case BoolValue(b) => b == this.boolValue
+      case _ => false
+    }
+  }
 }
 
 @SerialVersionUID(-4318700849067154549L)
 case class DoubleValue(doubleValue: Double) extends Value {
   override def toString = String.valueOf(doubleValue)
+
+  override def equalsValue(that: Value): Boolean = {
+    that match {
+      case DoubleValue(d) => d == this.doubleValue
+      case _ => false
+    }
+  }
 }
 
