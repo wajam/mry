@@ -5,7 +5,6 @@ import java.sql.ResultSet
 import collection.mutable
 import com.wajam.mry.execution._
 import com.wajam.mry.api.ProtocolTranslator
-import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.tracing.Traced
 import java.util.concurrent.atomic.AtomicInteger
 import com.wajam.nrv.utils.timestamp.Timestamp
@@ -563,9 +562,46 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         throw e
     }
   }
+
+  def getLastTimestamp(table: Table, ranges: Seq[TokenRange]): Option[Timestamp] = {
+
+    val whereRanges = ranges.map(r => "(i.tk >= %1$d AND i.tk <= %2$d)".format(r.start, r.end)).mkString("(", "OR ", ")")
+    val fullTableName = table.depthName("_")
+
+    /* Generated SQL looks like:
+     *
+     *   SELECT MAX(i.ts) AS max_ts
+     *   FROM `table1_index` AS i
+     *   WHERE ((i.tk >= 0 AND i.tk <= 89478485) OR (i.tk >= 536870910 AND i.tk <= 626349395));
+     */
+    val sql = """
+        SELECT MAX(i.ts) AS max_ts
+        FROM `%1$s_index` AS i
+        WHERE %2$s;
+              """.format(fullTableName, whereRanges)
+
+    var results: SqlResults = null
+    try {
+      results = storage.executeSql(connection, false, sql)
+      if (results.resultset.next()) {
+        val value = results.resultset.getLong("max_ts")
+        if (results.resultset.wasNull()) {
+          None
+        } else {
+          Some(Timestamp(value))
+        }
+      } else {
+        None
+      }
+    } finally {
+      if (results != null)
+        results.close()
+    }
+  }
 }
 
 object MysqlTransaction {
+
   class Metrics(storage: MysqlStorage) extends Traced {
     val tableMetricTimeline = generateTablesTimers("mysql-timeline")
     val tableMetricGetAllLatest = generateTablesTimers("mysql-timeline")
@@ -583,6 +619,7 @@ object MysqlTransaction {
 
     protected override def getTracedClass = classOf[MysqlTransaction]
   }
+
 }
 
 case class AccessKey(var key: String)

@@ -999,4 +999,39 @@ class TestMysqlStorage extends TestMysqlBase {
     after(3) should be(MapValue(Map("k" -> "value3.1")))
     after(4) should be(NullValue)
   }
+
+  test("getLastTimestamp should return max range timestamp") {
+
+    val context = new ExecutionContext(storages)
+    case class Data(key: String, table: String, timestamp: Long = Random.nextLong()) {
+      val token = context.getToken(key)
+    }
+
+    // Generate test data in two tables: table1 and table2
+    val data = 0.until(40).map(i => Data("key%d".format(i), (if (i%2 == 0) "table1" else "table2")))
+    data.foreach(d => {
+      exec(t => {
+        val storage = t.from("mysql")
+        val table = storage.from(d.table)
+        table.set(d.key, Map("data" -> d.token.toString))
+      }, commit = true, onTimestamp = Timestamp(d.timestamp))
+    })
+
+    val range1 = TokenRange(0, 1333333333L)
+    val range2 = TokenRange(1333333334L, 2666666666L)
+    val range3 = TokenRange(2666666667L, TokenRange.MaxToken)
+
+    val maxRange1 = data.filter(d => range1.contains(d.token)).map(_.timestamp).max
+    val maxRange2 = data.filter(d => range2.contains(d.token)).map(_.timestamp).max
+    val maxRange3 = data.filter(d => range3.contains(d.token)).map(_.timestamp).max
+    val maxRange1and3 = math.max(maxRange1, maxRange3)
+
+    mysqlStorage.getLastTimestamp(Seq(range1)) should be(Some(Timestamp(maxRange1)))
+    mysqlStorage.getLastTimestamp(Seq(range2)) should be(Some(Timestamp(maxRange2)))
+    mysqlStorage.getLastTimestamp(Seq(range3)) should be(Some(Timestamp(maxRange3)))
+    mysqlStorage.getLastTimestamp(Seq(range1, range3)) should be(Some(Timestamp(maxRange1and3)))
+
+    // Empty ranges should return None
+    mysqlStorage.getLastTimestamp(Seq(TokenRange(0, 1))) should be(None)
+  }
 }

@@ -22,6 +22,13 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
   }
 
   /**
+   * Returns the latest record timestamp for the specified token ranges
+   */
+  def getLastTimestamp(ranges: Seq[TokenRange]): Option[Timestamp] = {
+    storages.values.map(_.getLastTimestamp(ranges)).max
+  }
+
+  /**
    * Truncate all records at the given timestamp for the specified token.
    */
   def truncateAt(timestamp: Timestamp, token: Long) {
