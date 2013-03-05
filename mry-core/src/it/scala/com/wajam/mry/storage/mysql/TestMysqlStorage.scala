@@ -11,6 +11,7 @@ import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.mry.storage.mysql.TimelineSelectMode.AtTimestamp
 import com.wajam.nrv.service.TokenRange
 import com.wajam.nrv.utils.TimestampIdGenerator
+import com.wajam.nrv.utils.timestamp.Timestamp
 
 /**
  * Test MySQL storage
@@ -949,6 +950,53 @@ class TestMysqlStorage extends TestMysqlBase {
     ld should be(keys.slice(10, 20))
   }
 
-  test("make sure junit doesn't get stuck") {
+  test("should truncate all tables at the given timestamp") {
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", Map("k" -> "value1"))
+      table.set("key3", Map("k" -> "value3"))
+      table.get("key3").from("table1_1").set("key3.1", Map("k" -> "value3.1"))
+    }, commit = true, onTimestamp = Timestamp(10))
+
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", Map("k" -> "value1v2"))
+      table.set("key2", Map("k" -> "value2"))
+      table.set("key3", Map("k" -> "value3v2"))
+      table.get("key3").from("table1_1").set("key3.1", Map("k" -> "value3.1v2"))
+      table.get("key3").from("table1_1").get("key3.1").from("table1_1_1").set("key3.1.1", Map("k" -> "value3.1.1v2"))
+    }, commit = true, onTimestamp = Timestamp(20))
+
+    def getValues: Seq[Value] = {
+      exec(t => {
+        val storage = t.from("mysql")
+        val var1 = storage.from("table1").get("key1")
+        val var2 = storage.from("table1").get("key2")
+        val var3 = storage.from("table1").get("key3")
+        val var3_1 = storage.from("table1").get("key3").from("table1_1").get("key3.1")
+        val var3_1_1 = storage.from("table1").get("key3").from("table1_1").get("key3.1").from("table1_1_1").get("key3.1.1")
+
+        t.ret(var1, var2, var3, var3_1, var3_1_1)
+      })
+    }
+
+    val before = getValues
+    before(0) should be(MapValue(Map("k" -> "value1v2")))
+    before(1) should be(MapValue(Map("k" -> "value2")))
+    before(2) should be(MapValue(Map("k" -> "value3v2")))
+    before(3) should be(MapValue(Map("k" -> "value3.1v2")))
+    before(4) should be(MapValue(Map("k" -> "value3.1.1v2")))
+
+    val context = new ExecutionContext(storages)
+    mysqlStorage.truncateAt(Timestamp(20), context.getToken("key3"))
+
+    val after = getValues // key1 and key2 are not truncated because of different token
+    after(0) should be(MapValue(Map("k" -> "value1v2")))
+    after(1) should be(MapValue(Map("k" -> "value2")))
+    after(2) should be(MapValue(Map("k" -> "value3")))
+    after(3) should be(MapValue(Map("k" -> "value3.1")))
+    after(4) should be(NullValue)
   }
 }

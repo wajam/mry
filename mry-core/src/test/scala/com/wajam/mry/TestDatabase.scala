@@ -6,17 +6,13 @@ import org.scalatest.junit.JUnitRunner
 import com.wajam.nrv.cluster._
 import com.wajam.mry.execution.Implicits._
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
-import storage.MemoryStorage
+import storage.{Storage, MemoryStorage}
 import com.wajam.nrv.service.Resolver
 import com.wajam.nrv.utils.{Future, Promise}
-import com.wajam.scn.client.{ScnClientConfig, ScnClient}
-import com.wajam.scn.{ScnConfig, Scn}
-import com.wajam.scn.storage.StorageType
 import com.wajam.nrv.tracing.Tracer
 import java.util.UUID
 import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.nrv.zookeeper.cluster.ZookeeperTestingClusterDriver
-import com.wajam.nrv.consistency.ConsistencyMasterSlave
 import com.wajam.nrv.scribe.ScribeTraceRecorder
 
 @RunWith(classOf[JUnitRunner])
@@ -26,22 +22,13 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
 
     val tracer = new Tracer(new ScribeTraceRecorder("127.0.0.1", 1463, 1))
     val node = new LocalNode("127.0.0.1", Map("nrv" -> (50000 + 10 * i), "mry" -> (50001 + 10 * i), "scn" -> (50002 + 10 * i)))
-    val cluster = new Cluster(node, manager/*, new ActionSupportOptions(tracer = Option(tracer))*/)
+    val cluster = new Cluster(node, manager /*, new ActionSupportOptions(tracer = Option(tracer))*/)
 
     val token = Resolver.MAX_TOKEN / size * i
 
-    val scn = new Scn("scn", ScnConfig(), StorageType.MEMORY)
-    cluster.registerService(scn)
-    scn.addMember(token, cluster.localNode)
-
-    val scnClient = new ScnClient(scn, ScnClientConfig(100)).start()
-    val consistency = new ConsistencyMasterSlave(scnClient, "", txLogEnabled = false)
-
-    val db = new Database("mry")
+    val db = new Database[Storage]("mry")
     cluster.registerService(db)
     db.registerStorage(new MemoryStorage("memory"))
-    db.applySupport(consistency = Some(consistency))
-    consistency.bindService(db)
 
     db.addMember(token, cluster.localNode)
 
@@ -49,7 +36,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
   }
 
   def testDatabaseInstance(instance: TestingClusterInstance) {
-    val db = instance.data.asInstanceOf[Database]
+    val db = instance.data.asInstanceOf[Database[_]]
 
     for (i <- 0 to 100) {
       val key = UUID.randomUUID().toString
@@ -79,7 +66,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
           // make sure it's on the expected node
           val members = db.resolveMembers(expectedToken, 1)
 
-          members.map(_.node.uniqueKey) should contain (ret(2).asInstanceOf[StringValue].strValue)
+          members.map(_.node.uniqueKey) should contain(ret(2).asInstanceOf[StringValue].strValue)
       }, 30000)
     }
   }

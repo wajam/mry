@@ -6,7 +6,9 @@ import com.wajam.mry.execution.{ExecutionContext, Value}
 /**
  * Storage engine used by executed transaction
  */
-abstract class Storage(var name: String) {
+trait Storage {
+  def name: String
+
   def getStorageValue(context: ExecutionContext): Value
 
   def createStorageTransaction(context: ExecutionContext): StorageTransaction
