@@ -401,6 +401,37 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     }
   }
 
+  def truncateVersion(table: Table, token: Long, version: Timestamp) {
+    val fullTableName = table.depthName("_")
+
+    /*
+     * Generated SQL looks like:
+     *
+     *     DELETE FROM `table2_table2_1_table2_1_1_index`
+     *     WHERE tk = ? AND ts = ?;
+     */
+    val indexSql = """
+                DELETE FROM `%1$s_index`
+                WHERE tk = ? AND ts = ?;
+                   """.format(fullTableName)
+
+    /*
+     * Generated SQL looks like:
+     *
+     *     DELETE FROM `table2_table2_1_table2_1_1_data`
+     *     WHERE tk = ? AND ts = ?;
+     */
+    val dataSql = """
+                DELETE FROM `%1$s_data`
+                WHERE tk = ? AND ts = ?;
+                  """.format(fullTableName)
+
+    metrics.tableMetricTruncateVersions(table).time {
+      storage.executeSqlUpdate(connection, indexSql, (Seq(token, version.value)): _*)
+      storage.executeSqlUpdate(connection, dataSql, (Seq(token, version.value)): _*)
+    }
+  }
+
   def getSize(table: Table): Long = {
     val fullTableName = table.depthName("_")
 
