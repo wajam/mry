@@ -14,6 +14,7 @@ trait Value extends Object with OperationSource {
   def isNull = false
 }
 
+@SerialVersionUID(-8696609946517999638L)
 class NullValue extends Value with Serializable {
   override def equalsValue(that: Value): Boolean = this.isInstanceOf[NullValue]
   override def isNull = true
@@ -32,6 +33,14 @@ case class MapValue(mapValue: Map[String, Value]) extends Value {
     val newMap = for ((k, v) <- mapValue) yield (k -> v.serializableValue)
     new MapValue(newMap)
   }
+
+  override def execProjection(context: ExecutionContext, into: Variable, keys: Object*) {
+    into.value = if (!keys.isEmpty) {
+      MapValue(mapValue.filter(e => keys.contains(StringValue(e._1))))
+    } else {
+      MapValue(mapValue)
+    }
+  }
 }
 
 @SerialVersionUID(3729883700870722479L)
@@ -44,6 +53,17 @@ case class ListValue(listValue: Seq[Value]) extends Value {
   override def serializableValue: Value = {
     val newList = for (oldValue <- listValue) yield oldValue.serializableValue
     new ListValue(newList)
+  }
+
+  override def execProjection(context: ExecutionContext, into: Variable, keys: Object*) {
+    into.value = if (!keys.isEmpty) {
+      ListValue(listValue.map(v => {
+        v.execProjection(context, into, keys: _*)
+        into.value
+      }))
+    } else {
+      ListValue(listValue)
+    }
   }
 }
 

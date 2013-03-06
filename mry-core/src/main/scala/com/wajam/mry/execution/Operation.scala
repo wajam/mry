@@ -56,5 +56,12 @@ object Operation {
     def reset() {}
   }
 
+  class Projection(source: OperationSource, into: Variable, keys: Object*) extends Operation(source) with Serializable {
+    def execute(context: ExecutionContext) {
+      source.execProjection(context, into, keys: _*)
+    }
+
+    def reset() {}
+  }
 }
 

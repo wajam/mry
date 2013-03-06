@@ -62,4 +62,13 @@ trait OperationApi extends OperationSource {
     sourceBlock.addOperation(new Limit(this, into, keys: _*))
     into
   }
+
+  def projection(keys: Object*): Variable = {
+    this.projectionInto(this.sourceBlock.defineVariable(), keys: _*)
+  }
+
+  def projectionInto(into: Variable, keys: Object*): Variable = {
+    sourceBlock.addOperation(new Projection(this, into, keys: _*))
+    into
+  }
 }
