@@ -46,6 +46,9 @@ class MultipleRecordValue(storage: MysqlStorage, context: ExecutionContext, tabl
     }
   }
 
+  // Operations are executed on records (list of map or null)
+  override def proxiedSource: Option[OperationSource] = Some(this.innerValue)
+
   override def execLimit(context: ExecutionContext, into: Variable, keys: Object*) {
     if (loaded) {
       val newRec = new MultipleRecordValue(storage, context, table, token, accessPrefix)
