@@ -598,6 +598,86 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         results.close()
     }
   }
+
+  def getRecordIndexes(table: Table, timestamp: Timestamp, count: Int,
+                       ranges: List[TokenRange] = List(TokenRange.All)): Seq[IndexRecord] = {
+    val fullTableName = table.depthName("_")
+    val whereRanges = ranges.map(r => "(i.tk >= %1$d AND i.tk <= %2$d)".format(r.start, r.end)).mkString("(", "OR ", ")")
+
+    /* Generated SQL looks like:
+     *
+     *     SELECT i.tk , i.ts, COUNT(*) AS count
+     *     FROM `followees_index` AS i
+     *     WHERE ((i.tk >= 0 AND i.tk <= 40000000))
+     *     AND i.ts >= 0
+     *     GROUP BY i.tk, i.ts
+     *     ORDER BY i.ts ASC
+     *     LIMIT 0, 100;
+     */
+    val sql = """
+                SELECT i.tk , i.ts, COUNT(*) AS count
+                FROM `%1$s_index` AS i
+                WHERE %2$s
+                AND i.ts >= %3$d
+                GROUP BY i.tk, i.ts
+                ORDER BY i.ts ASC
+                LIMIT 0, %4$d;
+              """.format(fullTableName, whereRanges, timestamp.value, count)
+
+    var ret = List[IndexRecord]()
+    var results: SqlResults = null
+    try {
+        results = storage.executeSql(connection, false, sql)
+
+        while (results.resultset.next()) {
+          ret = IndexRecord(results.resultset, table) :: ret
+        }
+    } finally {
+      if (results != null)
+        results.close()
+    }
+
+    ret
+  }
+
+  def getRecords(table: Table, from: Timestamp, to: Timestamp, ranges: List[TokenRange]): RecordIterator = {
+
+    val fullTableName = table.depthName("_")
+    val projKeys = (for (i <- 1 to table.depth) yield "d.k%1$d".format(i)).mkString(",")
+    val whereRanges = ranges.map(r => "(d.tk >= %1$d AND d.tk <= %2$d)".format(r.start, r.end)).mkString("(", "OR ", ")")
+
+    /* Generated SQL looks like:
+     *
+     *   SELECT d.ts, d.tk, d.ec, d.d, d.k1
+     *   FROM `table1_data` AS d
+     *   WHERE ((d.tk >= 0 AND d.tk <= 40000000))
+     *   AND d.ts >= 13578286851700001 AND d.ts <= 13578286975770001
+     *   ORDER BY d.ts ASC;
+     *   SELECT i.max_ts, i.tk, o.ec, o.d, o.k1
+     */
+    var sql = """
+        SELECT d.ts, d.tk, d.ec, d.d, %1$s
+        FROM `%2$s_data` AS d
+        WHERE %3$s
+        AND d.ts >= %4$d AND d.ts <= %5$d
+        ORDER BY d.ts ASC;
+              """.format(projKeys, fullTableName, whereRanges, from.value, to.value)
+
+    var results: SqlResults = null
+    try {
+      metrics.tableMetricGet(table).time {
+        results = storage.executeSql(connection, false, sql)
+      }
+
+      new RecordIterator(storage, results, table)
+
+    } catch {
+      case e: Exception =>
+        if (results != null)
+          results.close()
+        throw e
+    }
+  }
 }
 
 object MysqlTransaction {
@@ -748,6 +828,16 @@ class VersionRecord {
     this.versionsCount = resultset.getInt(2)
     this.versions = resultset.getString(3).split(",").map(vers => Timestamp(vers.toLong))
     this.accessPath = new AccessPath(for (i <- 1 to depth) yield new AccessKey(resultset.getString(3 + i)))
+  }
+}
+
+case class IndexRecord(table: Table, token: Long, timestamp: Timestamp, recordsCount: Int)
+object IndexRecord {
+  def apply(resultset: ResultSet, table: Table): IndexRecord = {
+    val token = resultset.getLong(1)
+    val timestamp = Timestamp(resultset.getLong(2))
+    val recordsCount = resultset.getInt(3)
+    IndexRecord(table, token, timestamp, recordsCount)
   }
 }
 
