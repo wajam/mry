@@ -247,11 +247,28 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   }
 
   /**
+   * Returns the latest record timestamp for the specified token ranges
+   */
+  def getLastTimestamp(ranges: Seq[TokenRange]): Option[Timestamp] = {
+    var trx: MysqlTransaction = null
+    try {
+      trx = createStorageTransaction
+      model.allHierarchyTables.map(table => trx.getLastTimestamp(table, ranges)).max
+    } finally {
+      try {
+        if (trx != null)
+          trx.rollback()
+      } catch {
+        case _ =>
+      }
+    }
+  }
+
+  /**
    * Truncate all records at the given timestamp for the specified token.
    */
   def truncateAt(timestamp: Timestamp, token: Long) {
     var trx: MysqlTransaction = null
-
     try {
       trx = createStorageTransaction
       for (table <- model.allHierarchyTables) {
