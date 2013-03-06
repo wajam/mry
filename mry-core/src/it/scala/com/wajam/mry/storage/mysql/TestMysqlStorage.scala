@@ -57,6 +57,24 @@ class TestMysqlStorage extends TestMysqlBase {
     assert(v.equalsValue(expectedMapValue))
   }
 
+  test("empty projection should return all fields") {
+    val expectedMapValue: MapValue = Map("mapk" -> toVal("value1"))
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", expectedMapValue)
+    }, commit = true)
+
+    val Seq(v) = exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      t.ret(table.get("key1").projection())
+    }, commit = false)
+
+    assert(v.equalsValue(expectedMapValue))
+  }
+
+
   test("should support multiple projection on single record") {
     val expectedMapValue: MapValue = Map("key1" -> toVal("value1"), "key2" -> toVal("value2"))
     exec(t => {
@@ -110,6 +128,28 @@ class TestMysqlStorage extends TestMysqlBase {
     assert(m1 === Map("mapk" -> toVal("value1")))
     assert(m2 === Map("mapk" -> toVal("value2")))
     assert(m3.isEmpty)
+  }
+
+  test("empty projection should not filter fields on record list") {
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", Map("mapk" -> toVal("value1")))
+      val table1_1 = table.get("key1").from("table1_1")
+      table1_1.set("key1", Map("mapk" -> toVal("value1")))
+      table1_1.set("key2", Map("mapk" -> toVal("value2"), "noproj" -> toVal("x")))
+      table1_1.set("key3", Map("noproj" -> toVal("x")))
+    }, commit = true)
+
+    val Seq(ListValue(Seq(MapValue(m1), MapValue(m2), MapValue(m3)))) = exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      t.ret(table.get("key1").from("table1_1").get().projection())
+    }, commit = false)
+
+    assert(m1 === Map("mapk" -> toVal("value1")))
+    assert(m2 === Map("mapk" -> toVal("value2"), "noproj" -> toVal("x")))
+    assert(m3 === Map("noproj" -> toVal("x")))
   }
 
   test("should support projection on empty record list") {
