@@ -12,12 +12,14 @@ import collection.mutable
 import java.util.concurrent.{TimeUnit, ScheduledThreadPoolExecutor}
 import com.wajam.nrv.service.TokenRange
 import com.yammer.metrics.core.Gauge
+import com.wajam.nrv.utils.timestamp.Timestamp
 
 /**
  * MySQL backed storage
  */
 class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean = true)
-  extends Storage(config.name) with Logging with Value with Instrumented {
+  extends Storage with ConsistentStorage with Logging with Value with Instrumented {
+  val name = config.name
   var model: Model = _
   var transactionMetrics: MysqlTransaction.Metrics = _
   var tablesMutationsCount = Map[Table, AtomicInteger]()
@@ -244,6 +246,50 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
     }
   }
 
+  /**
+   * Returns the latest record timestamp for the specified token ranges
+   */
+  def getLastTimestamp(ranges: Seq[TokenRange]): Option[Timestamp] = {
+    var trx: MysqlTransaction = null
+    try {
+      trx = createStorageTransaction
+      model.allHierarchyTables.map(table => trx.getLastTimestamp(table, ranges)).max
+    } finally {
+      try {
+        if (trx != null)
+          trx.rollback()
+      } catch {
+        case _ =>
+      }
+    }
+  }
+
+  /**
+   * Truncate all records at the given timestamp for the specified token.
+   */
+  def truncateAt(timestamp: Timestamp, token: Long) {
+    var trx: MysqlTransaction = null
+    try {
+      trx = createStorageTransaction
+      for (table <- model.allHierarchyTables) {
+        trx.truncateVersion(table, token, timestamp)
+      }
+      trx.commit()
+    } catch {
+      case e: Exception => {
+        try {
+          if (trx != null)
+            trx.rollback()
+        } catch {
+          case _ =>
+        }
+
+        error("Caught an exception while truncating records storage (tk={}, ts={})", token, timestamp, e)
+        throw e
+      }
+    }
+  }
+
   object GarbageCollector {
     private val allTables: Iterable[Table] = model.allHierarchyTables
 
@@ -458,6 +504,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       collectedTotal
     }
   }
+
 }
 
 case class MysqlStorageConfiguration(name: String,

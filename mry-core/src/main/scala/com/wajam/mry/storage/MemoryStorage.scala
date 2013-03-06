@@ -5,7 +5,7 @@ import com.wajam.mry.execution._
 /**
  * In memory storage engine
  */
-class MemoryStorage(name: String) extends Storage(name) {
+class MemoryStorage(val name: String) extends Storage {
   var globData = Map[String, Value]()
 
   def nuke() {}

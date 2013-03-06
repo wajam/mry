@@ -6,19 +6,17 @@ import com.wajam.nrv.Logging
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service._
 import com.wajam.nrv.tracing.Traced
-import com.wajam.nrv.data.{MMigrationCatchAll, Message, InMessage}
+import com.wajam.nrv.data.InMessage
 import com.wajam.nrv.utils.{Promise, Future}
-import com.wajam.nrv.consistency.{Consistency, ConsistentStore}
-import com.wajam.nrv.utils.timestamp.Timestamp
-
+import com.wajam.nrv.consistency.Consistency
 
 /**
  * MRY database
  */
-class Database(var serviceName: String = "database")
-  extends Service(serviceName) with ConsistentStore with Logging with Instrumented with Traced {
+class Database[T <: Storage](serviceName: String = "database")
+  extends Service(serviceName) with Logging with Instrumented with Traced {
 
-  var storages = Map[String, Storage]()
+  var storages = Map[String, T]()
 
   def analyseTransaction(transaction: Transaction): ExecutionContext = {
     val context = new ExecutionContext(storages)
@@ -69,19 +67,16 @@ class Database(var serviceName: String = "database")
         remoteReadExecuteToken
       }
 
-      remoteAction.call(Map(Database.TOKEN_KEY -> context.tokens(0), "trx" -> MMigrationCatchAll(transaction)), // TODO: MigrationDuplicate: Remove trx
-                        data = transaction,
-                        onReply = (resp, optException) => {
-        if (ret != null) {
-          if (optException.isEmpty)
-            if (resp.hasData)
+      remoteAction.call(Map(Database.TOKEN_KEY -> context.tokens(0)),
+        data = transaction,
+        onReply = (resp, optException) => {
+          if (ret != null) {
+            if (optException.isEmpty)
               ret(resp.getData[Seq[Value]], None)
             else
-              ret(resp.parameters("values").asInstanceOf[MMigrationCatchAll].value.asInstanceOf[Seq[Value]], None) // TODO: MigrationDuplicate: Remove
-          else
-            ret(Seq(), optException)
-        }
-      })
+              ret(Seq(), optException)
+          }
+        })
 
     } catch {
       case ex: Exception =>
@@ -93,12 +88,12 @@ class Database(var serviceName: String = "database")
     }
   }
 
-  def registerStorage(storage: Storage) {
+  def registerStorage(storage: T) {
     this.storages += (storage.name -> storage)
     storage.start()
   }
 
-  def getStorage(name: String) = this.storages.get(name).get
+  def getStorage(name: String): T = this.storages.get(name).get
 
   protected val remoteWriteExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
     execute(req)
@@ -112,15 +107,11 @@ class Database(var serviceName: String = "database")
 
   private def execute(req: InMessage) {
     var values: Seq[Value] = null
-    val context = new ExecutionContext(storages, Some(Consistency.getMessageTimestamp(req).get))
+    val context = new ExecutionContext(storages, Consistency.getMessageTimestamp(req))
     context.cluster = Database.this.cluster
 
     try {
-      val transaction =
-        if (req.hasData)
-          req.getData[Transaction]
-        else
-          req.parameters("trx").asInstanceOf[MMigrationCatchAll].value.asInstanceOf[Transaction]  // TODO: MigrationDuplicate: Remove
+      val transaction = req.getData[Transaction]
 
       transaction.execute(context)
       values = context.returnValues
@@ -136,32 +127,9 @@ class Database(var serviceName: String = "database")
     }
 
     req.reply(
-      Seq("values" -> MMigrationCatchAll(values)), // TODO: MigrationDuplicate: Remove
+      null,
       data = values
     )
-  }
-
-  def requiresConsistency(message: Message) : Boolean = {
-    findAction(message.path, message.method) match {
-      case Some(action) => {
-        action == remoteWriteExecuteToken || action == remoteReadExecuteToken
-      }
-      case _ => false
-    }
-  }
-
-  /**
-   * Truncate all records at the given timestamp for the specified token.
-   */
-  def truncateAt(timestamp: Timestamp, token: Long) {
-    throw new Exception("Not implemented!")
-  }
-
-  /**
-   * Truncate all records from the given timestamp inclusively for the specified token ranges.
-   */
-  def truncateFrom(timestamp: Timestamp, tokens: Seq[TokenRange]) {
-    throw new Exception("Not implemented!")
   }
 }
 

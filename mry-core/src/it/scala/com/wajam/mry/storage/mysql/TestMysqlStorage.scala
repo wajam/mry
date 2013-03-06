@@ -11,6 +11,7 @@ import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.mry.storage.mysql.TimelineSelectMode.AtTimestamp
 import com.wajam.nrv.service.TokenRange
 import com.wajam.nrv.utils.TimestampIdGenerator
+import com.wajam.nrv.utils.timestamp.Timestamp
 
 /**
  * Test MySQL storage
@@ -1037,6 +1038,88 @@ class TestMysqlStorage extends TestMysqlBase {
     ld should be(keys.slice(10, 20))
   }
 
-  test("make sure junit doesn't get stuck") {
+  test("should truncate all tables at the given timestamp") {
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", Map("k" -> "value1"))
+      table.set("key3", Map("k" -> "value3"))
+      table.get("key3").from("table1_1").set("key3.1", Map("k" -> "value3.1"))
+    }, commit = true, onTimestamp = Timestamp(10))
+
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", Map("k" -> "value1v2"))
+      table.set("key2", Map("k" -> "value2"))
+      table.set("key3", Map("k" -> "value3v2"))
+      table.get("key3").from("table1_1").set("key3.1", Map("k" -> "value3.1v2"))
+      table.get("key3").from("table1_1").get("key3.1").from("table1_1_1").set("key3.1.1", Map("k" -> "value3.1.1v2"))
+    }, commit = true, onTimestamp = Timestamp(20))
+
+    def getValues: Seq[Value] = {
+      exec(t => {
+        val storage = t.from("mysql")
+        val var1 = storage.from("table1").get("key1")
+        val var2 = storage.from("table1").get("key2")
+        val var3 = storage.from("table1").get("key3")
+        val var3_1 = storage.from("table1").get("key3").from("table1_1").get("key3.1")
+        val var3_1_1 = storage.from("table1").get("key3").from("table1_1").get("key3.1").from("table1_1_1").get("key3.1.1")
+
+        t.ret(var1, var2, var3, var3_1, var3_1_1)
+      })
+    }
+
+    val before = getValues
+    before(0) should be(MapValue(Map("k" -> "value1v2")))
+    before(1) should be(MapValue(Map("k" -> "value2")))
+    before(2) should be(MapValue(Map("k" -> "value3v2")))
+    before(3) should be(MapValue(Map("k" -> "value3.1v2")))
+    before(4) should be(MapValue(Map("k" -> "value3.1.1v2")))
+
+    val context = new ExecutionContext(storages)
+    mysqlStorage.truncateAt(Timestamp(20), context.getToken("key3"))
+
+    val after = getValues // key1 and key2 are not truncated because of different token
+    after(0) should be(MapValue(Map("k" -> "value1v2")))
+    after(1) should be(MapValue(Map("k" -> "value2")))
+    after(2) should be(MapValue(Map("k" -> "value3")))
+    after(3) should be(MapValue(Map("k" -> "value3.1")))
+    after(4) should be(NullValue)
+  }
+
+  test("getLastTimestamp should return max range timestamp") {
+
+    val context = new ExecutionContext(storages)
+    case class Data(key: String, table: String, timestamp: Long = Random.nextLong()) {
+      val token = context.getToken(key)
+    }
+
+    // Generate test data in two tables: table1 and table2
+    val data = 0.until(40).map(i => Data("key%d".format(i), (if (i%2 == 0) "table1" else "table2")))
+    data.foreach(d => {
+      exec(t => {
+        val storage = t.from("mysql")
+        val table = storage.from(d.table)
+        table.set(d.key, Map("data" -> d.token.toString))
+      }, commit = true, onTimestamp = Timestamp(d.timestamp))
+    })
+
+    val range1 = TokenRange(0, 1333333333L)
+    val range2 = TokenRange(1333333334L, 2666666666L)
+    val range3 = TokenRange(2666666667L, TokenRange.MaxToken)
+
+    val maxRange1 = data.filter(d => range1.contains(d.token)).map(_.timestamp).max
+    val maxRange2 = data.filter(d => range2.contains(d.token)).map(_.timestamp).max
+    val maxRange3 = data.filter(d => range3.contains(d.token)).map(_.timestamp).max
+    val maxRange1and3 = math.max(maxRange1, maxRange3)
+
+    mysqlStorage.getLastTimestamp(Seq(range1)) should be(Some(Timestamp(maxRange1)))
+    mysqlStorage.getLastTimestamp(Seq(range2)) should be(Some(Timestamp(maxRange2)))
+    mysqlStorage.getLastTimestamp(Seq(range3)) should be(Some(Timestamp(maxRange3)))
+    mysqlStorage.getLastTimestamp(Seq(range1, range3)) should be(Some(Timestamp(maxRange1and3)))
+
+    // Empty ranges should return None
+    mysqlStorage.getLastTimestamp(Seq(TokenRange(0, 1))) should be(None)
   }
 }
