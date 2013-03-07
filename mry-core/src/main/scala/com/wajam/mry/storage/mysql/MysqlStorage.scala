@@ -294,6 +294,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
   /**
    * Iterate group of mutation records <b>from</b> the specified timestamp up <b>to</b> specified timestamp.
+   *
    * @param from start timestamp (inclusive)
    * @param to end timestamp (inclusive)
    * @param ranges token ranges
@@ -335,15 +336,30 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       }
     }
 
+    /**
+     * Advance to the next group. Returns true if successful or false if no more group are avaailable.
+     */
     def next(): Boolean = {
-
       // Do not continue if we had an error before as the iterator state is likely inconsistent.
       error.foreach(e => throw e)
 
+      // Go to next cached group or try to load more groups if cache is empty
       if (!groups.isEmpty) {
         groups = groups.tail
+      } else {
+        loadCache()
       }
+      !groups.isEmpty
+    }
 
+    /**
+     * Returns the current mutation group
+     */
+    def mutationGroup: MutationGroup = {
+      groups.head
+    }
+
+    private def loadCache() {
       try {
         // Load more mutation groups if needed and possible
         if (groups.isEmpty && (!groupIndexes.isEmpty || tableIndexes.exists(ti => ti.hasMore || !ti.indexes.isEmpty))) {
@@ -387,12 +403,6 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           throw e
         }
       }
-
-      !groups.isEmpty
-    }
-
-    def mutationGroup: MutationGroup = {
-      groups.head
     }
 
     private def loadTableIndex(index: TableIndex): TableIndex = {
