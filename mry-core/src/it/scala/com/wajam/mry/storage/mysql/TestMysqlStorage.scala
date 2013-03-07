@@ -255,7 +255,7 @@ class TestMysqlStorage extends TestMysqlBase {
 
   test("deletion should be a tombstone record") {
     val transac = new MysqlTransaction(mysqlStorage, None, new MysqlTransaction.Metrics(mysqlStorage))
-    val initRec = new Record(Map("test" -> 1234))
+    val initRec = new Record(table1, Map("test" -> 1234))
     val path = new AccessPath(Seq(new AccessKey("test1")))
     transac.set(table1, 1, createNowTimestamp(), path, Some(initRec))
 
@@ -1033,5 +1033,97 @@ class TestMysqlStorage extends TestMysqlBase {
 
     // Empty ranges should return None
     mysqlStorage.getLastTimestamp(Seq(TokenRange(0, 1))) should be(None)
+  }
+
+  test("mutation group iterator returns expected groups") {
+    val storage = mysqlStorage
+    val context = new ExecutionContext(storages)
+
+    exec(trx => {
+      val storage = trx.from("mysql")
+      storage.from("table1").set("k1", Map("k" -> "1"))
+    }, commit = true, onTimestamp = 1L)
+    val t1: Long = context.getToken("k1")
+    val grp1 = storage.MutationGroup(t1, 1L, List(Record(table1, t1, 1L, Map("k" -> "1"), "k1")))
+
+    exec(trx => {
+      val storage = trx.from("mysql")
+      storage.from("table1").set("k2", Map("k" -> "2"))
+      storage.from("table2").set("k2", Map("k" -> "2"))
+    }, commit = true, onTimestamp = 2L)
+    val t2: Long = context.getToken("k2")
+    val grp2 = storage.MutationGroup(t2, 2L, List(
+      Record(table1, t2, 2L, Map("k" -> "2"), "k2"), Record(table2, t2, 2L, Map("k" -> "2"), "k2")))
+
+    exec(trx => {
+      val storage = trx.from("mysql")
+      storage.from("table1").set("k3", Map("k" -> "3"))
+      storage.from("table1").get("k3").from("table1_1").set("k3.1", Map("k" -> "3.1"))
+    }, commit = true, onTimestamp = 3L)
+    val t3: Long = context.getToken("k3")
+    val grp3 = storage.MutationGroup(t3, 3L, List(
+      Record(table1, t3, 3L, Map("k" -> "2"), "k3"), Record(table1_1, t3, 3L, Map("k" -> "3.1"), "k3", "k3.1")))
+
+    exec(trx => {
+      val storage = trx.from("mysql")
+      storage.from("table1").set("k4", Map("k" -> "4"))
+      storage.from("table2").set("k4", Map("k" -> "4"))
+    }, commit = true, onTimestamp = 4L)
+    val t4: Long = context.getToken("k4")
+    val grp4 = storage.MutationGroup(t4, 4L, List(
+      Record(table1, t4, 4L, Map("k" -> "4"), "k4"), Record(table2, t4, 4L, Map("k" -> "4"), "k4")))
+
+    exec(trx => {
+      val storage = trx.from("mysql")
+      storage.from("table1").set("k5", Map("k" -> "5"))
+    }, commit = true, onTimestamp = 5L)
+    val t5: Long = context.getToken("k5")
+    val grp5 = storage.MutationGroup(t5, 5L, List(Record(table1, t5, 5L, Map("k" -> "5"), "k5")))
+
+    exec(trx => {
+      val storage = trx.from("mysql")
+      storage.from("table1").get("k1").from("table1_1").set("k1.1", Map("k" -> "1.1"))
+      storage.from("table1").get("k1").from("table1_1").set("k1.2", Map("k" -> "1.2"))
+      storage.from("table1").get("k1").from("table1_1").set("k1.3", Map("k" -> "1.3"))
+      storage.from("table1").get("k1").from("table1_1").set("k1.4", Map("k" -> "1.4"))
+      storage.from("table1").get("k1").from("table1_1").set("k1.5", Map("k" -> "1.5"))
+    }, commit = true, onTimestamp = 6L)
+    val t6: Long = context.getToken("k1")
+    val grp6 = storage.MutationGroup(t6, 6L, List(
+      Record(table1_1, t6, 6L, Map("k" -> "1.5"), "k1", "k1.5"), Record(table1_1, t6, 6L, Map("k" -> "1.4"), "k1", "k1.4"),
+      Record(table1_1, t6, 6L, Map("k" -> "1.3"), "k1", "k1.3"), Record(table1_1, t6, 6L, Map("k" -> "1.2"), "k1", "k1.2"),
+      Record(table1_1, t6, 6L, Map("k" -> "1.1"), "k1", "k1.1")))
+
+    exec(trx => {
+      val storage = trx.from("mysql")
+      storage.from("table1").set("k7", Map("k" -> "7"))
+    }, commit = true, onTimestamp = 7L)
+    val t7: Long = context.getToken("k7")
+    val grp7 = storage.MutationGroup(t7, 7L, List(Record(table1, t7, 7L, Map("k" -> "7"), "k7")))
+
+    exec(trx => {
+      val storage = trx.from("mysql")
+      storage.from("table1").set("k8", Map("k" -> "8"))
+    }, commit = true, onTimestamp = 8L)
+    val t8: Long = context.getToken("k8")
+    val grp8 = storage.MutationGroup(t8, 8L, List(Record(table1, t8, 8L, Map("k" -> "8"), "k8")))
+
+    // After first and before last
+    val grp2to7 = new storage.MutationGroupIterator(from = 2L, to = 7L, List(TokenRange.All), 4, 1)
+    grp2to7.toList should be(List(grp2, grp3, grp4, grp5, grp6, grp7))
+
+    // Same from and to
+    val grp1to1 = new storage.MutationGroupIterator(from = 1L, to = 1L, List(TokenRange.All), 4, 2)
+    grp1to1.toList should be(List(grp1))
+
+    // Before first
+    val grp0to3 = new storage.MutationGroupIterator(from = 0L, to = 3L, List(TokenRange.All), 4, 2)
+    grp0to3.toList should be(List(grp1, grp2, grp3))
+
+    // Beyond last
+    val grp5to9 = new storage.MutationGroupIterator(from = 5L, to = 9L, List(TokenRange.All), 4, 2)
+    grp5to9.toList should be(List(grp5, grp6, grp7, grp8))
+
+    // TODO: test with loading error
   }
 }

@@ -255,11 +255,8 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       trx = createStorageTransaction
       model.allHierarchyTables.map(table => trx.getLastTimestamp(table, ranges)).max
     } finally {
-      try {
-        if (trx != null)
-          trx.rollback()
-      } catch {
-        case _ =>
+      if (trx != null) {
+        trx.rollback()
       }
     }
   }
@@ -286,6 +283,156 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
         error("Caught an exception while truncating records storage (tk={}, ts={})", token, timestamp, e)
         throw e
+      }
+    }
+  }
+
+  /**
+   * A group of records from different tables which been mutated at the same timestamp.
+   */
+  case class MutationGroup(token: Long, timestamp: Timestamp, var records: List[Record] = Nil)
+
+  /**
+   * Iterate group of mutation records <b>from</b> the specified timestamp up <b>to</b> specified timestamp.
+   * @param from start timestamp (inclusive)
+   * @param to end timestamp (inclusive)
+   * @param ranges token ranges
+   * @param recordCacheSize maximum number of records cached in iterator
+   * @param indexBatchSize maximum number of indexes per table loaded from database
+   */
+  class MutationGroupIterator(from: Timestamp, to: Timestamp, ranges: Seq[TokenRange], recordCacheSize: Int = 100,
+                              indexBatchSize: Int = 50) extends Traversable[MutationGroup] {
+
+    private case class MutationGroupIndex(token: Long, timestamp: Timestamp, var indexes: List[RecordIndex] = Nil)
+
+    private case class TableIndex(table: Table, var lastTimestamp: Timestamp, var indexes: List[RecordIndex] = Nil) {
+      def hasMore: Boolean = lastTimestamp < to
+
+      def takeIndexesTo(timestamp: Timestamp): List[RecordIndex] = {
+        val (taken, remaining) = indexes.span(_.timestamp <= timestamp)
+        indexes = remaining
+        taken
+      }
+    }
+
+    // Mutation group cache ordered by timestamp.
+    private var groups: List[MutationGroup] = Nil
+
+    // Mutation group index ordered by timestamp. Very similar to the mutation group cache but without data loaded.
+    private var groupIndexes: List[MutationGroupIndex] = Nil
+
+    // Record indexes cached per table
+    private val tableIndexes: Seq[TableIndex] = {
+      val initialTimestamp = Timestamp(from.value - 1)
+      model.allHierarchyTables.map(table => loadTableIndex(TableIndex(table, initialTimestamp))).toSeq
+    }
+
+    private var error: Option[Exception] = None
+
+    def foreach[U](f: (MutationGroup) => U) {
+      while (next()) {
+        f(mutationGroup)
+      }
+    }
+
+    def next(): Boolean = {
+
+      // Do not continue if we had an error before as the iterator state is likely inconsistent.
+      error.foreach(e => throw e)
+
+      if (!groups.isEmpty) {
+        groups = groups.tail
+      }
+
+      try {
+        // Load more mutation groups if needed and possible
+        if (groups.isEmpty && (!groupIndexes.isEmpty || tableIndexes.exists(ti => ti.hasMore || !ti.indexes.isEmpty))) {
+
+          // Ensure we have a minimum quantity of indexes loaded from each table
+          tableIndexes.withFilter(ti => ti.hasMore && ti.indexes.size < indexBatchSize * 0.70).foreach(loadTableIndex(_))
+
+          // Group record indexes by timestamp
+          val maxAvailable = tableIndexes.minBy(_.lastTimestamp).lastTimestamp // Can group indexes up to that timestamp
+          val grouped: mutable.Map[Timestamp, MutationGroupIndex] = mutable.Map()
+          for (tableIndex <- tableIndexes; index <- tableIndex.takeIndexesTo(maxAvailable)) {
+            val groupIndex = grouped.getOrElseUpdate(index.timestamp, MutationGroupIndex(index.token, index.timestamp))
+            groupIndex.indexes = index :: groupIndex.indexes
+          }
+          groupIndexes = (groupIndexes ++ grouped.valuesIterator).sortBy(_.timestamp)
+
+          // Load records from database
+          if (!groupIndexes.isEmpty) {
+
+            // Compute the timestamp range and from which tables to load data while respecting the cache size as much
+            // as possible. A record group is always entirely loaded and cached records can go beyond the cache size
+            // (but never more than the last record group size)
+            var loadCount = 0
+            val loadFrom = groupIndexes.head.timestamp
+            var loadTo = loadFrom
+            var loadTables: mutable.Set[Table] = mutable.Set()
+            while (!groupIndexes.isEmpty && loadCount < recordCacheSize) {
+              loadTables ++= groupIndexes.head.indexes.map(_.table)
+              loadCount += groupIndexes.head.indexes.size
+              loadTo = groupIndexes.head.timestamp
+              groupIndexes = groupIndexes.tail
+            }
+
+            // Finally load, merge and sort the data grouped by timestamp
+            groups = (groups ++ loadTablesData(loadTables, loadFrom, loadTo)).sortBy(_.timestamp)
+          }
+        }
+      } catch {
+        case e: Exception => {
+          error = Some(e)
+          throw e
+        }
+      }
+
+      !groups.isEmpty
+    }
+
+    def mutationGroup: MutationGroup = {
+      groups.head
+    }
+
+    private def loadTableIndex(index: TableIndex): TableIndex = {
+      var trx: MysqlTransaction = null
+      try {
+        trx = createStorageTransaction
+        val indexes = trx.getRecordIndexRange(index.table, Timestamp(index.lastTimestamp.value + 1),
+          indexBatchSize, ranges)
+        index.indexes = (index.indexes ++ indexes.toList).sortBy(_.timestamp)
+        index.lastTimestamp = if (indexes.isEmpty) {
+          to
+        } else {
+          indexes.maxBy(_.timestamp).timestamp
+        }
+        info("loadTableIndex: {}", index)
+        index
+      } finally {
+        if (trx != null) {
+          trx.rollback()
+        }
+      }
+    }
+
+    /**
+     * Load all records from the specified tables and timestamp range. The records are grouped by timestamp.
+     */
+    private def loadTablesData(tables: Iterable[Table], from: Timestamp, to: Timestamp): Seq[MutationGroup] = {
+      var trx: MysqlTransaction = null
+      try {
+        trx = createStorageTransaction
+        val grouped: mutable.Map[Timestamp, MutationGroup] = mutable.Map()
+        for (table <- tables; record <- trx.getRecordRange(table, from, to, ranges)) {
+          val group = grouped.getOrElseUpdate(record.timestamp, MutationGroup(record.token, record.timestamp))
+          group.records = record :: group.records
+        }
+        grouped.values.toSeq
+      } finally {
+        if (trx != null) {
+          trx.rollback()
+        }
       }
     }
   }

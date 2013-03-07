@@ -425,7 +425,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
                 WHERE tk = ? AND ts = ?;
                   """.format(fullTableName)
 
-    metrics.tableMetricTruncateVersions(table).time {
+    metrics.tableMetricTruncateVersion(table).time {
       storage.executeSqlUpdate(connection, indexSql, (Seq(token, version.value)): _*)
       storage.executeSqlUpdate(connection, dataSql, (Seq(token, version.value)): _*)
     }
@@ -580,27 +580,28 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         WHERE %2$s;
               """.format(fullTableName, whereRanges)
 
-    var results: SqlResults = null
-    try {
-      results = storage.executeSql(connection, false, sql)
-      if (results.resultset.next()) {
-        val value = results.resultset.getLong("max_ts")
-        if (results.resultset.wasNull()) {
-          None
+    metrics.tableMetricGetLastTimestamp(table).time {
+      var results: SqlResults = null
+      try {
+        results = storage.executeSql(connection, false, sql)
+        if (results.resultset.next()) {
+          val value = results.resultset.getLong("max_ts")
+          if (results.resultset.wasNull()) {
+            None
+          } else {
+            Some(Timestamp(value))
+          }
         } else {
-          Some(Timestamp(value))
+          None
         }
-      } else {
-        None
+      } finally {
+        if (results != null)
+          results.close()
       }
-    } finally {
-      if (results != null)
-        results.close()
     }
   }
 
-  def getRecordIndexes(table: Table, timestamp: Timestamp, count: Int,
-                       ranges: List[TokenRange] = List(TokenRange.All)): Seq[IndexRecord] = {
+  def getRecordIndexRange(table: Table, timestamp: Timestamp, count: Int, ranges: Seq[TokenRange]): Seq[RecordIndex] = {
     val fullTableName = table.depthName("_")
     val whereRanges = ranges.map(r => "(i.tk >= %1$d AND i.tk <= %2$d)".format(r.start, r.end)).mkString("(", "OR ", ")")
 
@@ -624,23 +625,24 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
                 LIMIT 0, %4$d;
               """.format(fullTableName, whereRanges, timestamp.value, count)
 
-    var ret = List[IndexRecord]()
-    var results: SqlResults = null
-    try {
+    var ret = List[RecordIndex]()
+    metrics.tableMetricGetRecordIndexRange(table).time {
+      var results: SqlResults = null
+      try {
         results = storage.executeSql(connection, false, sql)
 
         while (results.resultset.next()) {
-          ret = IndexRecord(results.resultset, table) :: ret
+          ret = RecordIndex(results.resultset, table) :: ret
         }
-    } finally {
-      if (results != null)
-        results.close()
+      } finally {
+        if (results != null)
+          results.close()
+      }
     }
-
     ret
   }
 
-  def getRecords(table: Table, from: Timestamp, to: Timestamp, ranges: List[TokenRange]): RecordIterator = {
+  def getRecordRange(table: Table, from: Timestamp, to: Timestamp, ranges: Seq[TokenRange]): RecordIterator = {
 
     val fullTableName = table.depthName("_")
     val projKeys = (for (i <- 1 to table.depth) yield "d.k%1$d".format(i)).mkString(",")
@@ -663,19 +665,20 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         ORDER BY d.ts ASC;
               """.format(projKeys, fullTableName, whereRanges, from.value, to.value)
 
-    var results: SqlResults = null
-    try {
-      metrics.tableMetricGet(table).time {
-        results = storage.executeSql(connection, false, sql)
+    metrics.tableMetricGetRecordRange(table).time {
+      var results: SqlResults = null
+      try {
+        metrics.tableMetricGet(table).time {
+          results = storage.executeSql(connection, false, sql)
+        }
+
+        new RecordIterator(storage, results, table)
+      } catch {
+        case e: Exception =>
+          if (results != null)
+            results.close()
+          throw e
       }
-
-      new RecordIterator(storage, results, table)
-
-    } catch {
-      case e: Exception =>
-        if (results != null)
-          results.close()
-        throw e
     }
   }
 }
@@ -683,16 +686,20 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 object MysqlTransaction {
 
   class Metrics(storage: MysqlStorage) extends Traced {
+    val metricCommit = tracedTimer("mysql-commit")
+    val metricRollback = tracedTimer("mysql-rollback")
     val tableMetricTimeline = generateTablesTimers("mysql-timeline")
     val tableMetricGetAllLatest = generateTablesTimers("mysql-timeline")
     val tableMetricTopMostVersions = generateTablesTimers("mysql-topmosversions")
     val tableMetricSet = generateTablesTimers("mysql-set")
     val tableMetricGet = generateTablesTimers("mysql-get")
     val tableMetricDelete = generateTablesTimers("mysql-delete")
-    val metricCommit = tracedTimer("mysql-commit")
-    val metricRollback = tracedTimer("mysql-rollback")
+    val tableMetricTruncateVersion = generateTablesTimers("mysql-truncateversion")
     val tableMetricTruncateVersions = generateTablesTimers("mysql-truncateversions")
     val tableMetricSize = generateTablesTimers("mysql-size")
+    val tableMetricGetLastTimestamp = generateTablesTimers("mysql-getlastts")
+    val tableMetricGetRecordIndexRange = generateTablesTimers("mysql-getrecordindexrange")
+    val tableMetricGetRecordRange = generateTablesTimers("mysql-getrecordrange")
 
     private def generateTablesTimers(timerName: String) = storage.model.allHierarchyTables.map(table =>
       (table, tracedTimer(timerName, table.uniqueName))).toMap
@@ -716,7 +723,7 @@ case class AccessPath(parts: Seq[AccessKey] = Seq()) {
   override def toString: String = (for (part <- parts) yield part.key).mkString("/")
 }
 
-class Record(var value: Value = new MapValue(Map())) {
+case class Record(table: Table, var value: Value = new MapValue(Map())) {
   var accessPath = new AccessPath()
   var token: Long = 0
   var encoding: Byte = 0
@@ -745,6 +752,16 @@ class Record(var value: Value = new MapValue(Map())) {
       this.value = serializer.decodeValue(bytes).asInstanceOf[MapValue]
     else
       this.value = NullValue
+  }
+}
+
+object Record {
+  def apply(table: Table, token: Long, timestamp: Timestamp, value: Map[String, Value], accessPath: String*): Record = {
+    val record = Record(table, MapValue(value))
+    record.accessPath = AccessPath(accessPath.map(AccessKey(_)))
+    record.token = token
+    record.timestamp = timestamp
+    record
   }
 }
 
@@ -801,7 +818,7 @@ class RecordIterator(storage: MysqlStorage, results: SqlResults, table: Table) e
 
   def record: Record = {
     if (hasNext) {
-      val record = new Record
+      val record = new Record(table)
       record.load(storage.valueSerializer, results.resultset, table.depth)
       record
     } else {
@@ -831,13 +848,13 @@ class VersionRecord {
   }
 }
 
-case class IndexRecord(table: Table, token: Long, timestamp: Timestamp, recordsCount: Int)
-object IndexRecord {
-  def apply(resultset: ResultSet, table: Table): IndexRecord = {
+case class RecordIndex(table: Table, token: Long, timestamp: Timestamp, recordsCount: Int)
+object RecordIndex {
+  def apply(resultset: ResultSet, table: Table): RecordIndex = {
     val token = resultset.getLong(1)
     val timestamp = Timestamp(resultset.getLong(2))
     val recordsCount = resultset.getInt(3)
-    IndexRecord(table, token, timestamp, recordsCount)
+    RecordIndex(table, token, timestamp, recordsCount)
   }
 }
 
