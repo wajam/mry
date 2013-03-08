@@ -343,12 +343,16 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       // Do not continue if we had an error before as the iterator state is likely inconsistent.
       error.foreach(e => throw e)
 
-      // Go to next cached group or try to load more groups if cache is empty
+      // Go to next cached group
       if (!groups.isEmpty) {
         groups = groups.tail
-      } else {
+      }
+
+      // Try to load more groups if cache is empty
+      if (groups.isEmpty) {
         loadCache()
       }
+
       !groups.isEmpty
     }
 
@@ -417,7 +421,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
         } else {
           indexes.maxBy(_.timestamp).timestamp
         }
-        info("loadTableIndex: {}", index)
+        debug("loadTableIndex: {}", index)
         index
       } finally {
         if (trx != null) {
