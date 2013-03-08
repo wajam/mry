@@ -49,7 +49,7 @@ class TableValue(storage: MysqlStorage, table: Table, accessPrefix: AccessPath =
       val transaction = context.getStorageTransaction(storage).asInstanceOf[MysqlTransaction]
       transaction.loadLazyValues()
 
-      val record = new Record
+      val record = new Record(table)
       record.value = mapVal
       transaction.set(table, token, context.timestamp.get, accessPath, Some(record))
     }
