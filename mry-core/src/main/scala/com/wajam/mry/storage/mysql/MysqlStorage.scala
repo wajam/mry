@@ -290,7 +290,40 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   /**
    * A group of records from different tables which been mutated at the same timestamp.
    */
-  case class MutationGroup(token: Long, timestamp: Timestamp, var records: List[Record] = Nil)
+  case class MutationGroup(token: Long, timestamp: Timestamp, var records: List[Record] = Nil) {
+
+    /**
+     * Apply the mutation group to the specified transaction
+     */
+    def applyTo(transaction: Transaction) {
+      import com.wajam.mry.execution.Implicits._
+
+      // Set or delete each record
+      val storage = transaction.from("mysql")
+      for (record <- records.sortBy(_.table.depth)) {
+
+        // Select the table parent if any
+        val parent = record.table.parentTable match {
+          case Some(tableParent) => {
+            tableParent.path.zip(record.accessPath.keys).foldLeft(storage) {
+              case (p, (t, k)) => {
+                p.from(t.name).get(k)
+              }
+            }
+          }
+          case None => storage
+        }
+
+        // Finally set or delete the record data
+        val table = parent.from(record.table.name)
+        if (record.value.isNull) {
+          table.delete(record.accessPath.last.key)
+        } else {
+          table.set(record.accessPath.last.key, record.value)
+        }
+      }
+    }
+  }
 
   /**
    * Iterate group of mutation records <b>from</b> the specified timestamp up <b>to</b> specified timestamp.
