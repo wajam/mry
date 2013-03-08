@@ -350,14 +350,14 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       // Do not continue if we had an error before as the iterator state is likely inconsistent.
       error.foreach(e => throw e)
 
-      // Go to next queued group
-      if (!groupsQueue.isEmpty) {
-        groupsQueue = groupsQueue.tail
-      }
-
-      // Try to load more groups if queue is empty
-      if (groupsQueue.isEmpty) {
-        loadCache()
+      // Go to next queued group and try to load more groups if queue is empty
+      groupsQueue match {
+        case _ :: Nil => {
+          groupsQueue = Nil
+          loadCache()
+        }
+        case _ :: tail => groupsQueue = tail
+        case Nil => loadCache()
       }
 
       !groupsQueue.isEmpty
@@ -399,10 +399,11 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
             var loadTo = loadFrom
             var loadTables: mutable.Set[Table] = mutable.Set()
             while (!groupsSummaryQueue.isEmpty && loadCount < recordCacheSize) {
-              loadTables ++= groupsSummaryQueue.head.records.map(_.table)
-              loadCount += groupsSummaryQueue.head.records.size
-              loadTo = groupsSummaryQueue.head.timestamp
-              groupsSummaryQueue = groupsSummaryQueue.tail
+              val head :: tail = groupsSummaryQueue
+              loadTables ++= head.records.map(_.table)
+              loadCount += head.records.size
+              loadTo = head.timestamp
+              groupsSummaryQueue = tail
             }
 
             // Finally load, merge and sort the data grouped by timestamp
