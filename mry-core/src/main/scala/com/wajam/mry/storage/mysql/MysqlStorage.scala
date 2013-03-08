@@ -288,9 +288,36 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   }
 
   /**
+   * Returns the mutation transactions from the given timestamp inclusively for the specified token ranges.
+   */
+  def readTransactions(from: Timestamp, to: Timestamp, ranges: Seq[TokenRange]) = {
+    new Iterator[MutationGroup] {
+      private val itr = new MutationGroupIterator(from, to, ranges)
+      private var nextGroup: Option[MutationGroup] = readNext()
+
+      private def readNext(): Option[MutationGroup] = {
+        if (itr.next()) {
+          Some(itr.mutationGroup)
+        } else {
+          None
+        }
+      }
+
+      def hasNext = nextGroup.isDefined
+
+      def next() = {
+        val result = nextGroup
+        nextGroup = readNext()
+        result.get // Must fail if next is called while hasNext is false
+      }
+    }
+  }
+
+  /**
    * A group of records from different tables which been mutated at the same timestamp.
    */
-  case class MutationGroup(token: Long, timestamp: Timestamp, var records: List[Record] = Nil) {
+  case class MutationGroup(token: Long, timestamp: Timestamp, var records: List[Record] = Nil)
+    extends TransactionRecord {
 
     /**
      * Apply the mutation group to the specified transaction
