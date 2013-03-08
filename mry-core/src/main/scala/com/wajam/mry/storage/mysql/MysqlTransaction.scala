@@ -601,14 +601,14 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     }
   }
 
-  def getRecordIndexRange(table: Table, timestamp: Timestamp, count: Int, ranges: Seq[TokenRange]): Seq[RecordIndex] = {
+  def getTransactionSummaryRecords(table: Table, timestamp: Timestamp, count: Int, ranges: Seq[TokenRange]): Seq[TransactionSummaryRecord] = {
     val fullTableName = table.depthName("_")
     val whereRanges = ranges.map(r => "(i.tk >= %1$d AND i.tk <= %2$d)".format(r.start, r.end)).mkString("(", "OR ", ")")
 
     /* Generated SQL looks like:
      *
      *     SELECT i.tk , i.ts, COUNT(*) AS count
-     *     FROM `followees_index` AS i
+     *     FROM `table1_index` AS i
      *     WHERE ((i.tk >= 0 AND i.tk <= 89478485) OR (i.tk >= 536870910 AND i.tk <= 626349395))
      *     AND i.ts >= 0
      *     GROUP BY i.tk, i.ts
@@ -625,14 +625,14 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
                 LIMIT 0, %4$d;
               """.format(fullTableName, whereRanges, timestamp.value, count)
 
-    var ret = List[RecordIndex]()
-    metrics.tableMetricGetRecordIndexRange(table).time {
+    var ret = List[TransactionSummaryRecord]()
+    metrics.tableMetricGetTransactionSummaryRecords(table).time {
       var results: SqlResults = null
       try {
         results = storage.executeSql(connection, false, sql)
 
         while (results.resultset.next()) {
-          ret = RecordIndex(results.resultset, table) :: ret
+          ret = TransactionSummaryRecord(results.resultset, table) :: ret
         }
       } finally {
         if (results != null)
@@ -642,7 +642,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     ret
   }
 
-  def getRecordRange(table: Table, from: Timestamp, to: Timestamp, ranges: Seq[TokenRange]): RecordIterator = {
+  def getTransactionRecords(table: Table, from: Timestamp, to: Timestamp, ranges: Seq[TokenRange]): RecordIterator = {
 
     val fullTableName = table.depthName("_")
     val projKeys = (for (i <- 1 to table.depth) yield "d.k%1$d".format(i)).mkString(",")
@@ -664,7 +664,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         ORDER BY d.ts ASC;
               """.format(projKeys, fullTableName, whereRanges, from.value, to.value)
 
-    metrics.tableMetricGetRecordRange(table).time {
+    metrics.tableMetricGetTransactionRecords(table).time {
       var results: SqlResults = null
       try {
         metrics.tableMetricGet(table).time {
@@ -697,8 +697,8 @@ object MysqlTransaction {
     val tableMetricTruncateVersions = generateTablesTimers("mysql-truncateversions")
     val tableMetricSize = generateTablesTimers("mysql-size")
     val tableMetricGetLastTimestamp = generateTablesTimers("mysql-getlastts")
-    val tableMetricGetRecordIndexRange = generateTablesTimers("mysql-getrecordindexrange")
-    val tableMetricGetRecordRange = generateTablesTimers("mysql-getrecordrange")
+    val tableMetricGetTransactionSummaryRecords = generateTablesTimers("mysql-gettxsummaryrecords")
+    val tableMetricGetTransactionRecords = generateTablesTimers("mysql-gettxrecords")
 
     private def generateTablesTimers(timerName: String) = storage.model.allHierarchyTables.map(table =>
       (table, tracedTimer(timerName, table.uniqueName))).toMap
@@ -722,9 +722,8 @@ case class AccessPath(parts: Seq[AccessKey] = Seq()) {
   override def toString: String = (for (part <- parts) yield part.key).mkString("/")
 }
 
-case class Record(table: Table, var value: Value = new MapValue(Map())) {
+case class Record(table: Table, var value: Value = new MapValue(Map()), var token: Long = 0) {
   var accessPath = new AccessPath()
-  var token: Long = 0
   var encoding: Byte = 0
   var timestamp: Timestamp = Timestamp(0)
 
@@ -757,6 +756,14 @@ case class Record(table: Table, var value: Value = new MapValue(Map())) {
 object Record {
   def apply(table: Table, token: Long, timestamp: Timestamp, value: Map[String, Value], accessPath: String*): Record = {
     val record = Record(table, MapValue(value))
+    record.accessPath = AccessPath(accessPath.map(AccessKey(_)))
+    record.token = token
+    record.timestamp = timestamp
+    record
+  }
+
+  def apply(table: Table, token: Long, timestamp: Timestamp, value: Value, accessPath: String*): Record = {
+    val record = Record(table, value)
     record.accessPath = AccessPath(accessPath.map(AccessKey(_)))
     record.token = token
     record.timestamp = timestamp
@@ -847,13 +854,13 @@ class VersionRecord {
   }
 }
 
-case class RecordIndex(table: Table, token: Long, timestamp: Timestamp, recordsCount: Int)
-object RecordIndex {
-  def apply(resultset: ResultSet, table: Table): RecordIndex = {
+case class TransactionSummaryRecord(table: Table, token: Long, timestamp: Timestamp, recordsCount: Int)
+object TransactionSummaryRecord {
+  def apply(resultset: ResultSet, table: Table): TransactionSummaryRecord = {
     val token = resultset.getLong(1)
     val timestamp = Timestamp(resultset.getLong(2))
     val recordsCount = resultset.getInt(3)
-    RecordIndex(table, token, timestamp, recordsCount)
+    TransactionSummaryRecord(table, token, timestamp, recordsCount)
   }
 }
 
