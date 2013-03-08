@@ -609,7 +609,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *
      *     SELECT i.tk , i.ts, COUNT(*) AS count
      *     FROM `followees_index` AS i
-     *     WHERE ((i.tk >= 0 AND i.tk <= 40000000))
+     *     WHERE ((i.tk >= 0 AND i.tk <= 89478485) OR (i.tk >= 536870910 AND i.tk <= 626349395))
      *     AND i.ts >= 0
      *     GROUP BY i.tk, i.ts
      *     ORDER BY i.ts ASC
@@ -652,10 +652,9 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *
      *   SELECT d.ts, d.tk, d.ec, d.d, d.k1
      *   FROM `table1_data` AS d
-     *   WHERE ((d.tk >= 0 AND d.tk <= 40000000))
+     *   WHERE ((d.tk >= 0 AND d.tk <= 89478485) OR (d.tk >= 536870910 AND d.tk <= 626349395))
      *   AND d.ts >= 13578286851700001 AND d.ts <= 13578286975770001
      *   ORDER BY d.ts ASC;
-     *   SELECT i.max_ts, i.tk, o.ec, o.d, o.k1
      */
     var sql = """
         SELECT d.ts, d.tk, d.ec, d.d, %1$s
