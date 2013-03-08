@@ -1110,23 +1110,23 @@ class TestMysqlStorage extends TestMysqlBase {
     val grp8 = spyStorage.MutationGroup(tk8, 8L, List(Record(table1, tk8, 8L, NullValue, "k8")))
 
     // After first and before last
-    val grp2to7 = new spyStorage.MutationGroupIterator(from = 2L, to = 7L, List(TokenRange.All), 4, 1)
+    val grp2to7 = new spyStorage.MutationGroupIterator(from = 2L, to = 7L, List(TokenRange.All), 4, 1, 1)
     grp2to7.toList should be(List(grp2, grp3, grp4, grp5, grp6, grp7))
 
     // Same from and to
-    val grp1to1 = new spyStorage.MutationGroupIterator(from = 1L, to = 1L, List(TokenRange.All), 4, 2)
+    val grp1to1 = new spyStorage.MutationGroupIterator(from = 1L, to = 1L, List(TokenRange.All), 4, 2, 1)
     grp1to1.toList should be(List(grp1))
 
     // Before first
-    val grp0to3 = new spyStorage.MutationGroupIterator(from = 0L, to = 3L, List(TokenRange.All), 4, 2)
+    val grp0to3 = new spyStorage.MutationGroupIterator(from = 0L, to = 3L, List(TokenRange.All), 4, 2, 1)
     grp0to3.toList should be(List(grp1, grp2, grp3))
 
     // Beyond last
-    val grp5to9 = new spyStorage.MutationGroupIterator(from = 5L, to = 9L, List(TokenRange.All), 4, 2)
+    val grp5to9 = new spyStorage.MutationGroupIterator(from = 5L, to = 9L, List(TokenRange.All), 4, 2, 1)
     grp5to9.toList should be(List(grp5, grp6, grp7, grp8))
 
     // Loading records error
-    val grpError = new spyStorage.MutationGroupIterator(from = 1L, to = 3L, List(TokenRange.All), 4, 2)
+    val grpError = new spyStorage.MutationGroupIterator(from = 1L, to = 3L, List(TokenRange.All), 4, 2, 1)
     when(spyStorage.createStorageTransaction).thenThrow(new RuntimeException())
     evaluating {
       grpError.next()
