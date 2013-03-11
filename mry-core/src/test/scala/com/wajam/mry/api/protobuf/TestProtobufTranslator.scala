@@ -4,7 +4,9 @@ import org.scalatest.FunSuite
 import com.wajam.mry.execution.Implicits._
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import com.wajam.mry.execution.{ListValue, Value, MapValue, NullValue}
+import com.wajam.mry.execution._
+import com.wajam.mry.execution.MapValue
+import com.wajam.mry.execution.ListValue
 
 @RunWith(classOf[JUnitRunner])
 class TestProtobufTranslator extends FunSuite {
@@ -65,8 +67,13 @@ class TestProtobufTranslator extends FunSuite {
     }
   }
 
+  private def buildTransaction(): Transaction = {
+     val t: Transaction = new Transaction()
+  }
 
-  ignore("transaction encode/decode") {
+  test("transaction encode/decode") {
+
+    // Check transaction equals are working first!
 
   }
 }

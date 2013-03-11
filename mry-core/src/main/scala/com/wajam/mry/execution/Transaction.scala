@@ -1,10 +1,12 @@
 package com.wajam.mry.execution
 
+import com.wajam.nrv.utils.ContentEquals
+
 /**
  * MysqlTransaction (block of operations) executed on storage
  */
 @SerialVersionUID(3228033012927254856L)
-class Transaction(blockCreator: (Block with OperationApi) => Unit = null) extends Block with OperationApi with OperationSource with Serializable {
+class Transaction(blockCreator: (Block with OperationApi) => Unit = null) extends Block with OperationApi with OperationSource with ContentEquals with Serializable {
   var id: Int = 0
 
   def sourceBlock = this
@@ -36,4 +38,14 @@ class Transaction(blockCreator: (Block with OperationApi) => Unit = null) extend
   override def execReturn(context: ExecutionContext, from: Seq[Variable]) {
     context.returnValues = for (variable <- from) yield variable.value.serializableValue
   }
+
+  override def equalsContents(obj: Any): Boolean = {
+    obj match {
+      case t: Transaction =>
+        super.equalsContents(t) &&
+        t.id == id
+      case None => false
+    }
+  }
+
 }
