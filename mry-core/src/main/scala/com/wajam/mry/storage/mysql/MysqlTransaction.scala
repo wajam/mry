@@ -425,7 +425,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
                 WHERE tk = ? AND ts = ?;
                   """.format(fullTableName)
 
-    metrics.tableMetricTruncateVersions(table).time {
+    metrics.tableMetricTruncateVersion(table).time {
       storage.executeSqlUpdate(connection, indexSql, (Seq(token, version.value)): _*)
       storage.executeSqlUpdate(connection, dataSql, (Seq(token, version.value)): _*)
     }
@@ -580,22 +580,104 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         WHERE %2$s;
               """.format(fullTableName, whereRanges)
 
-    var results: SqlResults = null
-    try {
-      results = storage.executeSql(connection, false, sql)
-      if (results.resultset.next()) {
-        val value = results.resultset.getLong("max_ts")
-        if (results.resultset.wasNull()) {
-          None
+    metrics.tableMetricGetLastTimestamp(table).time {
+      var results: SqlResults = null
+      try {
+        results = storage.executeSql(connection, false, sql)
+        if (results.resultset.next()) {
+          val value = results.resultset.getLong("max_ts")
+          if (results.resultset.wasNull()) {
+            None
+          } else {
+            Some(Timestamp(value))
+          }
         } else {
-          Some(Timestamp(value))
+          None
         }
-      } else {
-        None
+      } finally {
+        if (results != null)
+          results.close()
       }
-    } finally {
-      if (results != null)
-        results.close()
+    }
+  }
+
+  def getTransactionSummaryRecords(table: Table, timestamp: Timestamp, count: Int, ranges: Seq[TokenRange]): Seq[TransactionSummaryRecord] = {
+    val fullTableName = table.depthName("_")
+    val whereRanges = ranges.map(r => "(i.tk >= %1$d AND i.tk <= %2$d)".format(r.start, r.end)).mkString("(", "OR ", ")")
+
+    /* Generated SQL looks like:
+     *
+     *     SELECT i.tk , i.ts, COUNT(*) AS count
+     *     FROM `table1_index` AS i
+     *     WHERE ((i.tk >= 0 AND i.tk <= 89478485) OR (i.tk >= 536870910 AND i.tk <= 626349395))
+     *     AND i.ts >= 0
+     *     GROUP BY i.tk, i.ts
+     *     ORDER BY i.ts ASC
+     *     LIMIT 0, 100;
+     */
+    val sql = """
+                SELECT i.tk , i.ts, COUNT(*) AS count
+                FROM `%1$s_index` AS i
+                WHERE %2$s
+                AND i.ts >= %3$d
+                GROUP BY i.tk, i.ts
+                ORDER BY i.ts ASC
+                LIMIT 0, %4$d;
+              """.format(fullTableName, whereRanges, timestamp.value, count)
+
+    var ret = List[TransactionSummaryRecord]()
+    metrics.tableMetricGetTransactionSummaryRecords(table).time {
+      var results: SqlResults = null
+      try {
+        results = storage.executeSql(connection, false, sql)
+
+        while (results.resultset.next()) {
+          ret = TransactionSummaryRecord(results.resultset, table) :: ret
+        }
+      } finally {
+        if (results != null)
+          results.close()
+      }
+    }
+    ret
+  }
+
+  def getTransactionRecords(table: Table, from: Timestamp, to: Timestamp, ranges: Seq[TokenRange]): RecordIterator = {
+
+    val fullTableName = table.depthName("_")
+    val projKeys = (for (i <- 1 to table.depth) yield "d.k%1$d".format(i)).mkString(",")
+    val whereRanges = ranges.map(r => "(d.tk >= %1$d AND d.tk <= %2$d)".format(r.start, r.end)).mkString("(", "OR ", ")")
+
+    /* Generated SQL looks like:
+     *
+     *   SELECT d.ts, d.tk, d.ec, d.d, d.k1
+     *   FROM `table1_data` AS d
+     *   WHERE ((d.tk >= 0 AND d.tk <= 89478485) OR (d.tk >= 536870910 AND d.tk <= 626349395))
+     *   AND d.ts >= 13578286851700001 AND d.ts <= 13578286975770001
+     *   ORDER BY d.ts ASC;
+     */
+    var sql = """
+        SELECT d.ts, d.tk, d.ec, d.d, %1$s
+        FROM `%2$s_data` AS d
+        WHERE %3$s
+        AND d.ts >= %4$d AND d.ts <= %5$d
+        ORDER BY d.ts ASC;
+              """.format(projKeys, fullTableName, whereRanges, from.value, to.value)
+
+    metrics.tableMetricGetTransactionRecords(table).time {
+      var results: SqlResults = null
+      try {
+        metrics.tableMetricGet(table).time {
+          results = storage.executeSql(connection, false, sql)
+        }
+
+        new RecordIterator(storage, results, table)
+      } catch {
+        case e: Exception =>
+          if (results != null)
+            results.close()
+          throw e
+      }
     }
   }
 }
@@ -603,16 +685,20 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 object MysqlTransaction {
 
   class Metrics(storage: MysqlStorage) extends Traced {
+    val metricCommit = tracedTimer("mysql-commit")
+    val metricRollback = tracedTimer("mysql-rollback")
     val tableMetricTimeline = generateTablesTimers("mysql-timeline")
     val tableMetricGetAllLatest = generateTablesTimers("mysql-timeline")
     val tableMetricTopMostVersions = generateTablesTimers("mysql-topmosversions")
     val tableMetricSet = generateTablesTimers("mysql-set")
     val tableMetricGet = generateTablesTimers("mysql-get")
     val tableMetricDelete = generateTablesTimers("mysql-delete")
-    val metricCommit = tracedTimer("mysql-commit")
-    val metricRollback = tracedTimer("mysql-rollback")
+    val tableMetricTruncateVersion = generateTablesTimers("mysql-truncateversion")
     val tableMetricTruncateVersions = generateTablesTimers("mysql-truncateversions")
     val tableMetricSize = generateTablesTimers("mysql-size")
+    val tableMetricGetLastTimestamp = generateTablesTimers("mysql-getlastts")
+    val tableMetricGetTransactionSummaryRecords = generateTablesTimers("mysql-gettxsummaryrecords")
+    val tableMetricGetTransactionRecords = generateTablesTimers("mysql-gettxrecords")
 
     private def generateTablesTimers(timerName: String) = storage.model.allHierarchyTables.map(table =>
       (table, tracedTimer(timerName, table.uniqueName))).toMap
@@ -636,9 +722,8 @@ case class AccessPath(parts: Seq[AccessKey] = Seq()) {
   override def toString: String = (for (part <- parts) yield part.key).mkString("/")
 }
 
-class Record(var value: Value = new MapValue(Map())) {
+case class Record(table: Table, var value: Value = new MapValue(Map()), var token: Long = 0) {
   var accessPath = new AccessPath()
-  var token: Long = 0
   var encoding: Byte = 0
   var timestamp: Timestamp = Timestamp(0)
 
@@ -665,6 +750,24 @@ class Record(var value: Value = new MapValue(Map())) {
       this.value = serializer.decodeValue(bytes).asInstanceOf[MapValue]
     else
       this.value = NullValue
+  }
+}
+
+object Record {
+  def apply(table: Table, token: Long, timestamp: Timestamp, value: Map[String, Value], accessPath: String*): Record = {
+    val record = Record(table, MapValue(value))
+    record.accessPath = AccessPath(accessPath.map(AccessKey(_)))
+    record.token = token
+    record.timestamp = timestamp
+    record
+  }
+
+  def apply(table: Table, token: Long, timestamp: Timestamp, value: Value, accessPath: String*): Record = {
+    val record = Record(table, value)
+    record.accessPath = AccessPath(accessPath.map(AccessKey(_)))
+    record.token = token
+    record.timestamp = timestamp
+    record
   }
 }
 
@@ -721,7 +824,7 @@ class RecordIterator(storage: MysqlStorage, results: SqlResults, table: Table) e
 
   def record: Record = {
     if (hasNext) {
-      val record = new Record
+      val record = new Record(table)
       record.load(storage.valueSerializer, results.resultset, table.depth)
       record
     } else {
@@ -748,6 +851,16 @@ class VersionRecord {
     this.versionsCount = resultset.getInt(2)
     this.versions = resultset.getString(3).split(",").map(vers => Timestamp(vers.toLong))
     this.accessPath = new AccessPath(for (i <- 1 to depth) yield new AccessKey(resultset.getString(3 + i)))
+  }
+}
+
+case class TransactionSummaryRecord(table: Table, token: Long, timestamp: Timestamp, recordsCount: Int)
+object TransactionSummaryRecord {
+  def apply(resultset: ResultSet, table: Table): TransactionSummaryRecord = {
+    val token = resultset.getLong(1)
+    val timestamp = Timestamp(resultset.getLong(2))
+    val recordsCount = resultset.getInt(3)
+    TransactionSummaryRecord(table, token, timestamp, recordsCount)
   }
 }
 
