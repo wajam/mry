@@ -3,7 +3,9 @@ package com.wajam.mry.api.protobuf
 import com.wajam.mry.api.{TranslationException, ProtocolTranslator}
 import com.wajam.mry.api.protobuf.MryProtobuf._
 import scala.collection.JavaConversions._
-import com.wajam.mry.execution.{Transaction => MryTransaction, _}
+import scala.collection.JavaConverters._
+import com.wajam.mry.execution._
+import com.wajam.mry.api.Transport
 import com.wajam.mry.execution.MapValue
 import com.wajam.mry.execution.IntValue
 import com.wajam.mry.api.Transport
@@ -11,19 +13,17 @@ import com.wajam.mry.execution.BoolValue
 import com.wajam.mry.execution.ListValue
 import com.wajam.mry.execution.StringValue
 import com.wajam.mry.execution.DoubleValue
-import com.wajam.mry.execution.Transaction
-
 
 /**
  * Protocol buffers translator
  */
 class ProtobufTranslator extends ProtocolTranslator {
 
-  def encodeTransaction(transaction: MryTransaction): Array[Byte] = {
+  def encodeTransaction(transaction: Transaction): Array[Byte] = {
     encodePTransaction(transaction).toByteArray
   }
 
-  def decodeTransaction(data: Array[Byte]): MryTransaction = {
+  def decodeTransaction(data: Array[Byte]): Transaction = {
     decodePTransaction(PTransaction.parseFrom(data))
   }
 
@@ -47,14 +47,23 @@ class ProtobufTranslator extends ProtocolTranslator {
     for (r <- request)
       pTransport.setRequest(encodePTransaction(r))
 
-    for (or <- response; v <- or)
+    for (v <- response)
       pTransport.addResponse(encodePValue(v))
 
     pTransport.build()
   }
 
-  private def decodePTransport(transaction: PTransport): Transport =  {
-    null
+  private def decodePTransport(transport: PTransport): Transport =  {
+
+    val request: Option[Transaction] =
+      if (transport.hasRequest)
+        Some(decodePTransaction(transport.getRequest))
+      else
+        None
+
+    val response: Seq[Value] = transport.getResponseList.asScala.map(decodePValue(_)).toSeq
+
+    Transport(request, response)
   }
 
   private def encodePTransaction(transaction: Transaction): PTransaction =  {
@@ -65,6 +74,30 @@ class ProtobufTranslator extends ProtocolTranslator {
     null
   }
 
+
+  private def encodePBlock(block: Block): PTransactionBlock =  {
+    null
+  }
+
+  private def decodePBlock(block: PTransactionBlock): Block =  {
+    null
+  }
+
+  private def encodePVariable(variable: Variable): PTransaction =  {
+    null
+  }
+
+  private def decodePVariable(variable: PTransactionVariable): Variable =  {
+    null
+  }
+
+  private def encodePOperation(operation: Operation): PTransactionOperation =  {
+    null
+  }
+
+  private def decodePOperation(operation: PTransactionOperation): Operation =  {
+    null
+  }
 
   private def encodePValue(value: Value): PTransactionValue = {
     value.serializableValue match {
