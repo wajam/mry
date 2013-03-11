@@ -1,11 +1,14 @@
 package com.wajam.mry.api.protobuf;
 option optimize_for = LITE_RUNTIME;
 
-message PTransaction {
-	optional uint64 id = 1;
-	optional PTransactionResult return = 2;
+message PTransport {
+	optional PTransaction request = 1;
+	repeated PTransactionValue response = 2;
+}
 
-	repeated PTransactionBlock blocks = 10;
+message PTransaction {
+	optional uint32 id = 1;
+	optional PTransactionBlock innerBlock = 2;
 }
 
 message PTransactionResult {
