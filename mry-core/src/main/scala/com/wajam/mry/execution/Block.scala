@@ -52,12 +52,12 @@ trait Block extends ContentEquals  {
     if (commit) context.commit()
   }
 
-  override def equalsContents(obj: Any): Boolean = {
+  override def equalsContent(obj: Any): Boolean = {
     obj match {
       case b: Block =>
-        variables.forall((v) => b.variables.forall(v.equalsContents(_))) &&
+        variables.forall((v) => b.variables.forall(v.equalsContent(_))) &&
         varSeq == b.varSeq &&
-        parent.forall((p) => b.parent.forall(p.equalsContents(_)))
+        parent.forall((p) => b.parent.forall(p.equalsContent(_)))
       case None => false
     }
   }

@@ -39,10 +39,10 @@ class Transaction(blockCreator: (Block with OperationApi) => Unit = null) extend
     context.returnValues = for (variable <- from) yield variable.value.serializableValue
   }
 
-  override def equalsContents(obj: Any): Boolean = {
+  override def equalsContent(obj: Any): Boolean = {
     obj match {
       case t: Transaction =>
-        super.equalsContents(t) &&
+        super.equalsContent(t) &&
         t.id == id
       case None => false
     }
