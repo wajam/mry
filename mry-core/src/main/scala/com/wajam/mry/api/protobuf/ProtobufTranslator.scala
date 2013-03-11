@@ -1,6 +1,6 @@
 package com.wajam.mry.api.protobuf
 
-import com.wajam.mry.api.{TranslationException, ProtocolTranslator}
+import com.wajam.mry.api.{Transport, TranslationException, ProtocolTranslator}
 import com.wajam.mry.api.protobuf.Transaction.{PTransactionCollectionValue, PTransactionCollection, PTransactionValue}
 import scala.collection.JavaConversions._
 import com.wajam.mry.execution.{Transaction => MryTransaction, _}
@@ -9,6 +9,27 @@ import com.wajam.mry.execution.{Transaction => MryTransaction, _}
  * Protocol buffers translator
  */
 class ProtobufTranslator extends ProtocolTranslator {
+
+  def encodeTransaction(transaction: MryTransaction): Array[Byte] = {
+    null
+  }
+
+  def decodeTransaction(data: Array[Byte]): MryTransaction = {
+    new MryTransaction()
+  }
+
+  def encodeValue(value: Value): Array[Byte] = this.toProtoValue(value).toByteArray
+
+  def decodeValue(data: Array[Byte]): Value = this.fromProtoValue(PTransactionValue.parseFrom(data))
+
+  def encodeAll(block: Transport): Array[Byte] = {
+     null
+  }
+
+  def decodeAll(data: Array[Byte]): Transport = {
+    null
+  }
+
   private def toProtoValue(value: Value): PTransactionValue = {
     value.serializableValue match {
       case strValue: StringValue =>
@@ -71,9 +92,7 @@ class ProtobufTranslator extends ProtocolTranslator {
     }
   }
 
-  def encodeValue(value: Value): Array[Byte] = this.toProtoValue(value).toByteArray
-
-  def fromProtoValue(protoVal: PTransactionValue): Value = {
+  private def fromProtoValue(protoVal: PTransactionValue): Value = {
     protoVal.getType match {
       case PTransactionValue.Type.STRING =>
         StringValue(protoVal.getStringValue)
@@ -110,13 +129,4 @@ class ProtobufTranslator extends ProtocolTranslator {
     }
   }
 
-  def decodeValue(data: Array[Byte]): Value = this.fromProtoValue(PTransactionValue.parseFrom(data))
-
-  def encodeTransaction(transaction: MryTransaction): Array[Byte] = {
-    null
-  }
-
-  def decodeTransaction(data: Array[Byte]): MryTransaction = {
-    new MryTransaction()
-  }
 }

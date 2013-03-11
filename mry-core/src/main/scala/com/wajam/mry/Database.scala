@@ -1,5 +1,6 @@
 package com.wajam.mry
 
+import api.MryCodec
 import execution._
 import storage.Storage
 import com.wajam.nrv.{TimeoutException, Logging}
@@ -17,6 +18,9 @@ class Database[T <: Storage](serviceName: String = "database")
   extends Service(serviceName) with CurrentTime with Logging with Instrumented with Traced {
 
   var storages = Map[String, T]()
+
+  // Set specific messageData codec for nrv
+  applySupport(nrvCodec = Some(new MryCodec))
 
   def analyseTransaction(transaction: Transaction): ExecutionContext = {
     val context = new ExecutionContext(storages)
