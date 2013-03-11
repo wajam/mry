@@ -1269,9 +1269,6 @@ class TestMysqlStorage extends TestMysqlBase {
   }
 
   test("applying mutation group to a transaction should produce the right operations") {
-    val path = table1_1_1.path
-    println(path)
-
     val storage = mysqlStorage
     val context = new ExecutionContext(storages)
 
