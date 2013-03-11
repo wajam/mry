@@ -7,9 +7,10 @@ import org.scalatest.junit.JUnitRunner
 import com.wajam.mry.execution._
 import com.wajam.mry.execution.MapValue
 import com.wajam.mry.execution.ListValue
+import org.scalatest.matchers.ShouldMatchers
 
 @RunWith(classOf[JUnitRunner])
-class TestProtobufTranslator extends FunSuite {
+class TestProtobufTranslator extends FunSuite with ShouldMatchers {
   val translator = new ProtobufTranslator
 
   test("value encode/decode") {
@@ -68,12 +69,20 @@ class TestProtobufTranslator extends FunSuite {
   }
 
   private def buildTransaction(): Transaction = {
-     val t: Transaction = new Transaction()
+    val t = new Transaction((b) => b.returns(b.from("A").from("B").get(1000).from("C").get()))
+    t
   }
 
   test("transaction encode/decode") {
 
-    // Check transaction equals are working first!
+    val t = buildTransaction
 
+    // Check transaction equals is working first!
+    t.equalsContent(t)
+
+    val bytes = translator.encodeTransaction(t)
+    val t2 = translator.decodeTransaction(bytes)
+
+    t equalsContent t2 should be(true)
   }
 }

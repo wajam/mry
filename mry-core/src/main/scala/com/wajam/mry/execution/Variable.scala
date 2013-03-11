@@ -18,7 +18,6 @@ class Variable(block: Block, id: Int, var value: Value = NullValue) extends Obje
   override def equalsContent(obj: Any): Boolean = {
     obj match {
       case v: Variable =>
-        block.equalsContent(v.sourceBlock) &&
         value.equalsValue(v.value)
 
       case None => false

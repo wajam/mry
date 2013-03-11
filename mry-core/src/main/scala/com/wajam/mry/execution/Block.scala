@@ -55,7 +55,7 @@ trait Block extends ContentEquals  {
   override def equalsContent(obj: Any): Boolean = {
     obj match {
       case b: Block =>
-        variables.forall((v) => b.variables.forall(v.equalsContent(_))) &&
+        variables.forall((v) => b.variables.exists(v.equalsContent(_))) &&
         varSeq == b.varSeq &&
         parent.forall((p) => b.parent.forall(p.equalsContent(_)))
       case None => false
