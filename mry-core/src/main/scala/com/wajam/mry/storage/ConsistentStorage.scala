@@ -15,7 +15,7 @@ trait ConsistentStorage extends Storage {
   def getLastTimestamp(ranges: Seq[TokenRange]): Option[Timestamp]
 
   /**
-   * Returns the mutation transactions from the given timestamp inclusively for the specified token ranges.
+   * Returns the mutation transactions from and up to the given timestamps inclusively for the specified token ranges.
    */
   def readTransactions(from: Timestamp, to: Timestamp, ranges: Seq[TokenRange]): Iterator[TransactionRecord]
 

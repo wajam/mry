@@ -288,7 +288,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   }
 
   /**
-   * Returns the mutation transactions from the given timestamp inclusively for the specified token ranges.
+   * Returns the mutation transactions from and to the given timestamps inclusively for the specified token ranges.
    */
   def readTransactions(from: Timestamp, to: Timestamp, ranges: Seq[TokenRange]) = {
     new Iterator[MutationGroup] {
@@ -329,7 +329,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       val storage = transaction.from("mysql")
       for (record <- records.sortBy(_.table.depth)) {
 
-        // Select the table parent if any
+        // Select the parent table if any
         val parent = record.table.parentTable match {
           case Some(tableParent) => {
             tableParent.path.zip(record.accessPath.keys).foldLeft(storage) {
