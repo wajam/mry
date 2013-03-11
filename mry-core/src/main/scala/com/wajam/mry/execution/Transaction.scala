@@ -3,6 +3,7 @@ package com.wajam.mry.execution
 /**
  * MysqlTransaction (block of operations) executed on storage
  */
+@SerialVersionUID(3228033012927254856L)
 class Transaction(blockCreator: (Block with OperationApi) => Unit = null) extends Block with OperationApi with OperationSource with Serializable {
   var id: Int = 0
 

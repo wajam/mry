@@ -54,6 +54,10 @@ trait OperationSource {
   def execLimit(context: ExecutionContext, into: Variable, keys: Object*) {
     getProxiedSource.execLimit(context, into, keys: _*)
   }
+
+  def execProjection(context: ExecutionContext, into: Variable, keys: Object*) {
+    getProxiedSource.execProjection(context, into, keys: _*)
+  }
 }
 
 class InvalidParameter(reason: String) extends Exception("%s: %s".format(getClass.toString, reason))

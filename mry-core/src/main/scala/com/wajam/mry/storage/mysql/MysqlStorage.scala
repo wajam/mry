@@ -358,11 +358,14 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
    * @param from start timestamp (inclusive)
    * @param to end timestamp (inclusive)
    * @param ranges token ranges
-   * @param recordCacheSize maximum number of records cached in iterator
-   * @param summaryBatchSize maximum number of indexes per table loaded from database
+   * @param recordCacheSize maximum number of records cached in this iterator. This is not the mutation group size but
+   *                        the number of records contained in the queued mutation group. A limit of 100 records can be
+   *                        reach by having 4 mutation groups of 25 records.
+   * @param tableSummarySize number of transaction summary records loaded per table per call from database
+   * @param tableSummaryThreshold threshold per table below which more transaction summary records are loaded
    */
   class MutationGroupIterator(from: Timestamp, to: Timestamp, ranges: Seq[TokenRange], recordCacheSize: Int = 100,
-                              summaryBatchSize: Int = 50) extends Traversable[MutationGroup] {
+                              tableSummarySize: Int = 50, tableSummaryThreshold: Double = 0.70) extends Traversable[MutationGroup] {
 
     private case class MutationGroupSummary(token: Long, timestamp: Timestamp,
                                             var records: List[TransactionSummaryRecord] = Nil)
@@ -370,6 +373,8 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
     private case class TableSummary(table: Table, var lastTimestamp: Timestamp,
                                     var records: List[TransactionSummaryRecord] = Nil) {
       def hasMore: Boolean = lastTimestamp < to
+
+      def mustLoadMore: Boolean = hasMore && records.size < tableSummarySize * tableSummaryThreshold
 
       def takeSummaryRecordsTo(timestamp: Timestamp): List[TransactionSummaryRecord] = {
         val (taken, remaining) = records.span(_.timestamp <= timestamp)
@@ -405,14 +410,14 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       // Do not continue if we had an error before as the iterator state is likely inconsistent.
       error.foreach(e => throw e)
 
-      // Go to next queued group
-      if (!groupsQueue.isEmpty) {
-        groupsQueue = groupsQueue.tail
-      }
-
-      // Try to load more groups if queue is empty
-      if (groupsQueue.isEmpty) {
-        loadCache()
+      // Go to next queued group and try to load more groups if queue is empty
+      groupsQueue match {
+        case _ :: Nil => {
+          groupsQueue = Nil
+          loadCache()
+        }
+        case _ :: tail => groupsQueue = tail
+        case Nil => loadCache()
       }
 
       !groupsQueue.isEmpty
@@ -432,7 +437,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           tablesCache.exists(ti => ti.hasMore || !ti.records.isEmpty))) {
 
           // Ensure we have a minimum quantity of transaction summary loaded from each table
-          tablesCache.withFilter(ti => ti.hasMore && ti.records.size < summaryBatchSize * 0.70).foreach(loadTableSummary(_))
+          tablesCache.withFilter(_.mustLoadMore).foreach(loadTableSummary(_))
 
           // Group transaction summary by timestamp
           val maxAvailable = tablesCache.minBy(_.lastTimestamp).lastTimestamp // Can group summary up to that timestamp
@@ -454,10 +459,11 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
             var loadTo = loadFrom
             var loadTables: mutable.Set[Table] = mutable.Set()
             while (!groupsSummaryQueue.isEmpty && loadCount < recordCacheSize) {
-              loadTables ++= groupsSummaryQueue.head.records.map(_.table)
-              loadCount += groupsSummaryQueue.head.records.size
-              loadTo = groupsSummaryQueue.head.timestamp
-              groupsSummaryQueue = groupsSummaryQueue.tail
+              val head :: tail = groupsSummaryQueue
+              loadTables ++= head.records.map(_.table)
+              loadCount += head.records.size
+              loadTo = head.timestamp
+              groupsSummaryQueue = tail
             }
 
             // Finally load, merge and sort the data grouped by timestamp
@@ -477,7 +483,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       try {
         trx = createStorageTransaction
         val records = trx.getTransactionSummaryRecords(tableSummary.table, Timestamp(tableSummary.lastTimestamp.value + 1),
-          summaryBatchSize, ranges)
+          tableSummarySize, ranges)
         tableSummary.records = (tableSummary.records ++ records.toList).sortBy(_.timestamp)
         tableSummary.lastTimestamp = if (records.isEmpty) {
           to
