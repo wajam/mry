@@ -16,7 +16,7 @@ trait ProtocolTranslator {
 
   def decodeTransaction(data: Array[Byte]): Transaction
 
-  def encodeAll(block: Transport): Array[Byte]
+  def encodeAll(transport: Transport): Array[Byte]
 
   def decodeAll(data: Array[Byte]): Transport
 }

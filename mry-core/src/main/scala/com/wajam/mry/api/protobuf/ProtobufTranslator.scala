@@ -22,7 +22,7 @@ class ProtobufTranslator extends ProtocolTranslator {
 
   def decodeValue(data: Array[Byte]): Value = this.fromProtoValue(PTransactionValue.parseFrom(data))
 
-  def encodeAll(block: Transport): Array[Byte] = {
+  def encodeAll(transport: Transport): Array[Byte] = {
      null
   }
 
