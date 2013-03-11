@@ -855,6 +855,7 @@ class VersionRecord {
 }
 
 case class TransactionSummaryRecord(table: Table, token: Long, timestamp: Timestamp, recordsCount: Int)
+
 object TransactionSummaryRecord {
   def apply(resultset: ResultSet, table: Table): TransactionSummaryRecord = {
     val token = resultset.getLong(1)
