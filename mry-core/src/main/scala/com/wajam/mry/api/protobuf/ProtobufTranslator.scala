@@ -1,9 +1,18 @@
 package com.wajam.mry.api.protobuf
 
-import com.wajam.mry.api.{Transport, TranslationException, ProtocolTranslator}
-import com.wajam.mry.api.protobuf.Transaction.{PTransactionCollectionValue, PTransactionCollection, PTransactionValue}
+import com.wajam.mry.api.{TranslationException, ProtocolTranslator}
+import com.wajam.mry.api.protobuf.MryProtobuf._
 import scala.collection.JavaConversions._
 import com.wajam.mry.execution.{Transaction => MryTransaction, _}
+import com.wajam.mry.execution.MapValue
+import com.wajam.mry.execution.IntValue
+import com.wajam.mry.api.Transport
+import com.wajam.mry.execution.BoolValue
+import com.wajam.mry.execution.ListValue
+import com.wajam.mry.execution.StringValue
+import com.wajam.mry.execution.DoubleValue
+import com.wajam.mry.execution.Transaction
+
 
 /**
  * Protocol buffers translator
@@ -11,26 +20,53 @@ import com.wajam.mry.execution.{Transaction => MryTransaction, _}
 class ProtobufTranslator extends ProtocolTranslator {
 
   def encodeTransaction(transaction: MryTransaction): Array[Byte] = {
-    null
+    encodePTransaction(transaction).toByteArray
   }
 
   def decodeTransaction(data: Array[Byte]): MryTransaction = {
-    new MryTransaction()
+    decodePTransaction(PTransaction.parseFrom(data))
   }
 
-  def encodeValue(value: Value): Array[Byte] = this.toProtoValue(value).toByteArray
+  def encodeValue(value: Value): Array[Byte] = this.encodePValue(value).toByteArray
 
-  def decodeValue(data: Array[Byte]): Value = this.fromProtoValue(PTransactionValue.parseFrom(data))
+  def decodeValue(data: Array[Byte]): Value = this.decodePValue(PTransactionValue.parseFrom(data))
 
   def encodeAll(transport: Transport): Array[Byte] = {
-     null
+    encodePTransport(transport).toByteArray
   }
 
   def decodeAll(data: Array[Byte]): Transport = {
+    decodePTransport(PTransport.parseFrom(data))
+  }
+
+  private def encodePTransport(transport: Transport): PTransport =  {
+    val Transport(request, response) = transport
+
+    val pTransport = PTransport.newBuilder()
+
+    for (r <- request)
+      pTransport.setRequest(encodePTransaction(r))
+
+    for (or <- response; v <- or)
+      pTransport.addResponse(encodePValue(v))
+
+    pTransport.build()
+  }
+
+  private def decodePTransport(transaction: PTransport): Transport =  {
     null
   }
 
-  private def toProtoValue(value: Value): PTransactionValue = {
+  private def encodePTransaction(transaction: Transaction): PTransaction =  {
+    null
+  }
+
+  private def decodePTransaction(transaction: PTransaction): Transaction =  {
+    null
+  }
+
+
+  private def encodePValue(value: Value): PTransactionValue = {
     value.serializableValue match {
       case strValue: StringValue =>
         PTransactionValue.newBuilder()
@@ -60,7 +96,7 @@ class ProtobufTranslator extends ProtocolTranslator {
         val collection = PTransactionCollection.newBuilder()
 
         for (v <- listValue.listValue) {
-          val protoVal = this.toProtoValue(v)
+          val protoVal = this.encodePValue(v)
           collection.addValues(PTransactionCollectionValue.newBuilder().setValue(protoVal).build())
         }
 
@@ -73,7 +109,7 @@ class ProtobufTranslator extends ProtocolTranslator {
         val collection = PTransactionCollection.newBuilder()
 
         for ((k, v) <- mapValue.mapValue) {
-          val protoVal = this.toProtoValue(v)
+          val protoVal = this.encodePValue(v)
           collection.addValues(PTransactionCollectionValue.newBuilder().setKey(k).setValue(protoVal).build())
         }
 
@@ -92,7 +128,7 @@ class ProtobufTranslator extends ProtocolTranslator {
     }
   }
 
-  private def fromProtoValue(protoVal: PTransactionValue): Value = {
+  private def decodePValue(protoVal: PTransactionValue): Value = {
     protoVal.getType match {
       case PTransactionValue.Type.STRING =>
         StringValue(protoVal.getStringValue)
@@ -110,7 +146,7 @@ class ProtobufTranslator extends ProtocolTranslator {
         var map = Map[String, Value]()
         val protoMap = protoVal.getMap
         for (protoVal <- protoMap.getValuesList) {
-          map += (protoVal.getKey -> this.fromProtoValue(protoVal.getValue))
+          map += (protoVal.getKey -> this.decodePValue(protoVal.getValue))
         }
         new MapValue(map)
 
@@ -118,7 +154,7 @@ class ProtobufTranslator extends ProtocolTranslator {
         val protoMap = protoVal.getMap
         val list = for {
           protoVal <- protoMap.getValuesList
-        } yield this.fromProtoValue(protoVal.getValue)
+        } yield this.decodePValue(protoVal.getValue)
 
         new ListValue(list)
       case PTransactionValue.Type.NULL =>
