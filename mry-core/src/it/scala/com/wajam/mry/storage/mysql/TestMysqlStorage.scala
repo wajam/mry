@@ -1267,4 +1267,52 @@ class TestMysqlStorage extends TestMysqlBase {
       grpError.next()
     } should produce[RuntimeException]
   }
+
+  test("applying mutation group to a transaction should produce the right operations") {
+    val storage = mysqlStorage
+    val context = new ExecutionContext(storages)
+
+    // Setup first mutation group
+    val tk1 = context.getToken("k1")
+    val ts1 = Timestamp(1)
+    val table1_r1 = Record(table1, tk1, ts1, Map("k" -> "1"), "k1")
+    val table1_1_r1 = Record(table1_1, tk1, ts1, Map("k" -> "1.1"), "k1", "k1.1")
+    val table1_1_1_r1 = Record(table1_1_1, tk1, ts1, Map("k" -> "1.1.1"), "k1", "k1.1", "k1.1.1")
+    val table1_1_r2 = Record(table1_1, tk1, ts1, Map("k" -> "1.2"), "k1", "k1.2")
+    val grp1 = storage.MutationGroup(tk1, ts1, List(table1_r1, table1_1_r2, table1_1_r1, table1_1_1_r1))
+
+    // Verify database is empty before
+    val before = new storage.MutationGroupIterator(from = 0L, to = 3L, ranges = List(TokenRange.All))
+    before.toList should be(List())
+
+    // Generate mutations transaction and apply the operations
+    exec(trx => {
+      // Reverse the expected order of the records. This test that operations are properly resequenced.
+      val reverse = storage.MutationGroup(grp1.token, grp1.timestamp, grp1.records.reverse)
+      reverse.applyTo(trx)
+    }, commit = true, onTimestamp = ts1)
+
+    // Ensure mutations are applied to database
+    val after = new storage.MutationGroupIterator(from = 0L, to = 3L, ranges = List(TokenRange.All))
+    after.toList should be(List(grp1))
+
+    // Create and apply a mutation group which deletes the intermediate record (i.e. with a parent and a child)
+    val ts2 = Timestamp(2)
+    val grp2 = storage.MutationGroup(tk1, ts2, List(
+      Record(table1_1_r1.table, table1_1_r1.token, ts2, NullValue, table1_1_r1.accessPath.keys : _*)))
+    exec(grp2.applyTo(_), commit = true, onTimestamp = ts2)
+
+    // Ensure mutations beeing applied
+    val Seq(v1, v1_1, v1_2) = exec(t => {
+      val storage = t.from("mysql")
+      val var1 = storage.from("table1").get("k1")
+      val var1_1 = storage.from("table1").get("k1").from("table1_1").get("k1.1")
+      val var1_2 = storage.from("table1").get("k1").from("table1_1").get("k1.2")
+
+      t.ret(var1, var1_1, var1_2)
+    })
+    v1 should be(table1_r1.value)
+    v1_1 should be(NullValue) // Deleted
+    v1_2 should be(table1_1_r2.value)
+  }
 }

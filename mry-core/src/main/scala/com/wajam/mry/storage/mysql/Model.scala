@@ -30,7 +30,7 @@ trait TableCollection {
   def getTable(name: String): Option[Table] = this.tables.get(name)
 }
 
-class Table(val name: String, var parent: Option[Table] = None, val maxVersions: Int = 3) extends TableCollection {
+class Table(val name: String, parent: Option[Table] = None, val maxVersions: Int = 3) extends TableCollection {
   override def currentTable = Some(this)
 
   def depthName(glue: String): String = {
@@ -41,6 +41,13 @@ class Table(val name: String, var parent: Option[Table] = None, val maxVersions:
   }
 
   lazy val uniqueName = depthName("_")
+
+  def path: List[Table] = {
+    this.parentTable match {
+      case None => List(this)
+      case Some(t) => t.path :+  this
+    }
+  }
 
   override def hashCode(): Int = uniqueName.hashCode
 

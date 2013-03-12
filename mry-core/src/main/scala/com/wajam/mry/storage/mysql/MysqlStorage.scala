@@ -288,9 +288,69 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   }
 
   /**
+   * Returns the mutation transactions from and to the given timestamps inclusively for the specified token ranges.
+   */
+  def readTransactions(from: Timestamp, to: Timestamp, ranges: Seq[TokenRange]) = {
+    new Iterator[MutationGroup] {
+      private val itr = new MutationGroupIterator(from, to, ranges)
+      private var nextGroup: Option[MutationGroup] = readNext()
+
+      private def readNext(): Option[MutationGroup] = {
+        if (itr.next()) {
+          Some(itr.mutationGroup)
+        } else {
+          None
+        }
+      }
+
+      def hasNext = nextGroup.isDefined
+
+      def next() = {
+        val result = nextGroup
+        nextGroup = readNext()
+        result.get // Must fail if next is called while hasNext is false
+      }
+    }
+  }
+
+  /**
    * A group of records from different tables which been mutated at the same timestamp.
    */
   case class MutationGroup(token: Long, timestamp: Timestamp, var records: List[Record] = Nil)
+    extends TransactionRecord {
+
+    /**
+     * Apply the mutation group to the specified transaction
+     */
+    def applyTo(transaction: Transaction) {
+      import com.wajam.mry.execution.Implicits._
+
+      // Set or delete each record
+      val storage = transaction.from("mysql")
+      for (record <- records.sortBy(_.table.depth)) {
+
+        // Select the parent table if any
+        val parent = record.table.parentTable match {
+          case Some(tableParent) => {
+            tableParent.path.zip(record.accessPath.keys).foldLeft(storage) {
+              case (p, (t, k)) => {
+                p.from(t.name).get(k)
+              }
+            }
+          }
+          case None => storage
+        }
+
+        // Finally set or delete the record data
+        val table = parent.from(record.table.name)
+        if (record.value.isNull) {
+          table.delete(record.accessPath.last.key)
+        } else {
+          table.set(record.accessPath.last.key, record.value)
+        }
+      }
+    }
+  }
 
   /**
    * Iterate group of mutation records <b>from</b> the specified timestamp up <b>to</b> specified timestamp.
