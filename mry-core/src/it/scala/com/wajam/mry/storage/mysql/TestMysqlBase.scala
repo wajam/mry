@@ -27,6 +27,7 @@ abstract class TestMysqlBase extends FunSuite with BeforeAndAfterEach {
       MysqlStorageConfiguration("mysql", "localhost", "mry", "mry", "mry", gcTokenStep = TokenRange.MaxToken),
       garbageCollection = false)
     storages = Map(("mysql" -> storage))
+    storage.setLastConsistentTimestamp(Long.MaxValue, Seq(TokenRange.All))
 
     storage.nuke()
     storage.syncModel(model)

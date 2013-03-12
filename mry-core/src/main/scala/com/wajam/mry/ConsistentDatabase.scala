@@ -29,6 +29,16 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
     storages.values.map(_.getLastTimestamp(ranges)).max
   }
 
+  /**
+   * Set the most recent timestamp considered as consistent by the Consistency manager for the specified token ranges.
+   * The consistency of the records more recent than that timestamp is unconfirmed and must be excluded from the store
+   * job processing (e.g. GC or percolation)
+   */
+  def setLastConsistentTimestamp(timestamp: Timestamp, ranges: Seq[TokenRange]) {
+    for (storage <- storages.values) {
+      storage.setLastConsistentTimestamp(timestamp, ranges)
+    }
+  }
 
   /**
    * Returns the mutation messages from the given timestamp inclusively for the specified token ranges.
@@ -83,12 +93,4 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
       storage.truncateAt(timestamp, token)
     }
   }
-
-  /**
-   * Truncate all records from the given timestamp inclusively for the specified token ranges.
-   */
-  def truncateFrom(timestamp: Timestamp, tokens: Seq[TokenRange]) {
-    throw new Exception("Not implemented!")
-  }
-
 }

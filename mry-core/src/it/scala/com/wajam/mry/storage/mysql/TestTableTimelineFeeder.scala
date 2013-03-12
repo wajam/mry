@@ -97,6 +97,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
     })
 
     val ranges = List(TokenRange(1000000001L, 2000000000L), TokenRange(3000000001L, 4000000000L))
+    mysqlStorage.setLastConsistentTimestamp(Long.MaxValue, ranges)
 
     val feeder = new TableTimelineFeeder("test", mysqlStorage, table1, ranges, batchSize)
     feeder.init(new TaskContext())
@@ -104,6 +105,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
       feeder.next()
     }).take(100).flatten.toList
 
+    records.size should be > 0
     records.size should be < 40
     val timestamps = records.map(_("new_timestamp").toString.toLong)
     timestamps should be(timestamps.sorted)
