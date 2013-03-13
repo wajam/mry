@@ -92,6 +92,18 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
 
   }
 
+  test("transaction encode") {
+
+    val t = buildTransaction
+
+    // Check transaction equals is working first!
+    t.equalsContent(t)
+
+    val bytes = translator.encodeTransaction(t)
+
+    bytes should not be(new Array[Byte](0))
+  }
+
   test("transaction encode/decode") {
 
     val t = buildTransaction
