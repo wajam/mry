@@ -73,6 +73,25 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     t
   }
 
+  test("stuff") {
+
+    val op: Operation = new Operation.From(null, new Variable(null, 0), Seq())
+
+    //val operationWithIntoIntoKeys = [{def into: Variable}]
+
+    assert(op.isInstanceOf[Operation.WithIntoAndKeys])
+
+    val blob = op.asInstanceOf[Operation.WithIntoAndKeys]
+
+    val i = blob.into
+    val j = blob.keys
+
+    assert(i != null)
+    assert(j != null)
+    assert(true)
+
+  }
+
   test("transaction encode/decode") {
 
     val t = buildTransaction

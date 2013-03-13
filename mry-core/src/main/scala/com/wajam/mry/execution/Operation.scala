@@ -8,7 +8,12 @@ abstract class Operation(var source: OperationSource) extends Executable with Se
 
 object Operation {
 
-  class Return(source: OperationSource, from: Seq[Variable]) extends Operation(source) with Serializable {
+  // TODO: To be replaced by proper hierachy when Java serialization in no longer used.
+  type WithIntoAndData = { def into: Variable; def data: Seq[Object]}
+  type WithIntoAndKeys = { def into: Variable; def keys: Seq[Object]}
+  type WithFrom = { def from: Seq[Variable]}
+
+  class Return(source: OperationSource, val from: Seq[Variable]) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execReturn(context, from)
     }
@@ -16,7 +21,8 @@ object Operation {
     def reset() {}
   }
 
-  class From(source: OperationSource, into: Variable, keys: Object*) extends Operation(source) with Serializable {
+  class From(source: OperationSource, val into: Variable, val keys: Object*) extends Operation(source) with Serializable {
+
     def execute(context: ExecutionContext) {
       source.execFrom(context, into, keys: _*)
     }
@@ -24,7 +30,7 @@ object Operation {
     def reset() {}
   }
 
-  class Get(source: OperationSource, into: Variable, keys: Object*) extends Operation(source) with Serializable {
+  class Get(source: OperationSource, val into: Variable, val keys: Object*) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execGet(context, into, keys: _*)
     }
@@ -32,7 +38,7 @@ object Operation {
     def reset() {}
   }
 
-  class Set(source: OperationSource, into: Variable, data: Object*) extends Operation(source) with Serializable {
+  class Set(source: OperationSource, val into: Variable, val data: Object*) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execSet(context, into, data: _*)
     }
@@ -40,7 +46,7 @@ object Operation {
     def reset() {}
   }
 
-  class Delete(source: OperationSource, into: Variable, data: Object*) extends Operation(source) with Serializable {
+  class Delete(source: OperationSource, val into: Variable, val data: Object*) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execDelete(context, into, data: _*)
     }
@@ -48,7 +54,7 @@ object Operation {
     def reset() {}
   }
 
-  class Limit(source: OperationSource, into: Variable, keys: Object*) extends Operation(source) with Serializable {
+  class Limit(source: OperationSource, val into: Variable, val keys: Object*) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execLimit(context, into, keys: _*)
     }
@@ -56,7 +62,7 @@ object Operation {
     def reset() {}
   }
 
-  class Projection(source: OperationSource, into: Variable, keys: Object*) extends Operation(source) with Serializable {
+  class Projection(source: OperationSource, val into: Variable, val keys: Object*) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execProjection(context, into, keys: _*)
     }

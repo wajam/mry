@@ -8,28 +8,28 @@ message PTransport {
 
 message PTransaction {
 	optional uint32 id = 1;
-	optional PTransactionBlock innerBlock = 2;
+	optional PBlock innerBlock = 2;
 }
 
-message PTransactionResult {
-	optional PTransactionError error = 1;
+message PResult {
+	optional PError error = 1;
 	repeated PTransactionValue data = 2;
 }
 
-message PTransactionError {
+message PError {
 	required uint32 id = 1;
 	required string message = 2;
 }
 
-message PTransactionBlock {
-	required uint32 id = 1;
-	repeated PTransactionOperation operations = 2;
-	repeated PTransactionVariable variables = 3;
+message PBlock {
+	required uint32 varSeq = 1;
+	repeated POperation operations = 2;
+	repeated PVariable variables = 3;
 
-	optional PTransactionBlock parent = 5;
+	optional PBlock parent = 5;
 }
 
-message PTransactionVariable {
+message PVariable {
 	required uint32 block = 1;
 	required uint32 id = 2;
 	optional PTransactionValue value = 3;
@@ -67,43 +67,33 @@ message PTransactionCollectionValue {
 	optional string key = 2;
 }
 
-message PTransactionObject {
+message PObject {
 	optional PTransactionValue value = 1;
-	optional PTransactionVariable variable = 2;
+	optional PVariable variable = 2;
 }
 
-message PTransactionOperation {
-	optional PTransactionOperationSet Set = 1;
-	optional PTransactionOperationGet Get = 2;
-	optional PTransactionOperationGetTable GetTable = 3;
-	optional PTransactionOperationReturn Return = 4;
-    optional PTransactionOperationGetAll GetAll = 5;
+message POperation {
+	enum Type {
+		RETURN = 1;
+    	FROM = 2;
+    	GET = 3;
+    	SET = 4;
+    	DELETE = 5;
+    	LIMIT = 6;
+    	PROJECTION = 7;
+	}
+
+	optional Type type = 1;
+
+	optional POperationWithFrom operationWithFrom = 2;
+	optional POperationWithIntoAndObjects operationWithIntoAndObjects = 3;
 }
 
-message PTransactionOperationSet {
-    required PTransactionVariable destination = 1;
-    required PTransactionObject key = 2;
-    required PTransactionObject value = 3;
-};
+message POperationWithFrom {
+	repeated PVariable from = 1;
+}
 
-message PTransactionOperationGet {
-    required PTransactionVariable source = 1;
-    required PTransactionObject key = 2;
-    required PTransactionVariable destination = 3;
-};
-
-message PTransactionOperationGetTable {
-    required PTransactionObject table_name = 1;
-    required PTransactionVariable destination = 2;
-    optional PTransactionVariable source = 3;
-};
-
-message PTransactionOperationReturn {
-    repeated PTransactionObject data = 1;
-};
-
-message PTransactionOperationGetAll {
-    required PTransactionVariable source = 1;
-    required PTransactionVariable destination = 2;
-};
-
+message POperationWithIntoAndObjects {
+	optional PVariable into = 1;
+	repeated PObject objects = 2;
+}

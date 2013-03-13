@@ -2,7 +2,6 @@ package com.wajam.mry.api.protobuf
 
 import com.wajam.mry.api.{TranslationException, ProtocolTranslator}
 import com.wajam.mry.api.protobuf.MryProtobuf._
-import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import com.wajam.mry.execution._
 import com.wajam.mry.api.Transport
@@ -19,27 +18,43 @@ import com.wajam.mry.execution.DoubleValue
  */
 class ProtobufTranslator extends ProtocolTranslator {
 
+  import ProtobufTranslator._
+
   def encodeTransaction(transaction: Transaction): Array[Byte] = {
-    encodePTransaction(transaction).toByteArray
+    encodePTransaction(transaction).build().toByteArray
   }
 
   def decodeTransaction(data: Array[Byte]): Transaction = {
     decodePTransaction(PTransaction.parseFrom(data))
   }
 
-  def encodeValue(value: Value): Array[Byte] = this.encodePValue(value).toByteArray
+  def encodeValue(value: Value): Array[Byte] = encodePValue(value).toByteArray
 
-  def decodeValue(data: Array[Byte]): Value = this.decodePValue(PTransactionValue.parseFrom(data))
+  def decodeValue(data: Array[Byte]): Value = decodePValue(PTransactionValue.parseFrom(data))
 
   def encodeAll(transport: Transport): Array[Byte] = {
-    encodePTransport(transport).toByteArray
+    encodePTransport(transport).build().toByteArray
   }
 
   def decodeAll(data: Array[Byte]): Transport = {
     decodePTransport(PTransport.parseFrom(data))
   }
+}
 
-  private def encodePTransport(transport: Transport): PTransport =  {
+object ProtobufTranslator {
+
+  private val pb2operation = Map(
+    POperation.Type.GET ->  classOf[Operation.Get],
+    POperation.Type.RETURN -> classOf[Operation.Return],
+    POperation.Type.FROM -> classOf[Operation.From],
+    POperation.Type.LIMIT -> classOf[Operation.Limit],
+    POperation.Type.PROJECTION -> classOf[Operation.Projection],
+    POperation.Type.SET -> classOf[Operation.Set],
+    POperation.Type.DELETE -> classOf[Operation.Delete])
+
+  private val operation2pb = pb2operation.map(_ swap)
+
+  private def encodePTransport(transport: Transport): PTransport.Builder =  {
     val Transport(request, response) = transport
 
     val pTransport = PTransport.newBuilder()
@@ -50,7 +65,7 @@ class ProtobufTranslator extends ProtocolTranslator {
     for (v <- response)
       pTransport.addResponse(encodePValue(v))
 
-    pTransport.build()
+    pTransport
   }
 
   private def decodePTransport(transport: PTransport): Transport =  {
@@ -66,36 +81,107 @@ class ProtobufTranslator extends ProtocolTranslator {
     Transport(request, response)
   }
 
-  private def encodePTransaction(transaction: Transaction): PTransaction =  {
+  private def encodePTransaction(transaction: Transaction): PTransaction.Builder =  {
+    val pTransaction = PTransaction.newBuilder()
+
+    pTransaction.setId(transaction.id)
+    pTransaction.setInnerBlock(encodePBlock(transaction))
+
+    pTransaction
+  }
+
+  private def decodePTransaction(pTransaction: PTransaction): Transaction =  {
+
+    val transaction = new Transaction()
+    transaction.id = pTransaction.getId
+
+    decodePBlock(transaction, pTransaction.getInnerBlock)
+
+    transaction
+  }
+
+
+  private def encodePBlock(block: Block): PBlock =  {
+    val pBlock = PBlock.newBuilder()
+
+    pBlock.addAllVariables(block.variables.map(encodePVariable(_).build()).asJava)
+    pBlock.addAllOperations(block.operations.map(encodePOperation(_).build).asJava)
+    pBlock.setVarSeq(block.varSeq)
+
+    pBlock.build()
+  }
+
+  private def decodePBlock(block: Block, pBlock: PBlock) {
     null
   }
 
-  private def decodePTransaction(transaction: PTransaction): Transaction =  {
+  private def encodePVariable(variable: Variable): PVariable.Builder =  {
+    null
+  }
+
+  private def decodePVariable(variable: PVariable): PVariable.Builder =  {
     null
   }
 
 
-  private def encodePBlock(block: Block): PTransactionBlock =  {
+//  private def hackyWayToGetOperationValues(operation: Operation): OperationData = {
+//    //    operation match {
+//    //      case op: Operation.Return => new OperationData(op.from, null, null)
+//    //      case op: Operation.From => new OperationData(op.from, null, null)
+//    //      case op: Operation.Get => new OperationData(op.from, null, null)
+//    //      case op: Operation.Set => new OperationData(op.from, null, null)
+//    //      case op: Operation.Delete => new OperationData(op.from, null, null)
+//    //      case op: Operation.Limit => new OperationData(op.from, null, null)
+//    //      case op: Operation.Projection => new OperationData(op.from, null, null)
+//    //    }
+//
+//    null
+//  }
+
+  private def encodePObject(obj: Object): PObject.Builder = {
     null
   }
 
-  private def decodePBlock(block: PTransactionBlock): Block =  {
-    null
+  private def encodePOperationWithIntoAndObjects(pOperation: POperation.Builder, into: Variable, objects: Seq[Object]):  POperation.Builder = {
+    val inner = POperationWithIntoAndObjects.newBuilder()
+    pOperation.setOperationWithIntoAndObjects(inner)
+
+    inner.setInto(encodePVariable(into))
+    inner.addAllObjects(objects.map(encodePObject(_).build).asJava)
+
+    pOperation
   }
 
-  private def encodePVariable(variable: Variable): PTransaction =  {
-    null
+  private def encodeAnIntoPOperationWithFrom(pOperation: POperation.Builder, operation: Operation with Operation.WithFrom): POperation.Builder =  {
+    val inner = POperationWithFrom.newBuilder()
+    pOperation.setOperationWithFrom(inner)
+
+    inner.addAllFrom(operation.from.map(encodePVariable(_).build).asJava)
+
+    pOperation
   }
 
-  private def decodePVariable(variable: PTransactionVariable): Variable =  {
-    null
+  private def getPOperationType(operation: Operation) = {
+    operation2pb.find(_.getClass.getCanonicalName == operation.getClass.getCanonicalName) match {
+      case pType: POperation.Type => pType
+      case None => throw new RuntimeException("Unmapped operation, please verify ProtobufTranslator mappings.")
+    }
   }
 
-  private def encodePOperation(operation: Operation): PTransactionOperation =  {
-    null
+  private def encodePOperation(operation: Operation): POperation.Builder =  {
+
+    val pOperation = POperation.newBuilder()
+
+    pOperation.setType(getPOperationType(operation))
+
+    operation match {
+      case op: Operation.WithIntoAndData => encodePOperationWithIntoAndObjects(pOperation, op.into, op.data)
+      case op: Operation.WithIntoAndKeys => encodePOperationWithIntoAndObjects(pOperation, op.into, op.keys)
+      case op: Operation.WithFrom => encodeAnIntoPOperationWithFrom(pOperation, op)
+    }
   }
 
-  private def decodePOperation(operation: PTransactionOperation): Operation =  {
+  private def decodePOperation(operation: POperation): Operation = {
     null
   }
 
@@ -178,7 +264,7 @@ class ProtobufTranslator extends ProtocolTranslator {
       case PTransactionValue.Type.MAP =>
         var map = Map[String, Value]()
         val protoMap = protoVal.getMap
-        for (protoVal <- protoMap.getValuesList) {
+        for (protoVal <- protoMap.getValuesList.asScala) {
           map += (protoVal.getKey -> this.decodePValue(protoVal.getValue))
         }
         new MapValue(map)
@@ -186,7 +272,7 @@ class ProtobufTranslator extends ProtocolTranslator {
       case PTransactionValue.Type.ARRAY =>
         val protoMap = protoVal.getMap
         val list = for {
-          protoVal <- protoMap.getValuesList
+          protoVal <- protoMap.getValuesList.asScala
         } yield this.decodePValue(protoVal.getValue)
 
         new ListValue(list)
