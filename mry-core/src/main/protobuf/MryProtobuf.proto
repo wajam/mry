@@ -1,5 +1,9 @@
 package com.wajam.mry.api.protobuf;
-option optimize_for = LITE_RUNTIME;
+option optimize_for = SPEED;
+
+// Polymorphism derived from:
+// http://www.indelible.org/ink/protobuf-polymorphism/
+// But with implicit type
 
 message PTransport {
 	optional PTransaction request = 1;
@@ -8,17 +12,15 @@ message PTransport {
 
 message PTransaction {
 	optional uint32 id = 1;
-	optional PBlock innerBlock = 2;
+
+	extend PBlock {
+		optional PTransaction transaction = 100;
+	}
 }
 
-message PResult {
-	optional PError error = 1;
-	repeated PTransactionValue data = 2;
-}
-
-message PError {
-	required uint32 id = 1;
-	required string message = 2;
+message PObject {
+    // Enable extensions
+    extensions 100 to 200;
 }
 
 message PBlock {
@@ -26,13 +28,17 @@ message PBlock {
 	repeated POperation operations = 2;
 	repeated PVariable variables = 3;
 
-	optional PBlock parent = 5;
+	// Enable extensions
+    extensions 100 to 200;
 }
 
 message PVariable {
-	required uint32 block = 1;
-	required uint32 id = 2;
-	optional PTransactionValue value = 3;
+	required uint32 id = 1;
+	optional PTransactionValue value = 2;
+
+	extend PObject {
+		optional PVariable variable = 100;
+	}
 }
 
 message PTransactionValue {
@@ -47,7 +53,7 @@ message PTransactionValue {
         MAP = 8;
     }
 
-    required Type type = 1;
+    optional Type type = 1;
 
 	optional int64 int_value = 2;
 	optional bool bool_value = 3;
@@ -56,6 +62,10 @@ message PTransactionValue {
 	optional bytes bytes_value = 6;
 	optional PTransactionCollection array = 7;
 	optional PTransactionCollection map = 8;
+
+	extend PObject {
+        optional PTransactionValue value = 101;
+    }
 }
 
 message PTransactionCollection {
@@ -67,33 +77,53 @@ message PTransactionCollectionValue {
 	optional string key = 2;
 }
 
-message PObject {
-	optional PTransactionValue value = 1;
-	optional PVariable variable = 2;
-}
-
 message POperation {
-	enum Type {
-		RETURN = 1;
-    	FROM = 2;
-    	GET = 3;
-    	SET = 4;
-    	DELETE = 5;
-    	LIMIT = 6;
-    	PROJECTION = 7;
-	}
 
-	optional Type type = 1;
+	// Enable extensions
+	extensions 100 to 200;
 
-	optional POperationWithFrom operationWithFrom = 2;
-	optional POperationWithIntoAndObjects operationWithIntoAndObjects = 3;
+    repeated PVariable variables = 1;
+    repeated PObject objects = 2;
 }
 
-message POperationWithFrom {
-	repeated PVariable from = 1;
+message PReturn {
+    extend POperation {
+        optional PReturn ret = 100;
+    }
 }
 
-message POperationWithIntoAndObjects {
-	optional PVariable into = 1;
-	repeated PObject objects = 2;
+message PFrom {
+    extend POperation {
+        optional PFrom from = 101;
+    }
+}
+
+message PGet {
+    extend POperation {
+        optional PGet get = 102;
+    }
+}
+
+message PSet {
+    extend POperation {
+        optional PSet set = 103;
+    }
+}
+
+message PDelete {
+    extend POperation {
+        optional PDelete delete = 104;
+    }
+}
+
+message PLimit {
+    extend POperation {
+        optional PLimit limit = 105;
+    }
+}
+
+message PProjection {
+    extend POperation {
+        optional PProjection projection = 106;
+    }
 }
