@@ -6,6 +6,7 @@ import com.wajam.nrv.utils.timestamp.Timestamp
 import com.wajam.nrv.service.TokenRange
 import execution.{ExecutionContext, Transaction}
 import storage.ConsistentStorage
+import com.wajam.nrv.utils.Closable
 
 /**
  * Consistent MRY database
@@ -33,22 +34,42 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
   /**
    * Returns the mutation messages from the given timestamp inclusively for the specified token ranges.
    */
-  def readTransactions(from: Timestamp, to: Timestamp, ranges: Seq[TokenRange]): Iterator[Message] = {
+  def readTransactions(from: Timestamp, to: Timestamp, ranges: Seq[TokenRange]): Iterator[Message] with Closable = {
     // TODO: somehow support more than one storage
     val (_, storage) = storages.head
 
-    new Iterator[Message] {
+    new Iterator[Message] with Closable {
       val itr = storage.readTransactions(from, to, ranges)
 
-      def hasNext = itr.hasNext
+      def hasNext = {
+        try {
+          itr.hasNext
+        } catch {
+          case e: Exception => {
+            close()
+            throw e
+          }
+        }
+      }
 
       def next() = {
-        val value = itr.next()
-        val transaction = new Transaction()
-        value.applyTo(transaction)
-        val message = new InMessage(Map(Database.TOKEN_KEY -> value.token), data = transaction)
-        Consistency.setMessageTimestamp(message, value.timestamp)
-        message
+        try {
+          val value = itr.next()
+          val transaction = new Transaction()
+          value.applyTo(transaction)
+          val message = new InMessage(Map(Database.TOKEN_KEY -> value.token), data = transaction)
+          Consistency.setMessageTimestamp(message, value.timestamp)
+          message
+        } catch {
+          case e: Exception => {
+            close()
+            throw e
+          }
+        }
+      }
+
+      def close() {
+        itr.close()
       }
     }
   }
