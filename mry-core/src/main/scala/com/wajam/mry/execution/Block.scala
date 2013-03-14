@@ -1,13 +1,15 @@
 package com.wajam.mry.execution
 
 import com.wajam.mry.execution.Operation.Return
+import collection.mutable.ArrayBuffer
 
 /**
  * Programmatic block of operations and variables that is executed against storage
  */
 trait Block {
-  var variables = List[Variable]()
-  var operations = List[Operation]()
+  //TODO should not expose these publicly, wait til Protobuf MRY codec is done
+  var variables = ArrayBuffer[Variable]()
+  var operations = ArrayBuffer[Operation]()
   var varSeq = 0
   var parent: Option[Block] = None
 
@@ -21,13 +23,13 @@ trait Block {
 
   def defineVariable(): Variable = {
     val variable = new Variable(this, this.varSeq)
-    this.variables :+= variable
+    this.variables += variable
     this.varSeq += 1
     variable
   }
 
   def addOperation(operation: Operation) {
-    this.operations :+= operation
+    this.operations += operation
   }
 
   def reset() {
