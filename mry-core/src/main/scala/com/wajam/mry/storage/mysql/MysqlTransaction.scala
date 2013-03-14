@@ -2,7 +2,6 @@ package com.wajam.mry.storage.mysql
 
 import com.wajam.mry.storage.StorageTransaction
 import java.sql.ResultSet
-import collection.mutable
 import com.wajam.mry.execution._
 import com.wajam.mry.api.ProtocolTranslator
 import com.wajam.nrv.tracing.Traced
