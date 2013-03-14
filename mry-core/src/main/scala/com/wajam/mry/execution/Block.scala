@@ -7,7 +7,7 @@ import collection.mutable.ArrayBuffer
  * Programmatic block of operations and variables that is executed against storage
  */
 trait Block {
-  //TODO should not expose these publicly, wait til Protobuf MRY codec is done
+  //TODO change to vals and do not expose these publicly, wait til Protobuf MRY codec is done
   var variables = ArrayBuffer[Variable]()
   var operations = ArrayBuffer[Operation]()
   var varSeq = 0
