@@ -56,6 +56,7 @@ trait Block extends ContentEquals  {
     obj match {
       case b: Block =>
         variables.forall((v) => b.variables.exists(v.equalsContent(_))) &&
+        operations.forall((o) => b.operations.exists(o.equalsContent(_))) &&
         varSeq == b.varSeq //&&
         //parent.forall((p) => b.parent.forall(p.equalsContent(_)))
       case None => false

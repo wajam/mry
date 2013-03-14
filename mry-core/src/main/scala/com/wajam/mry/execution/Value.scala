@@ -11,6 +11,10 @@ trait Value extends Object with OperationSource {
 
   def equalsValue(that: Value): Boolean = this == that
 
+  override def equalsContent(obj: Any): Boolean = {
+    this.equalsValue(obj.asInstanceOf[Value])
+  }
+
   def isNull = false
 }
 

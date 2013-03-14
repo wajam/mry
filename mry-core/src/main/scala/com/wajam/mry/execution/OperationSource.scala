@@ -1,12 +1,14 @@
 package com.wajam.mry.execution
 
+import com.wajam.nrv.utils.ContentEquals
+
 /**
  * Trait that makes an object source of the execution of an operation. All operations
  * are executed against something, this something must implements this trait.
  *
  * Ex: record.get("key"), record must be an execution source
  */
-trait OperationSource {
+trait OperationSource extends ContentEquals  {
   def proxiedSource: Option[OperationSource] = None
 
   private def getProxiedSource: OperationSource = {

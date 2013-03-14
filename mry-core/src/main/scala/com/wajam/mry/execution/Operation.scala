@@ -1,9 +1,11 @@
 package com.wajam.mry.execution
 
+import com.wajam.nrv.utils.ContentEquals
+
 /**
  * Represents an operation executed within a transaction
  */
-abstract class Operation(var source: OperationSource) extends Executable with Serializable {
+abstract class Operation(var source: OperationSource) extends Executable with ContentEquals with Serializable {
 }
 
 object Operation {
@@ -19,6 +21,16 @@ object Operation {
     }
 
     def reset() {}
+
+    override def equalsContent(obj: Any): Boolean = {
+      obj match {
+        case o: Return =>
+          //source.equalsContent(o.source) &&
+          from.forall((v) => o.from.exists(v.equalsContent(_)))
+
+        case _ => false
+      }
+    }
   }
 
   class From(source: OperationSource, val into: Variable, val keys: Object*) extends Operation(source) with Serializable {
@@ -28,11 +40,33 @@ object Operation {
     }
 
     def reset() {}
+
+    override def equalsContent(obj: Any): Boolean = {
+      obj match {
+        case o: From =>
+          //source.equalsContent(o.source) &&
+          into.equalsContent(o.into) &&
+          keys.forall((k) => o.keys.exists(k.equalsContent(_)))
+
+        case _ => false
+      }
+    }
   }
 
   class Get(source: OperationSource, val into: Variable, val keys: Object*) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execGet(context, into, keys: _*)
+    }
+
+    override def equalsContent(obj: Any): Boolean = {
+      obj match {
+        case o: Get =>
+          //source.equalsContent(o.source) &&
+          into.equalsContent(o.into) &&
+          keys.forall((k) => o.keys.exists(k.equalsContent(_)))
+
+        case _ => false
+      }
     }
 
     def reset() {}
@@ -44,6 +78,17 @@ object Operation {
     }
 
     def reset() {}
+
+    override def equalsContent(obj: Any): Boolean = {
+      obj match {
+        case o: Set =>
+          //source.equalsContent(o.source) &&
+          into.equalsContent(o.into) &&
+          data.forall((k) => o.data.exists(k.equalsContent(_)))
+
+        case _ => false
+      }
+    }
   }
 
   class Delete(source: OperationSource, val into: Variable, val data: Object*) extends Operation(source) with Serializable {
@@ -52,6 +97,17 @@ object Operation {
     }
 
     def reset() {}
+
+    override def equalsContent(obj: Any): Boolean = {
+      obj match {
+        case o: Delete =>
+          //source.equalsContent(o.source) &&
+          into.equalsContent(o.into) &&
+          data.forall((k) => o.data.exists(k.equalsContent(_)))
+
+        case _ => false
+      }
+    }
   }
 
   class Limit(source: OperationSource, val into: Variable, val keys: Object*) extends Operation(source) with Serializable {
@@ -60,6 +116,17 @@ object Operation {
     }
 
     def reset() {}
+
+    override def equalsContent(obj: Any): Boolean = {
+      obj match {
+        case o: Limit =>
+          //source.equalsContent(o.source) &&
+          into.equalsContent(o.into) &&
+          keys.forall((k) => o.keys.exists(k.equalsContent(_)))
+
+        case _ => false
+      }
+    }
   }
 
   class Projection(source: OperationSource, val into: Variable, val keys: Object*) extends Operation(source) with Serializable {
@@ -68,6 +135,17 @@ object Operation {
     }
 
     def reset() {}
+
+    override def equalsContent(obj: Any): Boolean = {
+      obj match {
+        case o: Projection =>
+          //source.equalsContent(o.source) &&
+          into.equalsContent(o.into) &&
+          keys.forall((k) => o.keys.exists(k.equalsContent(_)))
+
+        case _ => false
+      }
+    }
   }
 }
 
