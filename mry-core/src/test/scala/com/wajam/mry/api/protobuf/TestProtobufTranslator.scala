@@ -69,7 +69,7 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
   }
 
   private def buildTransaction(): Transaction = {
-    val t = new Transaction((b) => b.returns(b.from("A").from("B").get(1000).from("C").get()))
+    val t = new Transaction((b) => b.returns(b.from("B").get(1000).set("C").limit(100).projection("D").delete("E")))
     t
   }
 
