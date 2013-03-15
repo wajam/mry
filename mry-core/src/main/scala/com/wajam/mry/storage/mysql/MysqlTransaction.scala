@@ -2,13 +2,13 @@ package com.wajam.mry.storage.mysql
 
 import com.wajam.mry.storage.StorageTransaction
 import java.sql.ResultSet
-import collection.mutable
 import com.wajam.mry.execution._
 import com.wajam.mry.api.ProtocolTranslator
 import com.wajam.nrv.tracing.Traced
 import java.util.concurrent.atomic.AtomicInteger
 import com.wajam.nrv.utils.timestamp.Timestamp
 import com.wajam.nrv.service.TokenRange
+import collection.mutable.ArrayBuffer
 
 /**
  * Mysql storage transaction
@@ -296,7 +296,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
       }
     }
 
-    var ret = mutable.LinkedList[MutationRecord]()
+    val ret = ArrayBuffer[MutationRecord]()
     var results: SqlResults = null
     try {
       metrics.tableMetricTimeline(table).time {
@@ -305,7 +305,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         while (results.resultset.next()) {
           val mut = new MutationRecord
           mut.load(storage.valueSerializer, results.resultset, table.depth)
-          ret :+= mut
+          ret += mut
         }
       }
 
@@ -342,7 +342,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
       """.format(projKeys, fullTableName, fromToken, toToken, table.maxVersions, count)
 
 
-    var ret = mutable.LinkedList[VersionRecord]()
+    val ret = ArrayBuffer[VersionRecord]()
     var results: SqlResults = null
     try {
       metrics.tableMetricTopMostVersions(table).time {
@@ -351,7 +351,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         while (results.resultset.next()) {
           val version = new VersionRecord
           version.load(results.resultset, table.depth)
-          ret :+= version
+          ret += version
         }
       }
 
