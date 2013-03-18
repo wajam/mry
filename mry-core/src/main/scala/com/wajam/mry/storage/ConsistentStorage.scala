@@ -15,6 +15,13 @@ trait ConsistentStorage extends Storage {
   def getLastTimestamp(ranges: Seq[TokenRange]): Option[Timestamp]
 
   /**
+   * Set the most recent timestamp considered as consistent by the Consistency manager for the specified token ranges.
+   * The consistency of the records more recent than that timestamp is unconfirmed and must be excluded from the storage
+   * job processing (e.g. GC or percolation)
+   */
+  def setLastConsistentTimestamp(timestamp: Timestamp, ranges: Seq[TokenRange])
+
+  /**
    * Returns the mutation transactions from and up to the given timestamps inclusively for the specified token ranges.
    */
   def readTransactions(from: Timestamp, to: Timestamp, ranges: Seq[TokenRange]): Iterator[TransactionRecord]
@@ -23,7 +30,6 @@ trait ConsistentStorage extends Storage {
    * Truncate all records at the given timestamp for the specified token.
    */
   def truncateAt(timestamp: Timestamp, token: Long)
-
 }
 
 trait TransactionRecord {
