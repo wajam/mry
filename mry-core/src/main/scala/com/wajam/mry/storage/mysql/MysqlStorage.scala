@@ -670,12 +670,12 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           val lastToken = tableNextToken
           val lastRange = tableNextRange
           val toToken = math.min(lastToken + config.gcTokenStep, lastRange.end)
-          val lastConsistentToken = getLastConsistentTimestamp(tokenRanges)
+          val lastConsistentTimestamp = getLastConsistentTimestamp(tokenRanges)
 
           // no more versions in cache, fetch new batch
           var nextToken = lastToken
           if (tableVersionsCache.size == 0) {
-            val fetched = trx.getTopMostVersions(table, lastToken, toToken, lastConsistentToken, versionBatchSize)
+            val fetched = trx.getTopMostVersions(table, lastToken, toToken, lastConsistentTimestamp, versionBatchSize)
             tableVersionsCache ++= fetched
 
             if (fetched.size < versionBatchSize) {
@@ -699,7 +699,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
               tableVersionsCache.dequeue()
             } else {
               // More versions need to be truncated, reload and update record
-              trx.getTopMostVersions(table, record.token, record.token, lastConsistentToken, versionBatchSize).find(
+              trx.getTopMostVersions(table, record.token, record.token, lastConsistentTimestamp, versionBatchSize).find(
                 _.accessPath == record.accessPath) match {
                 case Some(reloaded) => {
                   extraVersionsLoadedMeter.mark(reloaded.versions.size)
