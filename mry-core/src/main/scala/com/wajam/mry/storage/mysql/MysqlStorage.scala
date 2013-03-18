@@ -13,6 +13,7 @@ import java.util.concurrent.{ConcurrentHashMap, TimeUnit, ScheduledThreadPoolExe
 import com.wajam.nrv.service.TokenRange
 import com.yammer.metrics.core.Gauge
 import com.wajam.nrv.utils.timestamp.Timestamp
+import com.wajam.nrv.utils.Closable
 
 /**
  * MySQL backed storage
@@ -307,7 +308,8 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
    * Returns the mutation transactions from and to the given timestamps inclusively for the specified token ranges.
    */
   def readTransactions(from: Timestamp, to: Timestamp, ranges: Seq[TokenRange]) = {
-    new Iterator[MutationGroup] {
+    // TODO: add this iterator in GC exclusion list until closed
+    new Iterator[MutationGroup] with Closable {
       private val itr = new MutationGroupIterator(from, to, ranges)
       private var nextGroup: Option[MutationGroup] = readNext()
 
@@ -325,6 +327,10 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
         val result = nextGroup
         nextGroup = readNext()
         result.get // Must fail if next is called while hasNext is false
+      }
+
+      def close() {
+        // TODO: remove this iterator from GC exlusion list
       }
     }
   }
