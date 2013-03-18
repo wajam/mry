@@ -9,7 +9,7 @@ import com.wajam.mry.storage._
 import com.yammer.metrics.scala.{Meter, Timer, Instrumented}
 import java.util.concurrent.atomic.AtomicInteger
 import collection.mutable
-import java.util.concurrent.{TimeUnit, ScheduledThreadPoolExecutor}
+import java.util.concurrent.{ConcurrentHashMap, TimeUnit, ScheduledThreadPoolExecutor}
 import com.wajam.nrv.service.TokenRange
 import com.yammer.metrics.core.Gauge
 import com.wajam.nrv.utils.timestamp.Timestamp
@@ -20,10 +20,11 @@ import com.wajam.nrv.utils.timestamp.Timestamp
 class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean = true)
   extends Storage with ConsistentStorage with Logging with Value with Instrumented {
   val name = config.name
-  var model: Model = _
-  var transactionMetrics: MysqlTransaction.Metrics = _
-  var tablesMutationsCount = Map[Table, AtomicInteger]()
+  private[mysql]var model: Model = _
+  private[mysql] var transactionMetrics: MysqlTransaction.Metrics = _
+  private var tablesMutationsCount = Map[Table, AtomicInteger]()
   val valueSerializer = new ProtobufTranslator
+  private val lastConsistentTimestamps  = new ConcurrentHashMap[TokenRange, Timestamp]
 
   val datasource = new ComboPooledDataSource()
   datasource.setDriverClass("com.mysql.jdbc.Driver")
@@ -34,9 +35,9 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   datasource.setMaxPoolSize(config.maxPoolSize)
   datasource.setNumHelperThreads(config.numhelperThread)
 
-  def createStorageTransaction(context: ExecutionContext) = new MysqlTransaction(this, Some(context), transactionMetrics)
+  def createStorageTransaction(context: ExecutionContext) = new MysqlTransaction(this, Some(context))
 
-  def createStorageTransaction = new MysqlTransaction(this, None, transactionMetrics)
+  def createStorageTransaction = new MysqlTransaction(this, None)
 
   def closeStorageTransaction(trx: MysqlTransaction) {
     model.allHierarchyTables.map(table => {
@@ -259,6 +260,21 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
         trx.rollback()
       }
     }
+  }
+
+  /**
+   * Set the most recent timestamp considered as consistent by the Consistency manager for the specified token ranges.
+   * The consistency of the records more recent than that timestamp is unconfirmed and are excluded from the storage
+   * GC or percolation.
+   */
+  def setLastConsistentTimestamp(timestamp: Timestamp, ranges: Seq[TokenRange]) {
+    ranges.foreach(range => {
+      lastConsistentTimestamps.put(range, timestamp)
+    })
+  }
+
+  private[mysql] def getLastConsistentTimestamp(ranges: Seq[TokenRange]): Timestamp = {
+    ranges.map(range => lastConsistentTimestamps.get(range)).min
   }
 
   /**
@@ -654,11 +670,12 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           val lastToken = tableNextToken
           val lastRange = tableNextRange
           val toToken = math.min(lastToken + config.gcTokenStep, lastRange.end)
+          val lastConsistentTimestamp = getLastConsistentTimestamp(tokenRanges)
 
           // no more versions in cache, fetch new batch
           var nextToken = lastToken
           if (tableVersionsCache.size == 0) {
-            val fetched = trx.getTopMostVersions(table, lastToken, toToken, versionBatchSize)
+            val fetched = trx.getTopMostVersions(table, lastToken, toToken, lastConsistentTimestamp, versionBatchSize)
             tableVersionsCache ++= fetched
 
             if (fetched.size < versionBatchSize) {
@@ -682,7 +699,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
               tableVersionsCache.dequeue()
             } else {
               // More versions need to be truncated, reload and update record
-              trx.getTopMostVersions(table, record.token, record.token, versionBatchSize).find(
+              trx.getTopMostVersions(table, record.token, record.token, lastConsistentTimestamp, versionBatchSize).find(
                 _.accessPath == record.accessPath) match {
                 case Some(reloaded) => {
                   extraVersionsLoadedMeter.mark(reloaded.versions.size)

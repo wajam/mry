@@ -13,8 +13,8 @@ import collection.mutable.ArrayBuffer
 /**
  * Mysql storage transaction
  */
-class MysqlTransaction(private val storage: MysqlStorage, private val context: Option[ExecutionContext],
-                       private val metrics: MysqlTransaction.Metrics) extends StorageTransaction {
+class MysqlTransaction(private val storage: MysqlStorage, private val context: Option[ExecutionContext])
+  extends StorageTransaction {
 
   private[mry] val tableMutationsCount = storage.model.allHierarchyTables.map(table => (table, new AtomicInteger(0))).toMap
   private var lazilyReadValues = List[Value]()
@@ -30,6 +30,8 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
       throw ex
     }
   }
+
+  private def metrics = storage.transactionMetrics
 
   def rollback() {
     if (this.connection != null) {
@@ -241,7 +243,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     }
   }
 
-  def getTimeline(table: Table, timestamp: Timestamp, count: Int, ranges: List[TokenRange] = List(TokenRange.All),
+  def getTimeline(table: Table, timestamp: Timestamp, count: Int, ranges: Seq[TokenRange] = Seq(TokenRange.All),
                   selectMode: TimelineSelectMode = TimelineSelectMode.FromTimestamp): Seq[MutationRecord] = {
     val projKeys = (for (i <- 1 to table.depth) yield "ai.k%1$d".format(i)).mkString(",")
     val whereKeys1 = (for (i <- 1 to table.depth) yield "ai.k%1$d = ad.k%1$d".format(i)).mkString(" AND ")
@@ -250,6 +252,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     val whereKeys4 = (for (i <- 1 to table.depth) yield "bi.k%1$d = bd.k%1$d".format(i)).mkString(" AND ")
     val whereRanges = ranges.map(r => "(ai.tk >= %1$d AND ai.tk <= %2$d)".format(r.start, r.end)).mkString("(", "OR ", ")")
     val fullTableName = table.depthName("_")
+    val lastConsistentTimestamp = storage.getLastConsistentTimestamp(ranges)
 
     /* Generated SQL looks like:
      *
@@ -263,7 +266,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *           AND ci.ts < ai.ts
      *       )) LEFT JOIN `table1_data` AS bd ON (bi.k1 = bd.k1 AND bi.tk = bd.tk AND bi.ts = bd.ts)
      *     WHERE ((ai.tk >= 0 AND ai.tk <= 89478485) OR (ai.tk >= 536870910 AND ai.tk <= 626349395))
-     *     AND ai.ts >= 0
+     *     AND ai.ts >= 0 AND ai.ts <= 13631089220001
      *     ORDER BY ai.ts ASC
      *     LIMIT 0, 100;
      */
@@ -284,10 +287,10 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
       case TimelineSelectMode.FromTimestamp => {
         sql +=
           """
-            AND ai.ts >= %1$d
+            AND ai.ts >= %1$d AND ai.ts <= %3$d
             ORDER BY ai.ts ASC
             LIMIT 0, %2$d;
-          """.format(timestamp.value, count)
+          """.format(timestamp.value, count, lastConsistentTimestamp.value)
       }
       case TimelineSelectMode.AtTimestamp => {
         sql +=
@@ -317,7 +320,8 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     ret
   }
 
-  def getTopMostVersions(table: Table, fromToken: Long, toToken: Long, count: Int): Seq[VersionRecord] = {
+  def getTopMostVersions(table: Table, fromToken: Long, toToken: Long, lastConsistentTimestamp: Timestamp,
+                         count: Int): Seq[VersionRecord] = {
     val projKeys = (for (i <- 1 to table.depth) yield "t.k%1$d".format(i)).mkString(",")
     val fullTableName = table.depthName("_")
 
@@ -327,6 +331,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *    SELECT t.tk, COUNT(*) AS nb, GROUP_CONCAT(t.ts SEPARATOR ',') AS timestamps, t.k1,t.k2,t.k3
      *    FROM `table1_table1_1_table1_1_1_index` AS t
      *    WHERE t.tk >= 0 AND t.tk <= 10000
+     *    AND t.ts <= 13631089220001
      *    GROUP BY t.tk,t.k1,t.k2,t.k3
      *    HAVING COUNT(*) > 3
      *    LIMIT 0, 100
@@ -336,10 +341,11 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
          SELECT t.tk, COUNT(*) AS nb, GROUP_CONCAT(t.ts SEPARATOR ',') AS timestamps, %1$s
          FROM `%2$s_index` AS t
          WHERE t.tk >= %3$d AND t.tk <= %4$d
+         AND t.ts <= %7$d
          GROUP BY t.tk, %1$s
          HAVING COUNT(*) > %5$d
          LIMIT 0, %6$d
-      """.format(projKeys, fullTableName, fromToken, toToken, table.maxVersions, count)
+      """.format(projKeys, fullTableName, fromToken, toToken, table.maxVersions, count, lastConsistentTimestamp.value)
 
 
     val ret = ArrayBuffer[VersionRecord]()
@@ -509,7 +515,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
       case None => ("i.tk >= %d".format(range.start), Seq())
     }
-
+    val lastConsistentTimestamp = storage.getLastConsistentTimestamp(Seq(range))
 
     /* Generated SQL looks like:
      *
@@ -519,6 +525,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *       FROM `table1_index` AS i
      *       WHERE (((i.tk > 4025886270)) OR ((i.tk = 4025886270) AND (k1 > 'key15')))
      *       AND i.tk <= 4525886270
+     *       AND i.ts <= 13631089220001
      *       GROUP BY i.tk, i.k1
      *       ORDER BY i.tk, i.k1
      *       LIMIT 0, 100
@@ -536,6 +543,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
             FROM `%2$s_index` AS i
             WHERE (%4$s)
             AND i.tk <= %7$d
+            AND i.ts <= %8$d
             GROUP BY i.tk, %3$s
             ORDER BY i.tk, %3$s
             LIMIT 0, %6$d
@@ -545,7 +553,8 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         AND o.ts = i.max_ts
         AND o.d IS NOT NULL
         ORDER BY i.tk, %1$s
-              """.format(outerProjKeys, fullTableName, innerProjKeys, recordPosition._1, outerWhereKeys, count, range.end)
+              """.format(outerProjKeys, fullTableName, innerProjKeys, recordPosition._1, outerWhereKeys,
+      count, range.end, lastConsistentTimestamp.value)
 
     var results: SqlResults = null
     try {
