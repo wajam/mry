@@ -3,9 +3,6 @@ package com.wajam.mry.storage.mysql
 import com.wajam.mry.execution.Implicits._
 import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.spnl.TaskContext
-import org.mockito.Matchers._
-import org.mockito.Mockito._
-import com.wajam.nrv.utils.ControlableCurrentTime
 import com.wajam.nrv.service.TokenRange
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner

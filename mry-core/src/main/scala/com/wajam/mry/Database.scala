@@ -2,7 +2,7 @@ package com.wajam.mry
 
 import execution._
 import storage.Storage
-import com.wajam.nrv.Logging
+import com.wajam.nrv.{TimeoutException, Logging}
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service._
 import com.wajam.nrv.tracing.Traced
@@ -105,6 +105,8 @@ class Database[T <: Storage](serviceName: String = "database")
   }, ActionMethod.GET))
   remoteReadExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
 
+  private def transactionTimeout = math.max(responseTimeout * 0.9, responseTimeout - 1000)
+
   private def execute(req: InMessage) {
     var values: Seq[Value] = null
     val context = new ExecutionContext(storages, Consistency.getMessageTimestamp(req))
@@ -113,7 +115,12 @@ class Database[T <: Storage](serviceName: String = "database")
     try {
       val transaction = req.getData[Transaction]
 
+      val startTime = System.currentTimeMillis()
       transaction.execute(context)
+      val elapsedTime = System.currentTimeMillis() - startTime
+      if (elapsedTime > transactionTimeout) {
+        throw new TimeoutException("Database transaction took too much time to execute", Some(elapsedTime))
+      }
       values = context.returnValues
       context.commit()
       transaction.reset()
