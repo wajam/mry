@@ -21,11 +21,12 @@ import com.wajam.nrv.utils.Closable
 class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean = true)
   extends Storage with ConsistentStorage with Logging with Value with Instrumented {
   val name = config.name
-  private[mysql]var model: Model = _
+  private[mysql] var model: Model = _
   private[mysql] var transactionMetrics: MysqlTransaction.Metrics = _
   private var tablesMutationsCount = Map[Table, AtomicInteger]()
   val valueSerializer = new ProtobufTranslator
-  private val lastConsistentTimestamps  = new ConcurrentHashMap[TokenRange, Timestamp]
+  private val lastConsistentTimestamps = new ConcurrentHashMap[TokenRange, Timestamp]
+  private var openReadIterators: List[MutationGroupIterator] = List()
 
   val datasource = new ComboPooledDataSource()
   datasource.setDriverClass("com.mysql.jdbc.Driver")
@@ -274,7 +275,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
     })
   }
 
-  private[mysql] def getLastConsistentTimestamp(ranges: Seq[TokenRange]): Timestamp = {
+  private[mysql] def getCurrentConsistentTimestamp(ranges: Seq[TokenRange]): Timestamp = {
     ranges.map(range => lastConsistentTimestamps.get(range)).min
   }
 
@@ -308,10 +309,14 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
    * Returns the mutation transactions from and to the given timestamps inclusively for the specified token ranges.
    */
   def readTransactions(from: Timestamp, to: Timestamp, ranges: Seq[TokenRange]) = {
-    // TODO: add this iterator in GC exclusion list until closed
     new Iterator[MutationGroup] with Closable {
       private val itr = new MutationGroupIterator(from, to, ranges)
       private var nextGroup: Option[MutationGroup] = readNext()
+
+      // Add this iterator in GC exclusion list until closed
+      MysqlStorage.this.synchronized {
+        openReadIterators = itr :: openReadIterators
+      }
 
       private def readNext(): Option[MutationGroup] = {
         if (itr.next()) {
@@ -330,7 +335,10 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       }
 
       def close() {
-        // TODO: remove this iterator from GC exlusion list
+        // Remove this iterator from GC exlusion list
+        MysqlStorage.this.synchronized {
+          openReadIterators = openReadIterators.filterNot(_ == itr)
+        }
       }
     }
   }
@@ -386,7 +394,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
    * @param tableSummarySize number of transaction summary records loaded per table per call from database
    * @param tableSummaryThreshold threshold per table below which more transaction summary records are loaded
    */
-  class MutationGroupIterator(from: Timestamp, to: Timestamp, ranges: Seq[TokenRange], recordCacheSize: Int = 100,
+  class MutationGroupIterator(val from: Timestamp, to: Timestamp, val ranges: Seq[TokenRange], recordCacheSize: Int = 100,
                               tableSummarySize: Int = 50, tableSummaryThreshold: Double = 0.70) extends Traversable[MutationGroup] {
 
     private case class MutationGroupSummary(token: Long, timestamp: Timestamp,
@@ -676,12 +684,12 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           val lastToken = tableNextToken
           val lastRange = tableNextRange
           val toToken = math.min(lastToken + config.gcTokenStep, lastRange.end)
-          val lastConsistentTimestamp = getLastConsistentTimestamp(tokenRanges)
+          val consistentTimestamp = getGcConsistentTimestamp(tokenRanges)
 
           // no more versions in cache, fetch new batch
           var nextToken = lastToken
           if (tableVersionsCache.size == 0) {
-            val fetched = trx.getTopMostVersions(table, lastToken, toToken, lastConsistentTimestamp, versionBatchSize)
+            val fetched = trx.getTopMostVersions(table, lastToken, toToken, consistentTimestamp, versionBatchSize)
             tableVersionsCache ++= fetched
 
             if (fetched.size < versionBatchSize) {
@@ -705,7 +713,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
               tableVersionsCache.dequeue()
             } else {
               // More versions need to be truncated, reload and update record
-              trx.getTopMostVersions(table, record.token, record.token, lastConsistentTimestamp, versionBatchSize).find(
+              trx.getTopMostVersions(table, record.token, record.token, consistentTimestamp, versionBatchSize).find(
                 _.accessPath == record.accessPath) match {
                 case Some(reloaded) => {
                   extraVersionsLoadedMeter.mark(reloaded.versions.size)
@@ -755,6 +763,15 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
       debug("GCing iteration done on {}! Collected {} versions", table.uniqueName, collectedTotal)
       collectedTotal
+    }
+
+    /**
+     * Returns the consistent timestamp that must be used by GC. The consistent timestamp exclude the transactions
+     * currently read for replication.
+     */
+    private def getGcConsistentTimestamp(ranges: Seq[TokenRange]): Timestamp = {
+      val rangesReadStartTimestamps = openReadIterators.withFilter(!_.ranges.intersect(ranges).isEmpty).map(_.from)
+      (getCurrentConsistentTimestamp(ranges) :: rangesReadStartTimestamps).min
     }
   }
 

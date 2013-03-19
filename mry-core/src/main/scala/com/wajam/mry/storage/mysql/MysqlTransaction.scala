@@ -252,7 +252,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     val whereKeys4 = (for (i <- 1 to table.depth) yield "bi.k%1$d = bd.k%1$d".format(i)).mkString(" AND ")
     val whereRanges = ranges.map(r => "(ai.tk >= %1$d AND ai.tk <= %2$d)".format(r.start, r.end)).mkString("(", "OR ", ")")
     val fullTableName = table.depthName("_")
-    val lastConsistentTimestamp = storage.getLastConsistentTimestamp(ranges)
+    val lastConsistentTimestamp = storage.getCurrentConsistentTimestamp(ranges)
 
     /* Generated SQL looks like:
      *
@@ -515,7 +515,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
       case None => ("i.tk >= %d".format(range.start), Seq())
     }
-    val lastConsistentTimestamp = storage.getLastConsistentTimestamp(Seq(range))
+    val lastConsistentTimestamp = storage.getCurrentConsistentTimestamp(Seq(range))
 
     /* Generated SQL looks like:
      *

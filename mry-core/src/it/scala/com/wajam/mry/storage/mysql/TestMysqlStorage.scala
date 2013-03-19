@@ -844,19 +844,39 @@ class TestMysqlStorage extends TestMysqlBase {
     }
   }
 
-  test("forced garbage collections should ignore versions after consistent timestamp") {
+  test("forced garbage collections should ignore versions after current consistent timestamp") {
     exec(_.from("mysql").from("table1").set("k", Map("k" -> "1")), commit = true, onTimestamp = 100L)
     exec(_.from("mysql").from("table1").set("k", Map("k" -> "1")), commit = true, onTimestamp = 200L)
     exec(_.from("mysql").from("table1").set("k", Map("k" -> "1")), commit = true, onTimestamp = 300L)
     exec(_.from("mysql").from("table1").set("k", Map("k" -> "1")), commit = true, onTimestamp = 400L)
     exec(_.from("mysql").from("table1").set("k", Map("k" -> "1")), commit = true, onTimestamp = 500L)
+    exec(_.from("mysql").from("table1").set("k", Map("k" -> "1")), commit = true, onTimestamp = 600L)
 
     // Force collection, no records collected because there are only 3 versions before the consistent timestamp
     mysqlStorage.setLastConsistentTimestamp(350L, Seq(TokenRange.All))
     mysqlStorage.GarbageCollector.collectAll(100) should be(0)
 
     // Force collection again, all extra records should have been collected
-    mysqlStorage.setLastConsistentTimestamp(500L, Seq(TokenRange.All))
+    mysqlStorage.setLastConsistentTimestamp(600L, Seq(TokenRange.All))
+    mysqlStorage.GarbageCollector.collectAll(100) should be(3)
+  }
+
+  test("forced garbage collections should ignore versions after open read transaction iterator") {
+    exec(_.from("mysql").from("table1").set("k", Map("k" -> "1")), commit = true, onTimestamp = 100L)
+    exec(_.from("mysql").from("table1").set("k", Map("k" -> "1")), commit = true, onTimestamp = 200L)
+    exec(_.from("mysql").from("table1").set("k", Map("k" -> "1")), commit = true, onTimestamp = 300L)
+    exec(_.from("mysql").from("table1").set("k", Map("k" -> "1")), commit = true, onTimestamp = 400L)
+    exec(_.from("mysql").from("table1").set("k", Map("k" -> "1")), commit = true, onTimestamp = 500L)
+    exec(_.from("mysql").from("table1").set("k", Map("k" -> "1")), commit = true, onTimestamp = 600L)
+
+    mysqlStorage.setLastConsistentTimestamp(Long.MaxValue, Seq(TokenRange.All))
+
+    // Force collection, versions from the open transactions iterator start timestamp are ignored
+    val itr = mysqlStorage.readTransactions(400L, 600L, Seq(TokenRange.All))
+    mysqlStorage.GarbageCollector.collectAll(100) should be(1)
+
+    // Force collection again after closing the iterator, all remaining extra record should be collected
+    itr.close()
     mysqlStorage.GarbageCollector.collectAll(100) should be(2)
   }
 
