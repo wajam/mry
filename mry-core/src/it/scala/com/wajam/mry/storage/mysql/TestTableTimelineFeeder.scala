@@ -97,7 +97,6 @@ class TestTableTimelineFeeder extends TestMysqlBase {
     })
 
     val ranges = List(TokenRange(1000000001L, 2000000000L), TokenRange(3000000001L, 4000000000L))
-    mysqlStorage.setLastConsistentTimestamp(Long.MaxValue, ranges)
 
     val feeder = new TableTimelineFeeder("test", mysqlStorage, table1, ranges, batchSize)
     feeder.init(new TaskContext())
@@ -213,5 +212,29 @@ class TestTableTimelineFeeder extends TestMysqlBase {
       })
     }).take(100).flatten.toList
     records2.size should be(1)
+  }
+
+  test("should not return data beyong current consistent timestamp") {
+    exec(t => {
+      t.from("mysql").from("table1").set("key1", Map("k" -> "v"))
+    }, commit = true, onTimestamp = 0L)
+
+    exec(t => {
+      t.from("mysql").from("table1").set("key2", Map("k" -> "v"))
+    }, commit = true, onTimestamp = 100L)
+
+    currentConsistentTimestamp = 50L
+
+    val feeder = new TableTimelineFeeder("test", mysqlStorage, table1, List(TokenRange.All))
+    feeder.init(new TaskContext())
+    val records = Iterator.continually({
+      feeder.next()
+    }).take(100).flatten.toList
+
+    records.size should be > 0
+    val strKeys = records.map(_("keys").asInstanceOf[Seq[String]](0))
+    strKeys.count(_ == "key1") should be(records.size)
+    strKeys.count(_ == "key2") should be(0)
+
   }
 }

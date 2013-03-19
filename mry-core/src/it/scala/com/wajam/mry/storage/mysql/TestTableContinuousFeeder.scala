@@ -173,7 +173,6 @@ class TestTableContinuousFeeder extends TestMysqlBase {
     }, commit = true, onTimestamp = createTimestamp(0))
 
     val ranges = List(TokenRange(1000000001L, 2000000000L), TokenRange(3000000001L, 4000000000L))
-    mysqlStorage.setLastConsistentTimestamp(Long.MaxValue, ranges)
     val expectedKeys = keys.filter(k => ranges.exists(_.contains(k._1))).toList
 
     val feeder = new TableContinuousFeeder("test", mysqlStorage, table1, ranges)
@@ -192,16 +191,16 @@ class TestTableContinuousFeeder extends TestMysqlBase {
     records.size should be(71) // Trust me, the count should be 71
   }
 
-  test("should not return data beyong last consistent timestamp") {
+  test("should not return data beyong current consistent timestamp") {
     exec(t => {
       t.from("mysql").from("table1").set("key1", Map("k" -> "v"))
     }, commit = true, onTimestamp = 0L)
 
-    mysqlStorage.setLastConsistentTimestamp(50L, Seq(TokenRange.All))
-
     exec(t => {
       t.from("mysql").from("table1").set("key2", Map("k" -> "v"))
     }, commit = true, onTimestamp = 100L)
+
+    currentConsistentTimestamp = 50L
 
     val feeder = new TableContinuousFeeder("test", mysqlStorage, table1, List(TokenRange.All))
     val records = Iterator.continually({

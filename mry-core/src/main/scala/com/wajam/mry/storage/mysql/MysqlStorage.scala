@@ -25,7 +25,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   private[mysql] var transactionMetrics: MysqlTransaction.Metrics = _
   private var tablesMutationsCount = Map[Table, AtomicInteger]()
   val valueSerializer = new ProtobufTranslator
-  private val lastConsistentTimestamps = new ConcurrentHashMap[TokenRange, Timestamp]
+  private var currentConsistentTimestamps: (TokenRange) => Timestamp = (_) => Long.MinValue
   private var openReadIterators: List[MutationGroupIterator] = List()
 
   val datasource = new ComboPooledDataSource()
@@ -265,18 +265,16 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   }
 
   /**
-   * Set the most recent timestamp considered as consistent by the Consistency manager for the specified token ranges.
-   * The consistency of the records more recent than that timestamp is unconfirmed and are excluded from the storage
-   * GC or percolation.
+   * Setup the function which returns the most recent timestamp considered as consistent by the Consistency manager
+   * for the specified token range. The consistency of the records more recent that the consistent timestamp is
+   * unconfirmed and these records must be excluded from processing tasks such as GC or percolation.
    */
-  def setLastConsistentTimestamp(timestamp: Timestamp, ranges: Seq[TokenRange]) {
-    ranges.foreach(range => {
-      lastConsistentTimestamps.put(range, timestamp)
-    })
+  def setCurrentConsistentTimestamp(getCurrentConsistentTimestamps: (TokenRange) => Timestamp) {
+    currentConsistentTimestamps = getCurrentConsistentTimestamps
   }
 
   private[mysql] def getCurrentConsistentTimestamp(ranges: Seq[TokenRange]): Timestamp = {
-    ranges.map(range => lastConsistentTimestamps.get(range)).min
+    ranges.map(range => currentConsistentTimestamps(range)).min
   }
 
   /**

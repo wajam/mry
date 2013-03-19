@@ -543,7 +543,6 @@ class TestMysqlStorage extends TestMysqlBase {
     val token1 = context.getToken("key1")
     val token2 = context.getToken("key2")
     val ranges = List(TokenRange(token1, token1), TokenRange(token2, token2))
-    mysqlStorage.setLastConsistentTimestamp(Long.MaxValue, ranges)
     val table1RangeTimeline = mysqlStorage.createStorageTransaction(context).getTimeline(table1, createTimestamp(0), 100, ranges)
     val allKeys = table1Timeline.map(_.accessPath.toString)
     val expectedRangeKeys = table1Timeline.filter(r => token1 == r.token || token2 == r.token).map(_.accessPath.toString)
@@ -785,7 +784,6 @@ class TestMysqlStorage extends TestMysqlBase {
     }
 
     val ranges = List(TokenRange(1000000001L, 2000000000L), TokenRange(3000000001L, 4000000000L))
-    mysqlStorage.setLastConsistentTimestamp(Long.MaxValue, ranges)
     mysqlStorage.GarbageCollector.setCollectedRanges(ranges)
 
     // Create 5 versions for each token/keys tupple
@@ -853,11 +851,11 @@ class TestMysqlStorage extends TestMysqlBase {
     exec(_.from("mysql").from("table1").set("k", Map("k" -> "1")), commit = true, onTimestamp = 600L)
 
     // Force collection, no records collected because there are only 3 versions before the consistent timestamp
-    mysqlStorage.setLastConsistentTimestamp(350L, Seq(TokenRange.All))
+    currentConsistentTimestamp = 350L
     mysqlStorage.GarbageCollector.collectAll(100) should be(0)
 
     // Force collection again, all extra records should have been collected
-    mysqlStorage.setLastConsistentTimestamp(600L, Seq(TokenRange.All))
+    currentConsistentTimestamp = 600L
     mysqlStorage.GarbageCollector.collectAll(100) should be(3)
   }
 
@@ -868,8 +866,6 @@ class TestMysqlStorage extends TestMysqlBase {
     exec(_.from("mysql").from("table1").set("k", Map("k" -> "1")), commit = true, onTimestamp = 400L)
     exec(_.from("mysql").from("table1").set("k", Map("k" -> "1")), commit = true, onTimestamp = 500L)
     exec(_.from("mysql").from("table1").set("k", Map("k" -> "1")), commit = true, onTimestamp = 600L)
-
-    mysqlStorage.setLastConsistentTimestamp(Long.MaxValue, Seq(TokenRange.All))
 
     // Force collection, versions from the open transactions iterator start timestamp are ignored
     val itr = mysqlStorage.readTransactions(400L, 600L, Seq(TokenRange.All))
@@ -1048,7 +1044,6 @@ class TestMysqlStorage extends TestMysqlBase {
 
     val ranges = List(TokenRange(0, 1333333333L), TokenRange(1333333334L, 2666666666L),
       TokenRange(2666666667L, TokenRange.MaxToken))
-    mysqlStorage.setLastConsistentTimestamp(Long.MaxValue, ranges)
 
     var allRecordKeys: List[String] = List()
     for (range <- ranges) {
@@ -1075,7 +1070,6 @@ class TestMysqlStorage extends TestMysqlBase {
 
     val ranges = List(TokenRange(0, 1333333333L), TokenRange(1333333334L, 2666666666L),
       TokenRange(2666666667L, TokenRange.MaxToken))
-    mysqlStorage.setLastConsistentTimestamp(Long.MaxValue, ranges)
 
     for (range <- ranges) {
       var records = mysqlStorage.createStorageTransaction(context).getAllLatest(table1, 40, range).toList
