@@ -17,6 +17,7 @@ abstract class TestMysqlBase extends FunSuite with BeforeAndAfterEach {
   val table2 = model.addTable(new Table("table2"))
   val table2_1 = table2.addTable(new Table("table2_1"))
   val table2_1_1 = table2_1.addTable(new Table("table2_1_1"))
+  var currentConsistentTimestamp: Timestamp = Long.MaxValue
 
   override def beforeEach() {
     this.mysqlStorage = newStorageInstance()
@@ -27,7 +28,7 @@ abstract class TestMysqlBase extends FunSuite with BeforeAndAfterEach {
       MysqlStorageConfiguration("mysql", "localhost", "mry", "mry", "mry", gcTokenStep = TokenRange.MaxToken),
       garbageCollection = false)
     storages = Map(("mysql" -> storage))
-    storage.setLastConsistentTimestamp(Long.MaxValue, Seq(TokenRange.All))
+    storage.setCurrentConsistentTimestamp((_) => currentConsistentTimestamp)
 
     storage.nuke()
     storage.syncModel(model)
