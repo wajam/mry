@@ -6,6 +6,7 @@ import com.wajam.mry.execution._
 import com.wajam.mry.execution.Transaction
 import com.wajam.mry.api.protobuf.MryProtobuf._
 import com.wajam.mry.api.Transport
+import collection.immutable.HashMap
 
 /**
  * Protocol buffers translator
@@ -63,22 +64,49 @@ private class InternalProtobufTranslator {
   val pHeap = PHeap.newBuilder()
   var currentAddress = 0 // I don't think will have more than 2^31 object
 
-  private def addToHeap(mryData: AnyRef): Int = {
+  val pb2obj = new HashMap[Int, AnyRef] // Encoded address to decoded instance mapping
+  val obj2pb = new HashMap[AnyRef, Int] // Live instance to encoded address mapping
+
+  private def registerEncodedData(pbAddress: Int, instance: AnyRef) = {
+    obj2pb += (instance => pbAddress)
+  }
+
+  private def registerDecodeData(pbAddress: Int, instance: AnyRef) = {
+
+  }
+
+  private def addToHeap(mryData: AnyRef): java.lang.Integer = {
 
     val pMryData = PMryData.newBuilder()
 
     mryData match {
-      case value: PTransaction => pMryData.setTransaction(value)
-      case value: PBlock => pMryData.setBlock(value)
-      case value: PVariable => pMryData.setVariable(value)
-      case value: POperation => pMryData.setOperation(value)
-      case value: PTransactionValue => pMryData.setValue(value)
+      case value: PTransaction.Builder => pMryData.setTransaction(value)
+      case value: PBlock.Builder => pMryData.setBlock(value)
+      case value: PVariable.Builder => pMryData.setVariable(value)
+      case value: POperation.Builder => pMryData.setOperation(value)
+      case value: PTransactionValue.Builder => pMryData.setValue(value)
     }
 
     pHeap.addValues(pMryData)
 
+    val instanceAddress = currentAddress
     currentAddress += 1
-    currentAddress
+    instanceAddress
+  }
+
+  private def getFromHeap[T](address: Int): T = {
+
+    val pMryData = pHeap.getValues(address)
+
+    pMryData match {
+      case pMryData if pMryData.hasTransaction => pMryData.getTransaction
+      case pMryData if pMryData.hasBlock => pMryData.getBlock
+      case pMryData if pMryData.hasVariable => pMryData.getVariable
+      case pMryData if pMryData.hasOperation => pMryData.getOperation
+      case pMryData if pMryData.hasValue => pMryData.getValue
+    }
+
+    pMryData.asInstanceOf[T]
   }
 
   def encodePTransport(transport: Transport): PTransport.Builder =  {
@@ -89,13 +117,14 @@ private class InternalProtobufTranslator {
     pTransport.setHeap(pHeap)
 
     for (r <- request) {
+      // ReserveId here
       val trx = encodePTransaction(r)
       pTransport.setRequestAddress(addToHeap(trx))
     }
 
     for (r <- response) {
       val value = encodePValue(r)
-      pTransport.addResponseAddress(addToHeap(value))
+      pTransport.addResponseAddresses(addToHeap(value))
     }
 
     pTransport
@@ -104,42 +133,38 @@ private class InternalProtobufTranslator {
   def decodePTransport(transport: PTransport): Transport = {
 
     val request: Option[Transaction] =
-      if (transport.hasRequest)
-        Some(decodePTransaction(transport.getRequest))
+      if (transport.hasRequestAddress)
+        Some(decodePTransaction(getFromHeap[PTransaction](transport.getRequestAddress)))
       else
         None
 
-    val response: Seq[Value] = transport.getResponseList.map(decodePValue(_)).toSeq
+    val response: Seq[Value] =
+      transport.getResponseAddressesList
+        .map(getFromHeap[PTransactionValue](_))
+        .map(decodePValue(_)).toSeq
 
     Transport(request, response)
   }
 
-//  private def encodePValue(value: Value): PTransactionValue = {
-//    null
-//  }
-//
-//  private def decodePValue(protoVal: PTransactionValue): Value = {
-//    null
-//  }
-
-  def encodePObject(obj: Object): PObject.Builder = {
-
-    val pObj = PObject.newBuilder()
+  def encodePObject(obj: Object): java.lang.Integer = {
 
     obj match {
       case variable: Variable => {
-        pObj.setExtension(PVariable.variable, encodePVariable(variable).build)
+        addToHeap(encodePVariable(variable))
       }
       case value: Value => {
-        pObj.setExtension(PTransactionValue.value, encodePValue(value).build)
+        addToHeap(encodePValue(value))
       }
     }
-
-    pObj
   }
 
-  def decodePObject(pObj: PObject): Object = {
-    throw new RuntimeException("Not implemented")
+  def decodePObject(block: Block, objAddress: Int): Object = {
+    val pObj = getFromHeap[AnyRef](objAddress)
+
+    pObj match {
+      case pVar: PVariable => decodePVariable(block, pVar)
+      case pValue: PTransactionValue => decodePValue(pValue)
+    }
   }
 
   def encodePTransaction(transaction: Transaction): PTransaction.Builder =  {
@@ -147,9 +172,9 @@ private class InternalProtobufTranslator {
 
     pTransaction.setId(transaction.id)
 
-    val pBlock = encodePBlock(transaction)
+    val pBlock = addToHeap(encodePBlock(transaction))
 
-    pBlock.setExtension(PTransaction.transaction, pTransaction.build)
+    pTransaction.setBlockAddress(pBlock)
 
     pTransaction
   }
@@ -157,28 +182,36 @@ private class InternalProtobufTranslator {
   def decodePTransaction(pTransaction: PTransaction): Transaction =  {
 
     val transaction = new Transaction()
+
     transaction.id = pTransaction.getId
-    val block =  pTransaction.getExtensiosn
-    decodePBlock(transaction,)
+
+    val pBlock = getFromHeap[PBlock](pTransaction.getBlockAddress)
+
+    decodePBlock(transaction, pBlock)
 
     transaction
+  }
+
+  def relinkVariable(block: PBlock) = {
+
   }
 
   def encodePBlock(block: Block): PBlock.Builder =  {
     val pBlock = PBlock.newBuilder()
 
-    pBlock.addAllVariables(block.variables.map(encodePVariable(_).build()))
-    pBlock.addAllOperations(block.operations.map(encodePOperation(_).build))
+    pBlock.addAllVariableAddresses(block.variables.map(encodePVariable(_)).map(addToHeap(_)))
+    pBlock.addAllOperationAddresses(block.operations.map(encodePOperation(_)).map(addToHeap(_)))
     pBlock.setVarSeq(block.varSeq)
 
     pBlock
   }
 
   def decodePBlock(block: Block, pBlock: PBlock) {
-    block.operations = pBlock.getOperationsList().map(decodePOperation(_)).toList
-    block.variables = pBlock.getVariablesList().map(decodePVariable(_)).toList
 
     block.varSeq = pBlock.getVarSeq
+
+    block.operations = pBlock.getOperationAddressesList().map(getFromHeap(_)).map(decodePOperation(block, _)).toList
+    block.variables = pBlock.getVariableAddressesList().map(getFromHeap(_)).map(decodePVariable(block, _)).toList
   }
 
   def encodePVariable(variable: Variable):PVariable.Builder =  {
@@ -188,11 +221,12 @@ private class InternalProtobufTranslator {
     // has parent of this variable
 
     pVariable.setId(variable.id)
-    pVariable.setValue(encodePValue(variable.value))
+    pVariable.setValueAddress(addToHeap(encodePValue(variable.value)))
   }
 
-  def decodePVariable(pVariable: PVariable): Variable =  {
-    throw new RuntimeException("Not implemented")
+  def decodePVariable(parentBlock: Block, pVariable: PVariable): Variable =  {
+
+    new Variable(parentBlock, pVariable.getId, decodePValue(getFromHeap[PTransactionValue](pVariable.getValueAddress)))
   }
 
   def encodePOperation(operation: Operation): POperation.Builder =  {
@@ -202,13 +236,17 @@ private class InternalProtobufTranslator {
     val pOperation = POperation.newBuilder()
 
     val withFrom = (op: WithFrom) =>
-      pOperation.addAllVariables(op.from.map(encodePVariable(_).build))
+      pOperation.addAllVariableAddresses(op.from.map(encodePVariable(_)).map(addToHeap(_)))
 
     val WithIntoAndKeys = (op: WithIntoAndKeys) =>
-      pOperation.addVariables(encodePVariable(op.into)).addAllObjects(op.keys.map(encodePObject(_).build))
+      pOperation
+        .addVariableAddresses(addToHeap(encodePVariable(op.into)))
+        .addAllObjectAddresses(op.keys.map(encodePObject(_)))
 
     val WithIntoAndData = (op: WithIntoAndData) =>
-      pOperation.addVariables(encodePVariable(op.into)).addAllObjects(op.data.map(encodePObject(_).build))
+      pOperation
+        .addVariableAddresses(addToHeap(encodePVariable(op.into)))
+        .addAllObjectAddresses(op.data.map(encodePObject(_)))
 
     operation match {
       case op: Return with WithFrom => withFrom(op); pOperation.setExtension(PReturn.ret, PReturn.getDefaultInstance)
@@ -221,7 +259,7 @@ private class InternalProtobufTranslator {
     }
   }
 
-  def decodePOperation(pOperation: POperation): Operation = {
+  def decodePOperation(block: Block, pOperation: POperation): Operation = {
 
     val os: OperationSource = null
 
@@ -238,8 +276,8 @@ private class InternalProtobufTranslator {
     val msg = pOperation
     val concreteOperation = operationExtensions.find(msg.hasExtension(_)).map(msg.getExtension(_)).head
 
-    val variables = pOperation.getVariablesList.map(decodePVariable(_))
-    val objects = pOperation.getObjectsList.map(decodePObject(_)).toSeq
+    val variables = pOperation.getVariableAddressesList.map(getFromHeap[PVariable](_)).map(decodePVariable(block, _))
+    val objects = pOperation.getObjectAddressesList.map(decodePObject(block, _)).toSeq
 
     concreteOperation match {
       case op: PReturn => new Operation.Return(os, variables)

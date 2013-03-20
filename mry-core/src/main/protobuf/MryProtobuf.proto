@@ -29,7 +29,7 @@ message PTransport {
 	optional PHeap heap = 3;
 
 	optional uint32 /* <PTransaction> */ requestAddress = 1;
-	repeated uint32 /* <PValue> */ responseAddress = 2;
+	repeated uint32 /* <PValue> */ responseAddresses = 2;
 }
 
 /* Transaction */

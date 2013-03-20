@@ -1634,10 +1634,10 @@ public final class MryProtobuf {
     boolean hasRequestAddress();
     int getRequestAddress();
     
-    // repeated uint32 responseAddress = 2;
-    java.util.List<java.lang.Integer> getResponseAddressList();
-    int getResponseAddressCount();
-    int getResponseAddress(int index);
+    // repeated uint32 responseAddresses = 2;
+    java.util.List<java.lang.Integer> getResponseAddressesList();
+    int getResponseAddressesCount();
+    int getResponseAddresses(int index);
   }
   public static final class PTransport extends
       com.google.protobuf.GeneratedMessage
@@ -1691,24 +1691,24 @@ public final class MryProtobuf {
       return requestAddress_;
     }
     
-    // repeated uint32 responseAddress = 2;
-    public static final int RESPONSEADDRESS_FIELD_NUMBER = 2;
-    private java.util.List<java.lang.Integer> responseAddress_;
+    // repeated uint32 responseAddresses = 2;
+    public static final int RESPONSEADDRESSES_FIELD_NUMBER = 2;
+    private java.util.List<java.lang.Integer> responseAddresses_;
     public java.util.List<java.lang.Integer>
-        getResponseAddressList() {
-      return responseAddress_;
+        getResponseAddressesList() {
+      return responseAddresses_;
     }
-    public int getResponseAddressCount() {
-      return responseAddress_.size();
+    public int getResponseAddressesCount() {
+      return responseAddresses_.size();
     }
-    public int getResponseAddress(int index) {
-      return responseAddress_.get(index);
+    public int getResponseAddresses(int index) {
+      return responseAddresses_.get(index);
     }
     
     private void initFields() {
       heap_ = com.wajam.mry.api.protobuf.MryProtobuf.PHeap.getDefaultInstance();
       requestAddress_ = 0;
-      responseAddress_ = java.util.Collections.emptyList();;
+      responseAddresses_ = java.util.Collections.emptyList();;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -1731,8 +1731,8 @@ public final class MryProtobuf {
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         output.writeUInt32(1, requestAddress_);
       }
-      for (int i = 0; i < responseAddress_.size(); i++) {
-        output.writeUInt32(2, responseAddress_.get(i));
+      for (int i = 0; i < responseAddresses_.size(); i++) {
+        output.writeUInt32(2, responseAddresses_.get(i));
       }
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         output.writeMessage(3, heap_);
@@ -1752,12 +1752,12 @@ public final class MryProtobuf {
       }
       {
         int dataSize = 0;
-        for (int i = 0; i < responseAddress_.size(); i++) {
+        for (int i = 0; i < responseAddresses_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeUInt32SizeNoTag(responseAddress_.get(i));
+            .computeUInt32SizeNoTag(responseAddresses_.get(i));
         }
         size += dataSize;
-        size += 1 * getResponseAddressList().size();
+        size += 1 * getResponseAddressesList().size();
       }
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
@@ -1896,7 +1896,7 @@ public final class MryProtobuf {
         bitField0_ = (bitField0_ & ~0x00000001);
         requestAddress_ = 0;
         bitField0_ = (bitField0_ & ~0x00000002);
-        responseAddress_ = java.util.Collections.emptyList();;
+        responseAddresses_ = java.util.Collections.emptyList();;
         bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
@@ -1949,10 +1949,10 @@ public final class MryProtobuf {
         }
         result.requestAddress_ = requestAddress_;
         if (((bitField0_ & 0x00000004) == 0x00000004)) {
-          responseAddress_ = java.util.Collections.unmodifiableList(responseAddress_);
+          responseAddresses_ = java.util.Collections.unmodifiableList(responseAddresses_);
           bitField0_ = (bitField0_ & ~0x00000004);
         }
-        result.responseAddress_ = responseAddress_;
+        result.responseAddresses_ = responseAddresses_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1975,13 +1975,13 @@ public final class MryProtobuf {
         if (other.hasRequestAddress()) {
           setRequestAddress(other.getRequestAddress());
         }
-        if (!other.responseAddress_.isEmpty()) {
-          if (responseAddress_.isEmpty()) {
-            responseAddress_ = other.responseAddress_;
+        if (!other.responseAddresses_.isEmpty()) {
+          if (responseAddresses_.isEmpty()) {
+            responseAddresses_ = other.responseAddresses_;
             bitField0_ = (bitField0_ & ~0x00000004);
           } else {
-            ensureResponseAddressIsMutable();
-            responseAddress_.addAll(other.responseAddress_);
+            ensureResponseAddressesIsMutable();
+            responseAddresses_.addAll(other.responseAddresses_);
           }
           onChanged();
         }
@@ -2028,15 +2028,15 @@ public final class MryProtobuf {
               break;
             }
             case 16: {
-              ensureResponseAddressIsMutable();
-              responseAddress_.add(input.readUInt32());
+              ensureResponseAddressesIsMutable();
+              responseAddresses_.add(input.readUInt32());
               break;
             }
             case 18: {
               int length = input.readRawVarint32();
               int limit = input.pushLimit(length);
               while (input.getBytesUntilLimit() > 0) {
-                addResponseAddress(input.readUInt32());
+                addResponseAddresses(input.readUInt32());
               }
               input.popLimit(limit);
               break;
@@ -2167,46 +2167,46 @@ public final class MryProtobuf {
         return this;
       }
       
-      // repeated uint32 responseAddress = 2;
-      private java.util.List<java.lang.Integer> responseAddress_ = java.util.Collections.emptyList();;
-      private void ensureResponseAddressIsMutable() {
+      // repeated uint32 responseAddresses = 2;
+      private java.util.List<java.lang.Integer> responseAddresses_ = java.util.Collections.emptyList();;
+      private void ensureResponseAddressesIsMutable() {
         if (!((bitField0_ & 0x00000004) == 0x00000004)) {
-          responseAddress_ = new java.util.ArrayList<java.lang.Integer>(responseAddress_);
+          responseAddresses_ = new java.util.ArrayList<java.lang.Integer>(responseAddresses_);
           bitField0_ |= 0x00000004;
          }
       }
       public java.util.List<java.lang.Integer>
-          getResponseAddressList() {
-        return java.util.Collections.unmodifiableList(responseAddress_);
+          getResponseAddressesList() {
+        return java.util.Collections.unmodifiableList(responseAddresses_);
       }
-      public int getResponseAddressCount() {
-        return responseAddress_.size();
+      public int getResponseAddressesCount() {
+        return responseAddresses_.size();
       }
-      public int getResponseAddress(int index) {
-        return responseAddress_.get(index);
+      public int getResponseAddresses(int index) {
+        return responseAddresses_.get(index);
       }
-      public Builder setResponseAddress(
+      public Builder setResponseAddresses(
           int index, int value) {
-        ensureResponseAddressIsMutable();
-        responseAddress_.set(index, value);
+        ensureResponseAddressesIsMutable();
+        responseAddresses_.set(index, value);
         onChanged();
         return this;
       }
-      public Builder addResponseAddress(int value) {
-        ensureResponseAddressIsMutable();
-        responseAddress_.add(value);
+      public Builder addResponseAddresses(int value) {
+        ensureResponseAddressesIsMutable();
+        responseAddresses_.add(value);
         onChanged();
         return this;
       }
-      public Builder addAllResponseAddress(
+      public Builder addAllResponseAddresses(
           java.lang.Iterable<? extends java.lang.Integer> values) {
-        ensureResponseAddressIsMutable();
-        super.addAll(values, responseAddress_);
+        ensureResponseAddressesIsMutable();
+        super.addAll(values, responseAddresses_);
         onChanged();
         return this;
       }
-      public Builder clearResponseAddress() {
-        responseAddress_ = java.util.Collections.emptyList();;
+      public Builder clearResponseAddresses() {
+        responseAddresses_ = java.util.Collections.emptyList();;
         bitField0_ = (bitField0_ & ~0x00000004);
         onChanged();
         return this;
@@ -8364,49 +8364,49 @@ public final class MryProtobuf {
       "obuf.PVariable\0229\n\toperation\030\004 \001(\0132&.com." +
       "wajam.mry.api.protobuf.POperation\022<\n\005val" +
       "ue\030\005 \001(\0132-.com.wajam.mry.api.protobuf.PT",
-      "ransactionValue\"n\n\nPTransport\022/\n\004heap\030\003 " +
+      "ransactionValue\"p\n\nPTransport\022/\n\004heap\030\003 " +
       "\001(\0132!.com.wajam.mry.api.protobuf.PHeap\022\026" +
-      "\n\016requestAddress\030\001 \001(\r\022\027\n\017responseAddres" +
-      "s\030\002 \003(\r\"0\n\014PTransaction\022\n\n\002id\030\001 \001(\r\022\024\n\014b" +
-      "lockAddress\030\002 \001(\r\"O\n\006PBlock\022\016\n\006varSeq\030\001 " +
-      "\002(\r\022\032\n\022operationAddresses\030\002 \003(\r\022\031\n\021varia" +
-      "bleAddresses\030\003 \003(\r\"-\n\tPVariable\022\n\n\002id\030\001 " +
-      "\002(\r\022\024\n\014valueAddress\030\002 \001(\r\"G\n\nPOperation\022" +
-      "\031\n\021variableAddresses\030\001 \003(\r\022\027\n\017objectAddr" +
-      "esses\030\002 \003(\r*\005\010d\020\311\001\"c\n\007PReturn2X\n\003ret\022&.c",
-      "om.wajam.mry.api.protobuf.POperation\030d \001" +
-      "(\0132#.com.wajam.mry.api.protobuf.PReturn\"" +
-      "`\n\005PFrom2W\n\004from\022&.com.wajam.mry.api.pro" +
-      "tobuf.POperation\030e \001(\0132!.com.wajam.mry.a" +
-      "pi.protobuf.PFrom\"]\n\004PGet2U\n\003get\022&.com.w" +
-      "ajam.mry.api.protobuf.POperation\030f \001(\0132 " +
-      ".com.wajam.mry.api.protobuf.PGet\"]\n\004PSet" +
-      "2U\n\003set\022&.com.wajam.mry.api.protobuf.POp" +
-      "eration\030g \001(\0132 .com.wajam.mry.api.protob" +
-      "uf.PSet\"f\n\007PDelete2[\n\006delete\022&.com.wajam",
-      ".mry.api.protobuf.POperation\030h \001(\0132#.com" +
-      ".wajam.mry.api.protobuf.PDelete\"c\n\006PLimi" +
-      "t2Y\n\005limit\022&.com.wajam.mry.api.protobuf." +
-      "POperation\030i \001(\0132\".com.wajam.mry.api.pro" +
-      "tobuf.PLimit\"r\n\013PProjection2c\n\nprojectio" +
-      "n\022&.com.wajam.mry.api.protobuf.POperatio" +
-      "n\030j \001(\0132\'.com.wajam.mry.api.protobuf.PPr" +
-      "ojection\"\235\003\n\021PTransactionValue\022@\n\004type\030\001" +
-      " \001(\01622.com.wajam.mry.api.protobuf.PTrans" +
-      "actionValue.Type\022\021\n\tint_value\030\002 \001(\003\022\022\n\nb",
-      "ool_value\030\003 \001(\010\022\024\n\014double_value\030\004 \001(\001\022\024\n" +
-      "\014string_value\030\005 \001(\t\022\023\n\013bytes_value\030\006 \001(\014" +
-      "\022A\n\005array\030\007 \001(\01322.com.wajam.mry.api.prot" +
-      "obuf.PTransactionCollection\022?\n\003map\030\010 \001(\013" +
-      "22.com.wajam.mry.api.protobuf.PTransacti" +
-      "onCollection\"Z\n\004Type\022\010\n\004NULL\020\001\022\007\n\003INT\020\002\022" +
-      "\010\n\004BOOL\020\003\022\n\n\006DOUBLE\020\004\022\n\n\006STRING\020\005\022\t\n\005BYT" +
-      "ES\020\006\022\t\n\005ARRAY\020\007\022\007\n\003MAP\020\010\"a\n\026PTransaction" +
-      "Collection\022G\n\006values\030\001 \003(\01327.com.wajam.m" +
-      "ry.api.protobuf.PTransactionCollectionVa",
-      "lue\"h\n\033PTransactionCollectionValue\022<\n\005va" +
-      "lue\030\001 \002(\0132-.com.wajam.mry.api.protobuf.P" +
-      "TransactionValue\022\013\n\003key\030\002 \001(\tB\002H\001"
+      "\n\016requestAddress\030\001 \001(\r\022\031\n\021responseAddres" +
+      "ses\030\002 \003(\r\"0\n\014PTransaction\022\n\n\002id\030\001 \001(\r\022\024\n" +
+      "\014blockAddress\030\002 \001(\r\"O\n\006PBlock\022\016\n\006varSeq\030" +
+      "\001 \002(\r\022\032\n\022operationAddresses\030\002 \003(\r\022\031\n\021var" +
+      "iableAddresses\030\003 \003(\r\"-\n\tPVariable\022\n\n\002id\030" +
+      "\001 \002(\r\022\024\n\014valueAddress\030\002 \001(\r\"G\n\nPOperatio" +
+      "n\022\031\n\021variableAddresses\030\001 \003(\r\022\027\n\017objectAd" +
+      "dresses\030\002 \003(\r*\005\010d\020\311\001\"c\n\007PReturn2X\n\003ret\022&",
+      ".com.wajam.mry.api.protobuf.POperation\030d" +
+      " \001(\0132#.com.wajam.mry.api.protobuf.PRetur" +
+      "n\"`\n\005PFrom2W\n\004from\022&.com.wajam.mry.api.p" +
+      "rotobuf.POperation\030e \001(\0132!.com.wajam.mry" +
+      ".api.protobuf.PFrom\"]\n\004PGet2U\n\003get\022&.com" +
+      ".wajam.mry.api.protobuf.POperation\030f \001(\013" +
+      "2 .com.wajam.mry.api.protobuf.PGet\"]\n\004PS" +
+      "et2U\n\003set\022&.com.wajam.mry.api.protobuf.P" +
+      "Operation\030g \001(\0132 .com.wajam.mry.api.prot" +
+      "obuf.PSet\"f\n\007PDelete2[\n\006delete\022&.com.waj",
+      "am.mry.api.protobuf.POperation\030h \001(\0132#.c" +
+      "om.wajam.mry.api.protobuf.PDelete\"c\n\006PLi" +
+      "mit2Y\n\005limit\022&.com.wajam.mry.api.protobu" +
+      "f.POperation\030i \001(\0132\".com.wajam.mry.api.p" +
+      "rotobuf.PLimit\"r\n\013PProjection2c\n\nproject" +
+      "ion\022&.com.wajam.mry.api.protobuf.POperat" +
+      "ion\030j \001(\0132\'.com.wajam.mry.api.protobuf.P" +
+      "Projection\"\235\003\n\021PTransactionValue\022@\n\004type" +
+      "\030\001 \001(\01622.com.wajam.mry.api.protobuf.PTra" +
+      "nsactionValue.Type\022\021\n\tint_value\030\002 \001(\003\022\022\n",
+      "\nbool_value\030\003 \001(\010\022\024\n\014double_value\030\004 \001(\001\022" +
+      "\024\n\014string_value\030\005 \001(\t\022\023\n\013bytes_value\030\006 \001" +
+      "(\014\022A\n\005array\030\007 \001(\01322.com.wajam.mry.api.pr" +
+      "otobuf.PTransactionCollection\022?\n\003map\030\010 \001" +
+      "(\01322.com.wajam.mry.api.protobuf.PTransac" +
+      "tionCollection\"Z\n\004Type\022\010\n\004NULL\020\001\022\007\n\003INT\020" +
+      "\002\022\010\n\004BOOL\020\003\022\n\n\006DOUBLE\020\004\022\n\n\006STRING\020\005\022\t\n\005B" +
+      "YTES\020\006\022\t\n\005ARRAY\020\007\022\007\n\003MAP\020\010\"a\n\026PTransacti" +
+      "onCollection\022G\n\006values\030\001 \003(\01327.com.wajam" +
+      ".mry.api.protobuf.PTransactionCollection",
+      "Value\"h\n\033PTransactionCollectionValue\022<\n\005" +
+      "value\030\001 \002(\0132-.com.wajam.mry.api.protobuf" +
+      ".PTransactionValue\022\013\n\003key\030\002 \001(\tB\002H\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -8434,7 +8434,7 @@ public final class MryProtobuf {
           internal_static_com_wajam_mry_api_protobuf_PTransport_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_PTransport_descriptor,
-              new java.lang.String[] { "Heap", "RequestAddress", "ResponseAddress", },
+              new java.lang.String[] { "Heap", "RequestAddress", "ResponseAddresses", },
               com.wajam.mry.api.protobuf.MryProtobuf.PTransport.class,
               com.wajam.mry.api.protobuf.MryProtobuf.PTransport.Builder.class);
           internal_static_com_wajam_mry_api_protobuf_PTransaction_descriptor =
