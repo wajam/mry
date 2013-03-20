@@ -31,13 +31,13 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
   }
 
   /**
-   * Set the most recent timestamp considered as consistent by the Consistency manager for the specified token ranges.
-   * The consistency of the records more recent than that timestamp is unconfirmed and must be excluded from the store
-   * job processing (e.g. GC or percolation)
+   * Setup the function which returns the most recent timestamp considered as consistent by the Consistency manager
+   * for the specified token range. The consistency of the records more recent that the consistent timestamp is
+   * unconfirmed and these records must be excluded from processing tasks such as GC or percolation.
    */
-  def setLastConsistentTimestamp(timestamp: Timestamp, ranges: Seq[TokenRange]) {
+  def setCurrentConsistentTimestamp(getCurrentConsistentTimestamp: (TokenRange) => Timestamp) {
     for (storage <- storages.values) {
-      storage.setLastConsistentTimestamp(timestamp, ranges)
+      storage.setCurrentConsistentTimestamp(getCurrentConsistentTimestamp)
     }
   }
 
