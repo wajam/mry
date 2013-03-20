@@ -5,76 +5,51 @@ option optimize_for = SPEED;
 // http://www.indelible.org/ink/protobuf-polymorphism/
 // But with implicit type
 
-message PTransport {
-	optional PBlock /* <Transaction> */ request = 1;
-	repeated PTransactionValue response = 2;
+// Generic container that will truly contains all the data
+// No object contains another one, but reference it
+
+/* Generic */
+
+message PHeap {
+	repeated PMryData values = 1;
 }
+
+message PMryData {
+	optional PTransaction transaction = 1;
+	optional PBlock block = 2;
+	optional PVariable variable = 3;
+	optional POperation operation = 4;
+	optional PTransactionValue value = 5;
+}
+
+/* Transport */
+
+message PTransport {
+
+	optional PHeap heap = 3;
+
+	optional uint32 /* <PTransaction> */ requestAddress = 1;
+	repeated uint32 /* <PValue> */ responseAddress = 2;
+}
+
+/* Transaction */
 
 message PTransaction {
 	optional uint32 id = 1;
 
-	extend PBlock {
-		optional PTransaction transaction = 100;
-	}
-}
-
-message PObject {
-    // Enable extensions
-    extensions 100 to 200;
+	optional uint32 /* Block */ blockAddress = 2;
 }
 
 message PBlock {
 	required uint32 varSeq = 1;
-	repeated POperation operations = 2;
-	repeated PVariable variables = 3;
 
-	// Enable extensions
-    extensions 100 to 200;
+	repeated uint32 /* <POperation> */ operationAddresses = 2;
+	repeated uint32 /* <PVariable> */ variableAddresses = 3;
 }
 
 message PVariable {
 	required uint32 id = 1;
-	optional PTransactionValue value = 2;
-
-	extend PObject {
-		optional PVariable variable = 100;
-	}
-}
-
-message PTransactionValue {
-    enum Type {
-        NULL = 1;
-        INT = 2;
-        BOOL = 3;
-        DOUBLE = 4;
-        STRING = 5;
-        BYTES = 6;
-        ARRAY = 7;
-        MAP = 8;
-    }
-
-    optional Type type = 1;
-
-	optional int64 int_value = 2;
-	optional bool bool_value = 3;
-	optional double double_value = 4;
-	optional string string_value = 5;
-	optional bytes bytes_value = 6;
-	optional PTransactionCollection array = 7;
-	optional PTransactionCollection map = 8;
-
-	extend PObject {
-        optional PTransactionValue value = 101;
-    }
-}
-
-message PTransactionCollection {
-	repeated PTransactionCollectionValue values = 1;
-}
-
-message PTransactionCollectionValue {
-	required PTransactionValue value = 1;
-	optional string key = 2;
+	optional uint32 /* <PTransactionValue> */ valueAddress = 2;
 }
 
 message POperation {
@@ -82,8 +57,8 @@ message POperation {
 	// Enable extensions
 	extensions 100 to 200;
 
-    repeated PVariable variables = 1;
-    repeated PObject objects = 2;
+    repeated uint32 /* <PVariable> */ variableAddresses = 1;
+    repeated uint32 /* <PObject> */ objectAddresses = 2;
 }
 
 message PReturn {
@@ -126,4 +101,38 @@ message PProjection {
     extend POperation {
         optional PProjection projection = 106;
     }
+}
+
+/* Values */
+
+message PTransactionValue {
+    enum Type {
+        NULL = 1;
+        INT = 2;
+        BOOL = 3;
+        DOUBLE = 4;
+        STRING = 5;
+        BYTES = 6;
+        ARRAY = 7;
+        MAP = 8;
+    }
+
+    optional Type type = 1;
+
+	optional int64 int_value = 2;
+	optional bool bool_value = 3;
+	optional double double_value = 4;
+	optional string string_value = 5;
+	optional bytes bytes_value = 6;
+	optional PTransactionCollection array = 7;
+	optional PTransactionCollection map = 8;
+}
+
+message PTransactionCollection {
+	repeated PTransactionCollectionValue values = 1;
+}
+
+message PTransactionCollectionValue {
+	required PTransactionValue value = 1;
+	optional string key = 2;
 }

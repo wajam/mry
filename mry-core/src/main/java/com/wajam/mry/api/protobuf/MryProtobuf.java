@@ -7,9 +7,6 @@ public final class MryProtobuf {
   private MryProtobuf() {}
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistry registry) {
-    registry.add(com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.transaction);
-    registry.add(com.wajam.mry.api.protobuf.MryProtobuf.PVariable.variable);
-    registry.add(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.value);
     registry.add(com.wajam.mry.api.protobuf.MryProtobuf.PReturn.ret);
     registry.add(com.wajam.mry.api.protobuf.MryProtobuf.PFrom.from);
     registry.add(com.wajam.mry.api.protobuf.MryProtobuf.PGet.get);
@@ -18,23 +15,1629 @@ public final class MryProtobuf {
     registry.add(com.wajam.mry.api.protobuf.MryProtobuf.PLimit.limit);
     registry.add(com.wajam.mry.api.protobuf.MryProtobuf.PProjection.projection);
   }
+  public interface PHeapOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // repeated .com.wajam.mry.api.protobuf.PMryData values = 1;
+    java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PMryData> 
+        getValuesList();
+    com.wajam.mry.api.protobuf.MryProtobuf.PMryData getValues(int index);
+    int getValuesCount();
+    java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PMryDataOrBuilder> 
+        getValuesOrBuilderList();
+    com.wajam.mry.api.protobuf.MryProtobuf.PMryDataOrBuilder getValuesOrBuilder(
+        int index);
+  }
+  public static final class PHeap extends
+      com.google.protobuf.GeneratedMessage
+      implements PHeapOrBuilder {
+    // Use PHeap.newBuilder() to construct.
+    private PHeap(Builder builder) {
+      super(builder);
+    }
+    private PHeap(boolean noInit) {}
+    
+    private static final PHeap defaultInstance;
+    public static PHeap getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public PHeap getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PHeap_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PHeap_fieldAccessorTable;
+    }
+    
+    // repeated .com.wajam.mry.api.protobuf.PMryData values = 1;
+    public static final int VALUES_FIELD_NUMBER = 1;
+    private java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PMryData> values_;
+    public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PMryData> getValuesList() {
+      return values_;
+    }
+    public java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PMryDataOrBuilder> 
+        getValuesOrBuilderList() {
+      return values_;
+    }
+    public int getValuesCount() {
+      return values_.size();
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PMryData getValues(int index) {
+      return values_.get(index);
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PMryDataOrBuilder getValuesOrBuilder(
+        int index) {
+      return values_.get(index);
+    }
+    
+    private void initFields() {
+      values_ = java.util.Collections.emptyList();
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      for (int i = 0; i < getValuesCount(); i++) {
+        if (!getValues(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+    
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      for (int i = 0; i < values_.size(); i++) {
+        output.writeMessage(1, values_.get(i));
+      }
+      getUnknownFields().writeTo(output);
+    }
+    
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+    
+      size = 0;
+      for (int i = 0; i < values_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(1, values_.get(i));
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+    
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+    
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PHeap parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PHeap parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PHeap parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PHeap parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PHeap parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PHeap parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PHeap parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PHeap parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PHeap parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PHeap parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(com.wajam.mry.api.protobuf.MryProtobuf.PHeap prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+    
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements com.wajam.mry.api.protobuf.MryProtobuf.PHeapOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PHeap_descriptor;
+      }
+      
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PHeap_fieldAccessorTable;
+      }
+      
+      // Construct using com.wajam.mry.api.protobuf.MryProtobuf.PHeap.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getValuesFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+      
+      public Builder clear() {
+        super.clear();
+        if (valuesBuilder_ == null) {
+          values_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000001);
+        } else {
+          valuesBuilder_.clear();
+        }
+        return this;
+      }
+      
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.PHeap.getDescriptor();
+      }
+      
+      public com.wajam.mry.api.protobuf.MryProtobuf.PHeap getDefaultInstanceForType() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.PHeap.getDefaultInstance();
+      }
+      
+      public com.wajam.mry.api.protobuf.MryProtobuf.PHeap build() {
+        com.wajam.mry.api.protobuf.MryProtobuf.PHeap result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+      
+      private com.wajam.mry.api.protobuf.MryProtobuf.PHeap buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        com.wajam.mry.api.protobuf.MryProtobuf.PHeap result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return result;
+      }
+      
+      public com.wajam.mry.api.protobuf.MryProtobuf.PHeap buildPartial() {
+        com.wajam.mry.api.protobuf.MryProtobuf.PHeap result = new com.wajam.mry.api.protobuf.MryProtobuf.PHeap(this);
+        int from_bitField0_ = bitField0_;
+        if (valuesBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001)) {
+            values_ = java.util.Collections.unmodifiableList(values_);
+            bitField0_ = (bitField0_ & ~0x00000001);
+          }
+          result.values_ = values_;
+        } else {
+          result.values_ = valuesBuilder_.build();
+        }
+        onBuilt();
+        return result;
+      }
+      
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof com.wajam.mry.api.protobuf.MryProtobuf.PHeap) {
+          return mergeFrom((com.wajam.mry.api.protobuf.MryProtobuf.PHeap)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+      
+      public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PHeap other) {
+        if (other == com.wajam.mry.api.protobuf.MryProtobuf.PHeap.getDefaultInstance()) return this;
+        if (valuesBuilder_ == null) {
+          if (!other.values_.isEmpty()) {
+            if (values_.isEmpty()) {
+              values_ = other.values_;
+              bitField0_ = (bitField0_ & ~0x00000001);
+            } else {
+              ensureValuesIsMutable();
+              values_.addAll(other.values_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.values_.isEmpty()) {
+            if (valuesBuilder_.isEmpty()) {
+              valuesBuilder_.dispose();
+              valuesBuilder_ = null;
+              values_ = other.values_;
+              bitField0_ = (bitField0_ & ~0x00000001);
+              valuesBuilder_ = 
+                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
+                   getValuesFieldBuilder() : null;
+            } else {
+              valuesBuilder_.addAllMessages(other.values_);
+            }
+          }
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+      
+      public final boolean isInitialized() {
+        for (int i = 0; i < getValuesCount(); i++) {
+          if (!getValues(i).isInitialized()) {
+            
+            return false;
+          }
+        }
+        return true;
+      }
+      
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder(
+            this.getUnknownFields());
+        while (true) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              this.setUnknownFields(unknownFields.build());
+              onChanged();
+              return this;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                this.setUnknownFields(unknownFields.build());
+                onChanged();
+                return this;
+              }
+              break;
+            }
+            case 10: {
+              com.wajam.mry.api.protobuf.MryProtobuf.PMryData.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PMryData.newBuilder();
+              input.readMessage(subBuilder, extensionRegistry);
+              addValues(subBuilder.buildPartial());
+              break;
+            }
+          }
+        }
+      }
+      
+      private int bitField0_;
+      
+      // repeated .com.wajam.mry.api.protobuf.PMryData values = 1;
+      private java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PMryData> values_ =
+        java.util.Collections.emptyList();
+      private void ensureValuesIsMutable() {
+        if (!((bitField0_ & 0x00000001) == 0x00000001)) {
+          values_ = new java.util.ArrayList<com.wajam.mry.api.protobuf.MryProtobuf.PMryData>(values_);
+          bitField0_ |= 0x00000001;
+         }
+      }
+      
+      private com.google.protobuf.RepeatedFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PMryData, com.wajam.mry.api.protobuf.MryProtobuf.PMryData.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PMryDataOrBuilder> valuesBuilder_;
+      
+      public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PMryData> getValuesList() {
+        if (valuesBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(values_);
+        } else {
+          return valuesBuilder_.getMessageList();
+        }
+      }
+      public int getValuesCount() {
+        if (valuesBuilder_ == null) {
+          return values_.size();
+        } else {
+          return valuesBuilder_.getCount();
+        }
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PMryData getValues(int index) {
+        if (valuesBuilder_ == null) {
+          return values_.get(index);
+        } else {
+          return valuesBuilder_.getMessage(index);
+        }
+      }
+      public Builder setValues(
+          int index, com.wajam.mry.api.protobuf.MryProtobuf.PMryData value) {
+        if (valuesBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureValuesIsMutable();
+          values_.set(index, value);
+          onChanged();
+        } else {
+          valuesBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      public Builder setValues(
+          int index, com.wajam.mry.api.protobuf.MryProtobuf.PMryData.Builder builderForValue) {
+        if (valuesBuilder_ == null) {
+          ensureValuesIsMutable();
+          values_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          valuesBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      public Builder addValues(com.wajam.mry.api.protobuf.MryProtobuf.PMryData value) {
+        if (valuesBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureValuesIsMutable();
+          values_.add(value);
+          onChanged();
+        } else {
+          valuesBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      public Builder addValues(
+          int index, com.wajam.mry.api.protobuf.MryProtobuf.PMryData value) {
+        if (valuesBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureValuesIsMutable();
+          values_.add(index, value);
+          onChanged();
+        } else {
+          valuesBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      public Builder addValues(
+          com.wajam.mry.api.protobuf.MryProtobuf.PMryData.Builder builderForValue) {
+        if (valuesBuilder_ == null) {
+          ensureValuesIsMutable();
+          values_.add(builderForValue.build());
+          onChanged();
+        } else {
+          valuesBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      public Builder addValues(
+          int index, com.wajam.mry.api.protobuf.MryProtobuf.PMryData.Builder builderForValue) {
+        if (valuesBuilder_ == null) {
+          ensureValuesIsMutable();
+          values_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          valuesBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      public Builder addAllValues(
+          java.lang.Iterable<? extends com.wajam.mry.api.protobuf.MryProtobuf.PMryData> values) {
+        if (valuesBuilder_ == null) {
+          ensureValuesIsMutable();
+          super.addAll(values, values_);
+          onChanged();
+        } else {
+          valuesBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      public Builder clearValues() {
+        if (valuesBuilder_ == null) {
+          values_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000001);
+          onChanged();
+        } else {
+          valuesBuilder_.clear();
+        }
+        return this;
+      }
+      public Builder removeValues(int index) {
+        if (valuesBuilder_ == null) {
+          ensureValuesIsMutable();
+          values_.remove(index);
+          onChanged();
+        } else {
+          valuesBuilder_.remove(index);
+        }
+        return this;
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PMryData.Builder getValuesBuilder(
+          int index) {
+        return getValuesFieldBuilder().getBuilder(index);
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PMryDataOrBuilder getValuesOrBuilder(
+          int index) {
+        if (valuesBuilder_ == null) {
+          return values_.get(index);  } else {
+          return valuesBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      public java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PMryDataOrBuilder> 
+           getValuesOrBuilderList() {
+        if (valuesBuilder_ != null) {
+          return valuesBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(values_);
+        }
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PMryData.Builder addValuesBuilder() {
+        return getValuesFieldBuilder().addBuilder(
+            com.wajam.mry.api.protobuf.MryProtobuf.PMryData.getDefaultInstance());
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PMryData.Builder addValuesBuilder(
+          int index) {
+        return getValuesFieldBuilder().addBuilder(
+            index, com.wajam.mry.api.protobuf.MryProtobuf.PMryData.getDefaultInstance());
+      }
+      public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PMryData.Builder> 
+           getValuesBuilderList() {
+        return getValuesFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PMryData, com.wajam.mry.api.protobuf.MryProtobuf.PMryData.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PMryDataOrBuilder> 
+          getValuesFieldBuilder() {
+        if (valuesBuilder_ == null) {
+          valuesBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
+              com.wajam.mry.api.protobuf.MryProtobuf.PMryData, com.wajam.mry.api.protobuf.MryProtobuf.PMryData.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PMryDataOrBuilder>(
+                  values_,
+                  ((bitField0_ & 0x00000001) == 0x00000001),
+                  getParentForChildren(),
+                  isClean());
+          values_ = null;
+        }
+        return valuesBuilder_;
+      }
+      
+      // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PHeap)
+    }
+    
+    static {
+      defaultInstance = new PHeap(true);
+      defaultInstance.initFields();
+    }
+    
+    // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PHeap)
+  }
+  
+  public interface PMryDataOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // optional .com.wajam.mry.api.protobuf.PTransaction transaction = 1;
+    boolean hasTransaction();
+    com.wajam.mry.api.protobuf.MryProtobuf.PTransaction getTransaction();
+    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionOrBuilder getTransactionOrBuilder();
+    
+    // optional .com.wajam.mry.api.protobuf.PBlock block = 2;
+    boolean hasBlock();
+    com.wajam.mry.api.protobuf.MryProtobuf.PBlock getBlock();
+    com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder getBlockOrBuilder();
+    
+    // optional .com.wajam.mry.api.protobuf.PVariable variable = 3;
+    boolean hasVariable();
+    com.wajam.mry.api.protobuf.MryProtobuf.PVariable getVariable();
+    com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder getVariableOrBuilder();
+    
+    // optional .com.wajam.mry.api.protobuf.POperation operation = 4;
+    boolean hasOperation();
+    com.wajam.mry.api.protobuf.MryProtobuf.POperation getOperation();
+    com.wajam.mry.api.protobuf.MryProtobuf.POperationOrBuilder getOperationOrBuilder();
+    
+    // optional .com.wajam.mry.api.protobuf.PTransactionValue value = 5;
+    boolean hasValue();
+    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue getValue();
+    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder getValueOrBuilder();
+  }
+  public static final class PMryData extends
+      com.google.protobuf.GeneratedMessage
+      implements PMryDataOrBuilder {
+    // Use PMryData.newBuilder() to construct.
+    private PMryData(Builder builder) {
+      super(builder);
+    }
+    private PMryData(boolean noInit) {}
+    
+    private static final PMryData defaultInstance;
+    public static PMryData getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public PMryData getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PMryData_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PMryData_fieldAccessorTable;
+    }
+    
+    private int bitField0_;
+    // optional .com.wajam.mry.api.protobuf.PTransaction transaction = 1;
+    public static final int TRANSACTION_FIELD_NUMBER = 1;
+    private com.wajam.mry.api.protobuf.MryProtobuf.PTransaction transaction_;
+    public boolean hasTransaction() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PTransaction getTransaction() {
+      return transaction_;
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionOrBuilder getTransactionOrBuilder() {
+      return transaction_;
+    }
+    
+    // optional .com.wajam.mry.api.protobuf.PBlock block = 2;
+    public static final int BLOCK_FIELD_NUMBER = 2;
+    private com.wajam.mry.api.protobuf.MryProtobuf.PBlock block_;
+    public boolean hasBlock() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PBlock getBlock() {
+      return block_;
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder getBlockOrBuilder() {
+      return block_;
+    }
+    
+    // optional .com.wajam.mry.api.protobuf.PVariable variable = 3;
+    public static final int VARIABLE_FIELD_NUMBER = 3;
+    private com.wajam.mry.api.protobuf.MryProtobuf.PVariable variable_;
+    public boolean hasVariable() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PVariable getVariable() {
+      return variable_;
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder getVariableOrBuilder() {
+      return variable_;
+    }
+    
+    // optional .com.wajam.mry.api.protobuf.POperation operation = 4;
+    public static final int OPERATION_FIELD_NUMBER = 4;
+    private com.wajam.mry.api.protobuf.MryProtobuf.POperation operation_;
+    public boolean hasOperation() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.POperation getOperation() {
+      return operation_;
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.POperationOrBuilder getOperationOrBuilder() {
+      return operation_;
+    }
+    
+    // optional .com.wajam.mry.api.protobuf.PTransactionValue value = 5;
+    public static final int VALUE_FIELD_NUMBER = 5;
+    private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value_;
+    public boolean hasValue() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue getValue() {
+      return value_;
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder getValueOrBuilder() {
+      return value_;
+    }
+    
+    private void initFields() {
+      transaction_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.getDefaultInstance();
+      block_ = com.wajam.mry.api.protobuf.MryProtobuf.PBlock.getDefaultInstance();
+      variable_ = com.wajam.mry.api.protobuf.MryProtobuf.PVariable.getDefaultInstance();
+      operation_ = com.wajam.mry.api.protobuf.MryProtobuf.POperation.getDefaultInstance();
+      value_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (hasBlock()) {
+        if (!getBlock().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      if (hasVariable()) {
+        if (!getVariable().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      if (hasOperation()) {
+        if (!getOperation().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      if (hasValue()) {
+        if (!getValue().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+    
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, transaction_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeMessage(2, block_);
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeMessage(3, variable_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeMessage(4, operation_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeMessage(5, value_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+    
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+    
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(1, transaction_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(2, block_);
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(3, variable_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(4, operation_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(5, value_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+    
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+    
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PMryData parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PMryData parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PMryData parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PMryData parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PMryData parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PMryData parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PMryData parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PMryData parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PMryData parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PMryData parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(com.wajam.mry.api.protobuf.MryProtobuf.PMryData prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+    
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements com.wajam.mry.api.protobuf.MryProtobuf.PMryDataOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PMryData_descriptor;
+      }
+      
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PMryData_fieldAccessorTable;
+      }
+      
+      // Construct using com.wajam.mry.api.protobuf.MryProtobuf.PMryData.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getTransactionFieldBuilder();
+          getBlockFieldBuilder();
+          getVariableFieldBuilder();
+          getOperationFieldBuilder();
+          getValueFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+      
+      public Builder clear() {
+        super.clear();
+        if (transactionBuilder_ == null) {
+          transaction_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.getDefaultInstance();
+        } else {
+          transactionBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
+        if (blockBuilder_ == null) {
+          block_ = com.wajam.mry.api.protobuf.MryProtobuf.PBlock.getDefaultInstance();
+        } else {
+          blockBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000002);
+        if (variableBuilder_ == null) {
+          variable_ = com.wajam.mry.api.protobuf.MryProtobuf.PVariable.getDefaultInstance();
+        } else {
+          variableBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000004);
+        if (operationBuilder_ == null) {
+          operation_ = com.wajam.mry.api.protobuf.MryProtobuf.POperation.getDefaultInstance();
+        } else {
+          operationBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000008);
+        if (valueBuilder_ == null) {
+          value_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
+        } else {
+          valueBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000010);
+        return this;
+      }
+      
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.PMryData.getDescriptor();
+      }
+      
+      public com.wajam.mry.api.protobuf.MryProtobuf.PMryData getDefaultInstanceForType() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.PMryData.getDefaultInstance();
+      }
+      
+      public com.wajam.mry.api.protobuf.MryProtobuf.PMryData build() {
+        com.wajam.mry.api.protobuf.MryProtobuf.PMryData result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+      
+      private com.wajam.mry.api.protobuf.MryProtobuf.PMryData buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        com.wajam.mry.api.protobuf.MryProtobuf.PMryData result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return result;
+      }
+      
+      public com.wajam.mry.api.protobuf.MryProtobuf.PMryData buildPartial() {
+        com.wajam.mry.api.protobuf.MryProtobuf.PMryData result = new com.wajam.mry.api.protobuf.MryProtobuf.PMryData(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        if (transactionBuilder_ == null) {
+          result.transaction_ = transaction_;
+        } else {
+          result.transaction_ = transactionBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        if (blockBuilder_ == null) {
+          result.block_ = block_;
+        } else {
+          result.block_ = blockBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        if (variableBuilder_ == null) {
+          result.variable_ = variable_;
+        } else {
+          result.variable_ = variableBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        if (operationBuilder_ == null) {
+          result.operation_ = operation_;
+        } else {
+          result.operation_ = operationBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        if (valueBuilder_ == null) {
+          result.value_ = value_;
+        } else {
+          result.value_ = valueBuilder_.build();
+        }
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+      
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof com.wajam.mry.api.protobuf.MryProtobuf.PMryData) {
+          return mergeFrom((com.wajam.mry.api.protobuf.MryProtobuf.PMryData)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+      
+      public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PMryData other) {
+        if (other == com.wajam.mry.api.protobuf.MryProtobuf.PMryData.getDefaultInstance()) return this;
+        if (other.hasTransaction()) {
+          mergeTransaction(other.getTransaction());
+        }
+        if (other.hasBlock()) {
+          mergeBlock(other.getBlock());
+        }
+        if (other.hasVariable()) {
+          mergeVariable(other.getVariable());
+        }
+        if (other.hasOperation()) {
+          mergeOperation(other.getOperation());
+        }
+        if (other.hasValue()) {
+          mergeValue(other.getValue());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+      
+      public final boolean isInitialized() {
+        if (hasBlock()) {
+          if (!getBlock().isInitialized()) {
+            
+            return false;
+          }
+        }
+        if (hasVariable()) {
+          if (!getVariable().isInitialized()) {
+            
+            return false;
+          }
+        }
+        if (hasOperation()) {
+          if (!getOperation().isInitialized()) {
+            
+            return false;
+          }
+        }
+        if (hasValue()) {
+          if (!getValue().isInitialized()) {
+            
+            return false;
+          }
+        }
+        return true;
+      }
+      
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder(
+            this.getUnknownFields());
+        while (true) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              this.setUnknownFields(unknownFields.build());
+              onChanged();
+              return this;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                this.setUnknownFields(unknownFields.build());
+                onChanged();
+                return this;
+              }
+              break;
+            }
+            case 10: {
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.newBuilder();
+              if (hasTransaction()) {
+                subBuilder.mergeFrom(getTransaction());
+              }
+              input.readMessage(subBuilder, extensionRegistry);
+              setTransaction(subBuilder.buildPartial());
+              break;
+            }
+            case 18: {
+              com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PBlock.newBuilder();
+              if (hasBlock()) {
+                subBuilder.mergeFrom(getBlock());
+              }
+              input.readMessage(subBuilder, extensionRegistry);
+              setBlock(subBuilder.buildPartial());
+              break;
+            }
+            case 26: {
+              com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PVariable.newBuilder();
+              if (hasVariable()) {
+                subBuilder.mergeFrom(getVariable());
+              }
+              input.readMessage(subBuilder, extensionRegistry);
+              setVariable(subBuilder.buildPartial());
+              break;
+            }
+            case 34: {
+              com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.POperation.newBuilder();
+              if (hasOperation()) {
+                subBuilder.mergeFrom(getOperation());
+              }
+              input.readMessage(subBuilder, extensionRegistry);
+              setOperation(subBuilder.buildPartial());
+              break;
+            }
+            case 42: {
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.newBuilder();
+              if (hasValue()) {
+                subBuilder.mergeFrom(getValue());
+              }
+              input.readMessage(subBuilder, extensionRegistry);
+              setValue(subBuilder.buildPartial());
+              break;
+            }
+          }
+        }
+      }
+      
+      private int bitField0_;
+      
+      // optional .com.wajam.mry.api.protobuf.PTransaction transaction = 1;
+      private com.wajam.mry.api.protobuf.MryProtobuf.PTransaction transaction_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransaction, com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionOrBuilder> transactionBuilder_;
+      public boolean hasTransaction() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransaction getTransaction() {
+        if (transactionBuilder_ == null) {
+          return transaction_;
+        } else {
+          return transactionBuilder_.getMessage();
+        }
+      }
+      public Builder setTransaction(com.wajam.mry.api.protobuf.MryProtobuf.PTransaction value) {
+        if (transactionBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          transaction_ = value;
+          onChanged();
+        } else {
+          transactionBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      public Builder setTransaction(
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.Builder builderForValue) {
+        if (transactionBuilder_ == null) {
+          transaction_ = builderForValue.build();
+          onChanged();
+        } else {
+          transactionBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      public Builder mergeTransaction(com.wajam.mry.api.protobuf.MryProtobuf.PTransaction value) {
+        if (transactionBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              transaction_ != com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.getDefaultInstance()) {
+            transaction_ =
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.newBuilder(transaction_).mergeFrom(value).buildPartial();
+          } else {
+            transaction_ = value;
+          }
+          onChanged();
+        } else {
+          transactionBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      public Builder clearTransaction() {
+        if (transactionBuilder_ == null) {
+          transaction_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.getDefaultInstance();
+          onChanged();
+        } else {
+          transactionBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
+        return this;
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.Builder getTransactionBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getTransactionFieldBuilder().getBuilder();
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionOrBuilder getTransactionOrBuilder() {
+        if (transactionBuilder_ != null) {
+          return transactionBuilder_.getMessageOrBuilder();
+        } else {
+          return transaction_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransaction, com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionOrBuilder> 
+          getTransactionFieldBuilder() {
+        if (transactionBuilder_ == null) {
+          transactionBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransaction, com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionOrBuilder>(
+                  transaction_,
+                  getParentForChildren(),
+                  isClean());
+          transaction_ = null;
+        }
+        return transactionBuilder_;
+      }
+      
+      // optional .com.wajam.mry.api.protobuf.PBlock block = 2;
+      private com.wajam.mry.api.protobuf.MryProtobuf.PBlock block_ = com.wajam.mry.api.protobuf.MryProtobuf.PBlock.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PBlock, com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder> blockBuilder_;
+      public boolean hasBlock() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PBlock getBlock() {
+        if (blockBuilder_ == null) {
+          return block_;
+        } else {
+          return blockBuilder_.getMessage();
+        }
+      }
+      public Builder setBlock(com.wajam.mry.api.protobuf.MryProtobuf.PBlock value) {
+        if (blockBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          block_ = value;
+          onChanged();
+        } else {
+          blockBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000002;
+        return this;
+      }
+      public Builder setBlock(
+          com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder builderForValue) {
+        if (blockBuilder_ == null) {
+          block_ = builderForValue.build();
+          onChanged();
+        } else {
+          blockBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000002;
+        return this;
+      }
+      public Builder mergeBlock(com.wajam.mry.api.protobuf.MryProtobuf.PBlock value) {
+        if (blockBuilder_ == null) {
+          if (((bitField0_ & 0x00000002) == 0x00000002) &&
+              block_ != com.wajam.mry.api.protobuf.MryProtobuf.PBlock.getDefaultInstance()) {
+            block_ =
+              com.wajam.mry.api.protobuf.MryProtobuf.PBlock.newBuilder(block_).mergeFrom(value).buildPartial();
+          } else {
+            block_ = value;
+          }
+          onChanged();
+        } else {
+          blockBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000002;
+        return this;
+      }
+      public Builder clearBlock() {
+        if (blockBuilder_ == null) {
+          block_ = com.wajam.mry.api.protobuf.MryProtobuf.PBlock.getDefaultInstance();
+          onChanged();
+        } else {
+          blockBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000002);
+        return this;
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder getBlockBuilder() {
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return getBlockFieldBuilder().getBuilder();
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder getBlockOrBuilder() {
+        if (blockBuilder_ != null) {
+          return blockBuilder_.getMessageOrBuilder();
+        } else {
+          return block_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PBlock, com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder> 
+          getBlockFieldBuilder() {
+        if (blockBuilder_ == null) {
+          blockBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              com.wajam.mry.api.protobuf.MryProtobuf.PBlock, com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder>(
+                  block_,
+                  getParentForChildren(),
+                  isClean());
+          block_ = null;
+        }
+        return blockBuilder_;
+      }
+      
+      // optional .com.wajam.mry.api.protobuf.PVariable variable = 3;
+      private com.wajam.mry.api.protobuf.MryProtobuf.PVariable variable_ = com.wajam.mry.api.protobuf.MryProtobuf.PVariable.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PVariable, com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder> variableBuilder_;
+      public boolean hasVariable() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PVariable getVariable() {
+        if (variableBuilder_ == null) {
+          return variable_;
+        } else {
+          return variableBuilder_.getMessage();
+        }
+      }
+      public Builder setVariable(com.wajam.mry.api.protobuf.MryProtobuf.PVariable value) {
+        if (variableBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          variable_ = value;
+          onChanged();
+        } else {
+          variableBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000004;
+        return this;
+      }
+      public Builder setVariable(
+          com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder builderForValue) {
+        if (variableBuilder_ == null) {
+          variable_ = builderForValue.build();
+          onChanged();
+        } else {
+          variableBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000004;
+        return this;
+      }
+      public Builder mergeVariable(com.wajam.mry.api.protobuf.MryProtobuf.PVariable value) {
+        if (variableBuilder_ == null) {
+          if (((bitField0_ & 0x00000004) == 0x00000004) &&
+              variable_ != com.wajam.mry.api.protobuf.MryProtobuf.PVariable.getDefaultInstance()) {
+            variable_ =
+              com.wajam.mry.api.protobuf.MryProtobuf.PVariable.newBuilder(variable_).mergeFrom(value).buildPartial();
+          } else {
+            variable_ = value;
+          }
+          onChanged();
+        } else {
+          variableBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000004;
+        return this;
+      }
+      public Builder clearVariable() {
+        if (variableBuilder_ == null) {
+          variable_ = com.wajam.mry.api.protobuf.MryProtobuf.PVariable.getDefaultInstance();
+          onChanged();
+        } else {
+          variableBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000004);
+        return this;
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder getVariableBuilder() {
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return getVariableFieldBuilder().getBuilder();
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder getVariableOrBuilder() {
+        if (variableBuilder_ != null) {
+          return variableBuilder_.getMessageOrBuilder();
+        } else {
+          return variable_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PVariable, com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder> 
+          getVariableFieldBuilder() {
+        if (variableBuilder_ == null) {
+          variableBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              com.wajam.mry.api.protobuf.MryProtobuf.PVariable, com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder>(
+                  variable_,
+                  getParentForChildren(),
+                  isClean());
+          variable_ = null;
+        }
+        return variableBuilder_;
+      }
+      
+      // optional .com.wajam.mry.api.protobuf.POperation operation = 4;
+      private com.wajam.mry.api.protobuf.MryProtobuf.POperation operation_ = com.wajam.mry.api.protobuf.MryProtobuf.POperation.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.POperation, com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder, com.wajam.mry.api.protobuf.MryProtobuf.POperationOrBuilder> operationBuilder_;
+      public boolean hasOperation() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.POperation getOperation() {
+        if (operationBuilder_ == null) {
+          return operation_;
+        } else {
+          return operationBuilder_.getMessage();
+        }
+      }
+      public Builder setOperation(com.wajam.mry.api.protobuf.MryProtobuf.POperation value) {
+        if (operationBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          operation_ = value;
+          onChanged();
+        } else {
+          operationBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000008;
+        return this;
+      }
+      public Builder setOperation(
+          com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder builderForValue) {
+        if (operationBuilder_ == null) {
+          operation_ = builderForValue.build();
+          onChanged();
+        } else {
+          operationBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000008;
+        return this;
+      }
+      public Builder mergeOperation(com.wajam.mry.api.protobuf.MryProtobuf.POperation value) {
+        if (operationBuilder_ == null) {
+          if (((bitField0_ & 0x00000008) == 0x00000008) &&
+              operation_ != com.wajam.mry.api.protobuf.MryProtobuf.POperation.getDefaultInstance()) {
+            operation_ =
+              com.wajam.mry.api.protobuf.MryProtobuf.POperation.newBuilder(operation_).mergeFrom(value).buildPartial();
+          } else {
+            operation_ = value;
+          }
+          onChanged();
+        } else {
+          operationBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000008;
+        return this;
+      }
+      public Builder clearOperation() {
+        if (operationBuilder_ == null) {
+          operation_ = com.wajam.mry.api.protobuf.MryProtobuf.POperation.getDefaultInstance();
+          onChanged();
+        } else {
+          operationBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000008);
+        return this;
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder getOperationBuilder() {
+        bitField0_ |= 0x00000008;
+        onChanged();
+        return getOperationFieldBuilder().getBuilder();
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.POperationOrBuilder getOperationOrBuilder() {
+        if (operationBuilder_ != null) {
+          return operationBuilder_.getMessageOrBuilder();
+        } else {
+          return operation_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.POperation, com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder, com.wajam.mry.api.protobuf.MryProtobuf.POperationOrBuilder> 
+          getOperationFieldBuilder() {
+        if (operationBuilder_ == null) {
+          operationBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              com.wajam.mry.api.protobuf.MryProtobuf.POperation, com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder, com.wajam.mry.api.protobuf.MryProtobuf.POperationOrBuilder>(
+                  operation_,
+                  getParentForChildren(),
+                  isClean());
+          operation_ = null;
+        }
+        return operationBuilder_;
+      }
+      
+      // optional .com.wajam.mry.api.protobuf.PTransactionValue value = 5;
+      private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder> valueBuilder_;
+      public boolean hasValue() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue getValue() {
+        if (valueBuilder_ == null) {
+          return value_;
+        } else {
+          return valueBuilder_.getMessage();
+        }
+      }
+      public Builder setValue(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value) {
+        if (valueBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          value_ = value;
+          onChanged();
+        } else {
+          valueBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000010;
+        return this;
+      }
+      public Builder setValue(
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder builderForValue) {
+        if (valueBuilder_ == null) {
+          value_ = builderForValue.build();
+          onChanged();
+        } else {
+          valueBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000010;
+        return this;
+      }
+      public Builder mergeValue(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value) {
+        if (valueBuilder_ == null) {
+          if (((bitField0_ & 0x00000010) == 0x00000010) &&
+              value_ != com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance()) {
+            value_ =
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.newBuilder(value_).mergeFrom(value).buildPartial();
+          } else {
+            value_ = value;
+          }
+          onChanged();
+        } else {
+          valueBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000010;
+        return this;
+      }
+      public Builder clearValue() {
+        if (valueBuilder_ == null) {
+          value_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
+          onChanged();
+        } else {
+          valueBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000010);
+        return this;
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder getValueBuilder() {
+        bitField0_ |= 0x00000010;
+        onChanged();
+        return getValueFieldBuilder().getBuilder();
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder getValueOrBuilder() {
+        if (valueBuilder_ != null) {
+          return valueBuilder_.getMessageOrBuilder();
+        } else {
+          return value_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder> 
+          getValueFieldBuilder() {
+        if (valueBuilder_ == null) {
+          valueBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder>(
+                  value_,
+                  getParentForChildren(),
+                  isClean());
+          value_ = null;
+        }
+        return valueBuilder_;
+      }
+      
+      // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PMryData)
+    }
+    
+    static {
+      defaultInstance = new PMryData(true);
+      defaultInstance.initFields();
+    }
+    
+    // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PMryData)
+  }
+  
   public interface PTransportOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
     
-    // optional .com.wajam.mry.api.protobuf.PBlock request = 1;
-    boolean hasRequest();
-    com.wajam.mry.api.protobuf.MryProtobuf.PBlock getRequest();
-    com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder getRequestOrBuilder();
+    // optional .com.wajam.mry.api.protobuf.PHeap heap = 3;
+    boolean hasHeap();
+    com.wajam.mry.api.protobuf.MryProtobuf.PHeap getHeap();
+    com.wajam.mry.api.protobuf.MryProtobuf.PHeapOrBuilder getHeapOrBuilder();
     
-    // repeated .com.wajam.mry.api.protobuf.PTransactionValue response = 2;
-    java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue> 
-        getResponseList();
-    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue getResponse(int index);
-    int getResponseCount();
-    java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder> 
-        getResponseOrBuilderList();
-    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder getResponseOrBuilder(
-        int index);
+    // optional uint32 requestAddress = 1;
+    boolean hasRequestAddress();
+    int getRequestAddress();
+    
+    // repeated uint32 responseAddress = 2;
+    java.util.List<java.lang.Integer> getResponseAddressList();
+    int getResponseAddressCount();
+    int getResponseAddress(int index);
   }
   public static final class PTransport extends
       com.google.protobuf.GeneratedMessage
@@ -65,57 +1668,55 @@ public final class MryProtobuf {
     }
     
     private int bitField0_;
-    // optional .com.wajam.mry.api.protobuf.PBlock request = 1;
-    public static final int REQUEST_FIELD_NUMBER = 1;
-    private com.wajam.mry.api.protobuf.MryProtobuf.PBlock request_;
-    public boolean hasRequest() {
+    // optional .com.wajam.mry.api.protobuf.PHeap heap = 3;
+    public static final int HEAP_FIELD_NUMBER = 3;
+    private com.wajam.mry.api.protobuf.MryProtobuf.PHeap heap_;
+    public boolean hasHeap() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PBlock getRequest() {
-      return request_;
+    public com.wajam.mry.api.protobuf.MryProtobuf.PHeap getHeap() {
+      return heap_;
     }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder getRequestOrBuilder() {
-      return request_;
+    public com.wajam.mry.api.protobuf.MryProtobuf.PHeapOrBuilder getHeapOrBuilder() {
+      return heap_;
     }
     
-    // repeated .com.wajam.mry.api.protobuf.PTransactionValue response = 2;
-    public static final int RESPONSE_FIELD_NUMBER = 2;
-    private java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue> response_;
-    public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue> getResponseList() {
-      return response_;
+    // optional uint32 requestAddress = 1;
+    public static final int REQUESTADDRESS_FIELD_NUMBER = 1;
+    private int requestAddress_;
+    public boolean hasRequestAddress() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
     }
-    public java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder> 
-        getResponseOrBuilderList() {
-      return response_;
+    public int getRequestAddress() {
+      return requestAddress_;
     }
-    public int getResponseCount() {
-      return response_.size();
+    
+    // repeated uint32 responseAddress = 2;
+    public static final int RESPONSEADDRESS_FIELD_NUMBER = 2;
+    private java.util.List<java.lang.Integer> responseAddress_;
+    public java.util.List<java.lang.Integer>
+        getResponseAddressList() {
+      return responseAddress_;
     }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue getResponse(int index) {
-      return response_.get(index);
+    public int getResponseAddressCount() {
+      return responseAddress_.size();
     }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder getResponseOrBuilder(
-        int index) {
-      return response_.get(index);
+    public int getResponseAddress(int index) {
+      return responseAddress_.get(index);
     }
     
     private void initFields() {
-      request_ = com.wajam.mry.api.protobuf.MryProtobuf.PBlock.getDefaultInstance();
-      response_ = java.util.Collections.emptyList();
+      heap_ = com.wajam.mry.api.protobuf.MryProtobuf.PHeap.getDefaultInstance();
+      requestAddress_ = 0;
+      responseAddress_ = java.util.Collections.emptyList();;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized != -1) return isInitialized == 1;
       
-      if (hasRequest()) {
-        if (!getRequest().isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-      }
-      for (int i = 0; i < getResponseCount(); i++) {
-        if (!getResponse(i).isInitialized()) {
+      if (hasHeap()) {
+        if (!getHeap().isInitialized()) {
           memoizedIsInitialized = 0;
           return false;
         }
@@ -127,11 +1728,14 @@ public final class MryProtobuf {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeMessage(1, request_);
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeUInt32(1, requestAddress_);
       }
-      for (int i = 0; i < response_.size(); i++) {
-        output.writeMessage(2, response_.get(i));
+      for (int i = 0; i < responseAddress_.size(); i++) {
+        output.writeUInt32(2, responseAddress_.get(i));
+      }
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(3, heap_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -142,13 +1746,22 @@ public final class MryProtobuf {
       if (size != -1) return size;
     
       size = 0;
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(1, requestAddress_);
+      }
+      {
+        int dataSize = 0;
+        for (int i = 0; i < responseAddress_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeUInt32SizeNoTag(responseAddress_.get(i));
+        }
+        size += dataSize;
+        size += 1 * getResponseAddressList().size();
+      }
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, request_);
-      }
-      for (int i = 0; i < response_.size(); i++) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, response_.get(i));
+          .computeMessageSize(3, heap_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -266,8 +1879,7 @@ public final class MryProtobuf {
       }
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-          getRequestFieldBuilder();
-          getResponseFieldBuilder();
+          getHeapFieldBuilder();
         }
       }
       private static Builder create() {
@@ -276,18 +1888,16 @@ public final class MryProtobuf {
       
       public Builder clear() {
         super.clear();
-        if (requestBuilder_ == null) {
-          request_ = com.wajam.mry.api.protobuf.MryProtobuf.PBlock.getDefaultInstance();
+        if (heapBuilder_ == null) {
+          heap_ = com.wajam.mry.api.protobuf.MryProtobuf.PHeap.getDefaultInstance();
         } else {
-          requestBuilder_.clear();
+          heapBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000001);
-        if (responseBuilder_ == null) {
-          response_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
-        } else {
-          responseBuilder_.clear();
-        }
+        requestAddress_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        responseAddress_ = java.util.Collections.emptyList();;
+        bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
       
@@ -329,20 +1939,20 @@ public final class MryProtobuf {
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
-        if (requestBuilder_ == null) {
-          result.request_ = request_;
+        if (heapBuilder_ == null) {
+          result.heap_ = heap_;
         } else {
-          result.request_ = requestBuilder_.build();
+          result.heap_ = heapBuilder_.build();
         }
-        if (responseBuilder_ == null) {
-          if (((bitField0_ & 0x00000002) == 0x00000002)) {
-            response_ = java.util.Collections.unmodifiableList(response_);
-            bitField0_ = (bitField0_ & ~0x00000002);
-          }
-          result.response_ = response_;
-        } else {
-          result.response_ = responseBuilder_.build();
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
         }
+        result.requestAddress_ = requestAddress_;
+        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+          responseAddress_ = java.util.Collections.unmodifiableList(responseAddress_);
+          bitField0_ = (bitField0_ & ~0x00000004);
+        }
+        result.responseAddress_ = responseAddress_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -359,48 +1969,29 @@ public final class MryProtobuf {
       
       public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PTransport other) {
         if (other == com.wajam.mry.api.protobuf.MryProtobuf.PTransport.getDefaultInstance()) return this;
-        if (other.hasRequest()) {
-          mergeRequest(other.getRequest());
+        if (other.hasHeap()) {
+          mergeHeap(other.getHeap());
         }
-        if (responseBuilder_ == null) {
-          if (!other.response_.isEmpty()) {
-            if (response_.isEmpty()) {
-              response_ = other.response_;
-              bitField0_ = (bitField0_ & ~0x00000002);
-            } else {
-              ensureResponseIsMutable();
-              response_.addAll(other.response_);
-            }
-            onChanged();
+        if (other.hasRequestAddress()) {
+          setRequestAddress(other.getRequestAddress());
+        }
+        if (!other.responseAddress_.isEmpty()) {
+          if (responseAddress_.isEmpty()) {
+            responseAddress_ = other.responseAddress_;
+            bitField0_ = (bitField0_ & ~0x00000004);
+          } else {
+            ensureResponseAddressIsMutable();
+            responseAddress_.addAll(other.responseAddress_);
           }
-        } else {
-          if (!other.response_.isEmpty()) {
-            if (responseBuilder_.isEmpty()) {
-              responseBuilder_.dispose();
-              responseBuilder_ = null;
-              response_ = other.response_;
-              bitField0_ = (bitField0_ & ~0x00000002);
-              responseBuilder_ = 
-                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
-                   getResponseFieldBuilder() : null;
-            } else {
-              responseBuilder_.addAllMessages(other.response_);
-            }
-          }
+          onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
       
       public final boolean isInitialized() {
-        if (hasRequest()) {
-          if (!getRequest().isInitialized()) {
-            
-            return false;
-          }
-        }
-        for (int i = 0; i < getResponseCount(); i++) {
-          if (!getResponse(i).isInitialized()) {
+        if (hasHeap()) {
+          if (!getHeap().isInitialized()) {
             
             return false;
           }
@@ -431,19 +2022,32 @@ public final class MryProtobuf {
               }
               break;
             }
-            case 10: {
-              com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PBlock.newBuilder();
-              if (hasRequest()) {
-                subBuilder.mergeFrom(getRequest());
-              }
-              input.readMessage(subBuilder, extensionRegistry);
-              setRequest(subBuilder.buildPartial());
+            case 8: {
+              bitField0_ |= 0x00000002;
+              requestAddress_ = input.readUInt32();
+              break;
+            }
+            case 16: {
+              ensureResponseAddressIsMutable();
+              responseAddress_.add(input.readUInt32());
               break;
             }
             case 18: {
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.newBuilder();
+              int length = input.readRawVarint32();
+              int limit = input.pushLimit(length);
+              while (input.getBytesUntilLimit() > 0) {
+                addResponseAddress(input.readUInt32());
+              }
+              input.popLimit(limit);
+              break;
+            }
+            case 26: {
+              com.wajam.mry.api.protobuf.MryProtobuf.PHeap.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PHeap.newBuilder();
+              if (hasHeap()) {
+                subBuilder.mergeFrom(getHeap());
+              }
               input.readMessage(subBuilder, extensionRegistry);
-              addResponse(subBuilder.buildPartial());
+              setHeap(subBuilder.buildPartial());
               break;
             }
           }
@@ -452,280 +2056,160 @@ public final class MryProtobuf {
       
       private int bitField0_;
       
-      // optional .com.wajam.mry.api.protobuf.PBlock request = 1;
-      private com.wajam.mry.api.protobuf.MryProtobuf.PBlock request_ = com.wajam.mry.api.protobuf.MryProtobuf.PBlock.getDefaultInstance();
+      // optional .com.wajam.mry.api.protobuf.PHeap heap = 3;
+      private com.wajam.mry.api.protobuf.MryProtobuf.PHeap heap_ = com.wajam.mry.api.protobuf.MryProtobuf.PHeap.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PBlock, com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder> requestBuilder_;
-      public boolean hasRequest() {
+          com.wajam.mry.api.protobuf.MryProtobuf.PHeap, com.wajam.mry.api.protobuf.MryProtobuf.PHeap.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PHeapOrBuilder> heapBuilder_;
+      public boolean hasHeap() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PBlock getRequest() {
-        if (requestBuilder_ == null) {
-          return request_;
+      public com.wajam.mry.api.protobuf.MryProtobuf.PHeap getHeap() {
+        if (heapBuilder_ == null) {
+          return heap_;
         } else {
-          return requestBuilder_.getMessage();
+          return heapBuilder_.getMessage();
         }
       }
-      public Builder setRequest(com.wajam.mry.api.protobuf.MryProtobuf.PBlock value) {
-        if (requestBuilder_ == null) {
+      public Builder setHeap(com.wajam.mry.api.protobuf.MryProtobuf.PHeap value) {
+        if (heapBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
           }
-          request_ = value;
+          heap_ = value;
           onChanged();
         } else {
-          requestBuilder_.setMessage(value);
+          heapBuilder_.setMessage(value);
         }
         bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setRequest(
-          com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder builderForValue) {
-        if (requestBuilder_ == null) {
-          request_ = builderForValue.build();
+      public Builder setHeap(
+          com.wajam.mry.api.protobuf.MryProtobuf.PHeap.Builder builderForValue) {
+        if (heapBuilder_ == null) {
+          heap_ = builderForValue.build();
           onChanged();
         } else {
-          requestBuilder_.setMessage(builderForValue.build());
+          heapBuilder_.setMessage(builderForValue.build());
         }
         bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder mergeRequest(com.wajam.mry.api.protobuf.MryProtobuf.PBlock value) {
-        if (requestBuilder_ == null) {
+      public Builder mergeHeap(com.wajam.mry.api.protobuf.MryProtobuf.PHeap value) {
+        if (heapBuilder_ == null) {
           if (((bitField0_ & 0x00000001) == 0x00000001) &&
-              request_ != com.wajam.mry.api.protobuf.MryProtobuf.PBlock.getDefaultInstance()) {
-            request_ =
-              com.wajam.mry.api.protobuf.MryProtobuf.PBlock.newBuilder(request_).mergeFrom(value).buildPartial();
+              heap_ != com.wajam.mry.api.protobuf.MryProtobuf.PHeap.getDefaultInstance()) {
+            heap_ =
+              com.wajam.mry.api.protobuf.MryProtobuf.PHeap.newBuilder(heap_).mergeFrom(value).buildPartial();
           } else {
-            request_ = value;
+            heap_ = value;
           }
           onChanged();
         } else {
-          requestBuilder_.mergeFrom(value);
+          heapBuilder_.mergeFrom(value);
         }
         bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder clearRequest() {
-        if (requestBuilder_ == null) {
-          request_ = com.wajam.mry.api.protobuf.MryProtobuf.PBlock.getDefaultInstance();
+      public Builder clearHeap() {
+        if (heapBuilder_ == null) {
+          heap_ = com.wajam.mry.api.protobuf.MryProtobuf.PHeap.getDefaultInstance();
           onChanged();
         } else {
-          requestBuilder_.clear();
+          heapBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000001);
         return this;
       }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder getRequestBuilder() {
+      public com.wajam.mry.api.protobuf.MryProtobuf.PHeap.Builder getHeapBuilder() {
         bitField0_ |= 0x00000001;
         onChanged();
-        return getRequestFieldBuilder().getBuilder();
+        return getHeapFieldBuilder().getBuilder();
       }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder getRequestOrBuilder() {
-        if (requestBuilder_ != null) {
-          return requestBuilder_.getMessageOrBuilder();
+      public com.wajam.mry.api.protobuf.MryProtobuf.PHeapOrBuilder getHeapOrBuilder() {
+        if (heapBuilder_ != null) {
+          return heapBuilder_.getMessageOrBuilder();
         } else {
-          return request_;
+          return heap_;
         }
       }
       private com.google.protobuf.SingleFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PBlock, com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder> 
-          getRequestFieldBuilder() {
-        if (requestBuilder_ == null) {
-          requestBuilder_ = new com.google.protobuf.SingleFieldBuilder<
-              com.wajam.mry.api.protobuf.MryProtobuf.PBlock, com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder>(
-                  request_,
+          com.wajam.mry.api.protobuf.MryProtobuf.PHeap, com.wajam.mry.api.protobuf.MryProtobuf.PHeap.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PHeapOrBuilder> 
+          getHeapFieldBuilder() {
+        if (heapBuilder_ == null) {
+          heapBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              com.wajam.mry.api.protobuf.MryProtobuf.PHeap, com.wajam.mry.api.protobuf.MryProtobuf.PHeap.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PHeapOrBuilder>(
+                  heap_,
                   getParentForChildren(),
                   isClean());
-          request_ = null;
+          heap_ = null;
         }
-        return requestBuilder_;
+        return heapBuilder_;
       }
       
-      // repeated .com.wajam.mry.api.protobuf.PTransactionValue response = 2;
-      private java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue> response_ =
-        java.util.Collections.emptyList();
-      private void ensureResponseIsMutable() {
-        if (!((bitField0_ & 0x00000002) == 0x00000002)) {
-          response_ = new java.util.ArrayList<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue>(response_);
-          bitField0_ |= 0x00000002;
+      // optional uint32 requestAddress = 1;
+      private int requestAddress_ ;
+      public boolean hasRequestAddress() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      public int getRequestAddress() {
+        return requestAddress_;
+      }
+      public Builder setRequestAddress(int value) {
+        bitField0_ |= 0x00000002;
+        requestAddress_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearRequestAddress() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        requestAddress_ = 0;
+        onChanged();
+        return this;
+      }
+      
+      // repeated uint32 responseAddress = 2;
+      private java.util.List<java.lang.Integer> responseAddress_ = java.util.Collections.emptyList();;
+      private void ensureResponseAddressIsMutable() {
+        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
+          responseAddress_ = new java.util.ArrayList<java.lang.Integer>(responseAddress_);
+          bitField0_ |= 0x00000004;
          }
       }
-      
-      private com.google.protobuf.RepeatedFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder> responseBuilder_;
-      
-      public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue> getResponseList() {
-        if (responseBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(response_);
-        } else {
-          return responseBuilder_.getMessageList();
-        }
+      public java.util.List<java.lang.Integer>
+          getResponseAddressList() {
+        return java.util.Collections.unmodifiableList(responseAddress_);
       }
-      public int getResponseCount() {
-        if (responseBuilder_ == null) {
-          return response_.size();
-        } else {
-          return responseBuilder_.getCount();
-        }
+      public int getResponseAddressCount() {
+        return responseAddress_.size();
       }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue getResponse(int index) {
-        if (responseBuilder_ == null) {
-          return response_.get(index);
-        } else {
-          return responseBuilder_.getMessage(index);
-        }
+      public int getResponseAddress(int index) {
+        return responseAddress_.get(index);
       }
-      public Builder setResponse(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value) {
-        if (responseBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureResponseIsMutable();
-          response_.set(index, value);
-          onChanged();
-        } else {
-          responseBuilder_.setMessage(index, value);
-        }
+      public Builder setResponseAddress(
+          int index, int value) {
+        ensureResponseAddressIsMutable();
+        responseAddress_.set(index, value);
+        onChanged();
         return this;
       }
-      public Builder setResponse(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder builderForValue) {
-        if (responseBuilder_ == null) {
-          ensureResponseIsMutable();
-          response_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          responseBuilder_.setMessage(index, builderForValue.build());
-        }
+      public Builder addResponseAddress(int value) {
+        ensureResponseAddressIsMutable();
+        responseAddress_.add(value);
+        onChanged();
         return this;
       }
-      public Builder addResponse(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value) {
-        if (responseBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureResponseIsMutable();
-          response_.add(value);
-          onChanged();
-        } else {
-          responseBuilder_.addMessage(value);
-        }
+      public Builder addAllResponseAddress(
+          java.lang.Iterable<? extends java.lang.Integer> values) {
+        ensureResponseAddressIsMutable();
+        super.addAll(values, responseAddress_);
+        onChanged();
         return this;
       }
-      public Builder addResponse(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value) {
-        if (responseBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureResponseIsMutable();
-          response_.add(index, value);
-          onChanged();
-        } else {
-          responseBuilder_.addMessage(index, value);
-        }
+      public Builder clearResponseAddress() {
+        responseAddress_ = java.util.Collections.emptyList();;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        onChanged();
         return this;
-      }
-      public Builder addResponse(
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder builderForValue) {
-        if (responseBuilder_ == null) {
-          ensureResponseIsMutable();
-          response_.add(builderForValue.build());
-          onChanged();
-        } else {
-          responseBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      public Builder addResponse(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder builderForValue) {
-        if (responseBuilder_ == null) {
-          ensureResponseIsMutable();
-          response_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          responseBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      public Builder addAllResponse(
-          java.lang.Iterable<? extends com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue> values) {
-        if (responseBuilder_ == null) {
-          ensureResponseIsMutable();
-          super.addAll(values, response_);
-          onChanged();
-        } else {
-          responseBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      public Builder clearResponse() {
-        if (responseBuilder_ == null) {
-          response_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
-          onChanged();
-        } else {
-          responseBuilder_.clear();
-        }
-        return this;
-      }
-      public Builder removeResponse(int index) {
-        if (responseBuilder_ == null) {
-          ensureResponseIsMutable();
-          response_.remove(index);
-          onChanged();
-        } else {
-          responseBuilder_.remove(index);
-        }
-        return this;
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder getResponseBuilder(
-          int index) {
-        return getResponseFieldBuilder().getBuilder(index);
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder getResponseOrBuilder(
-          int index) {
-        if (responseBuilder_ == null) {
-          return response_.get(index);  } else {
-          return responseBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      public java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder> 
-           getResponseOrBuilderList() {
-        if (responseBuilder_ != null) {
-          return responseBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(response_);
-        }
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder addResponseBuilder() {
-        return getResponseFieldBuilder().addBuilder(
-            com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance());
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder addResponseBuilder(
-          int index) {
-        return getResponseFieldBuilder().addBuilder(
-            index, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance());
-      }
-      public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder> 
-           getResponseBuilderList() {
-        return getResponseFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder> 
-          getResponseFieldBuilder() {
-        if (responseBuilder_ == null) {
-          responseBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder>(
-                  response_,
-                  ((bitField0_ & 0x00000002) == 0x00000002),
-                  getParentForChildren(),
-                  isClean());
-          response_ = null;
-        }
-        return responseBuilder_;
       }
       
       // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PTransport)
@@ -745,6 +2229,10 @@ public final class MryProtobuf {
     // optional uint32 id = 1;
     boolean hasId();
     int getId();
+    
+    // optional uint32 blockAddress = 2;
+    boolean hasBlockAddress();
+    int getBlockAddress();
   }
   public static final class PTransaction extends
       com.google.protobuf.GeneratedMessage
@@ -785,8 +2273,19 @@ public final class MryProtobuf {
       return id_;
     }
     
+    // optional uint32 blockAddress = 2;
+    public static final int BLOCKADDRESS_FIELD_NUMBER = 2;
+    private int blockAddress_;
+    public boolean hasBlockAddress() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public int getBlockAddress() {
+      return blockAddress_;
+    }
+    
     private void initFields() {
       id_ = 0;
+      blockAddress_ = 0;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -803,6 +2302,9 @@ public final class MryProtobuf {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         output.writeUInt32(1, id_);
       }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeUInt32(2, blockAddress_);
+      }
       getUnknownFields().writeTo(output);
     }
     
@@ -815,6 +2317,10 @@ public final class MryProtobuf {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(1, id_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(2, blockAddress_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -942,6 +2448,8 @@ public final class MryProtobuf {
         super.clear();
         id_ = 0;
         bitField0_ = (bitField0_ & ~0x00000001);
+        blockAddress_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
       
@@ -984,6 +2492,10 @@ public final class MryProtobuf {
           to_bitField0_ |= 0x00000001;
         }
         result.id_ = id_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.blockAddress_ = blockAddress_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1002,6 +2514,9 @@ public final class MryProtobuf {
         if (other == com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.getDefaultInstance()) return this;
         if (other.hasId()) {
           setId(other.getId());
+        }
+        if (other.hasBlockAddress()) {
+          setBlockAddress(other.getBlockAddress());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -1039,6 +2554,11 @@ public final class MryProtobuf {
               id_ = input.readUInt32();
               break;
             }
+            case 16: {
+              bitField0_ |= 0x00000002;
+              blockAddress_ = input.readUInt32();
+              break;
+            }
           }
         }
       }
@@ -1066,6 +2586,27 @@ public final class MryProtobuf {
         return this;
       }
       
+      // optional uint32 blockAddress = 2;
+      private int blockAddress_ ;
+      public boolean hasBlockAddress() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      public int getBlockAddress() {
+        return blockAddress_;
+      }
+      public Builder setBlockAddress(int value) {
+        bitField0_ |= 0x00000002;
+        blockAddress_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearBlockAddress() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        blockAddress_ = 0;
+        onChanged();
+        return this;
+      }
+      
       // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PTransaction)
     }
     
@@ -1075,340 +2616,28 @@ public final class MryProtobuf {
     }
     
     // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PTransaction)
-    public static final int TRANSACTION_FIELD_NUMBER = 100;
-    public static final
-      com.google.protobuf.GeneratedMessage.GeneratedExtension<
-        com.wajam.mry.api.protobuf.MryProtobuf.PBlock,
-        com.wajam.mry.api.protobuf.MryProtobuf.PTransaction> transaction = com.google.protobuf.GeneratedMessage
-            .newMessageScopedGeneratedExtension(
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.getDefaultInstance(),
-          0,
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.class,
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.getDefaultInstance());
   }
   
-  public interface PObjectOrBuilder extends
-      com.google.protobuf.GeneratedMessage.
-          ExtendableMessageOrBuilder<PObject> {
-  }
-  public static final class PObject extends
-      com.google.protobuf.GeneratedMessage.ExtendableMessage<
-        PObject> implements PObjectOrBuilder {
-    // Use PObject.newBuilder() to construct.
-    private PObject(Builder builder) {
-      super(builder);
-    }
-    private PObject(boolean noInit) {}
-    
-    private static final PObject defaultInstance;
-    public static PObject getDefaultInstance() {
-      return defaultInstance;
-    }
-    
-    public PObject getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-    
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PObject_descriptor;
-    }
-    
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PObject_fieldAccessorTable;
-    }
-    
-    private void initFields() {
-    }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-      
-      if (!extensionsAreInitialized()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      memoizedIsInitialized = 1;
-      return true;
-    }
-    
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      com.google.protobuf.GeneratedMessage
-        .ExtendableMessage<com.wajam.mry.api.protobuf.MryProtobuf.PObject>.ExtensionWriter extensionWriter =
-          newExtensionWriter();
-      extensionWriter.writeUntil(201, output);
-      getUnknownFields().writeTo(output);
-    }
-    
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-    
-      size = 0;
-      size += extensionsSerializedSize();
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-    
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
-    }
-    
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PObject parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PObject parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PObject parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PObject parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PObject parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PObject parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PObject parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PObject parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PObject parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PObject parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(com.wajam.mry.api.protobuf.MryProtobuf.PObject prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-    
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.ExtendableBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PObject, Builder> implements com.wajam.mry.api.protobuf.MryProtobuf.PObjectOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PObject_descriptor;
-      }
-      
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PObject_fieldAccessorTable;
-      }
-      
-      // Construct using com.wajam.mry.api.protobuf.MryProtobuf.PObject.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-      
-      private Builder(BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-        }
-      }
-      private static Builder create() {
-        return new Builder();
-      }
-      
-      public Builder clear() {
-        super.clear();
-        return this;
-      }
-      
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
-      
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PObject.getDescriptor();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PObject getDefaultInstanceForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PObject.getDefaultInstance();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PObject build() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PObject result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-      
-      private com.wajam.mry.api.protobuf.MryProtobuf.PObject buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        com.wajam.mry.api.protobuf.MryProtobuf.PObject result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return result;
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PObject buildPartial() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PObject result = new com.wajam.mry.api.protobuf.MryProtobuf.PObject(this);
-        onBuilt();
-        return result;
-      }
-      
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof com.wajam.mry.api.protobuf.MryProtobuf.PObject) {
-          return mergeFrom((com.wajam.mry.api.protobuf.MryProtobuf.PObject)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-      
-      public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PObject other) {
-        if (other == com.wajam.mry.api.protobuf.MryProtobuf.PObject.getDefaultInstance()) return this;
-        this.mergeExtensionFields(other);
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
-      
-      public final boolean isInitialized() {
-        if (!extensionsAreInitialized()) {
-          
-          return false;
-        }
-        return true;
-      }
-      
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              onChanged();
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                onChanged();
-                return this;
-              }
-              break;
-            }
-          }
-        }
-      }
-      
-      
-      // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PObject)
-    }
-    
-    static {
-      defaultInstance = new PObject(true);
-      defaultInstance.initFields();
-    }
-    
-    // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PObject)
-  }
-  
-  public interface PBlockOrBuilder extends
-      com.google.protobuf.GeneratedMessage.
-          ExtendableMessageOrBuilder<PBlock> {
+  public interface PBlockOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
     
     // required uint32 varSeq = 1;
     boolean hasVarSeq();
     int getVarSeq();
     
-    // repeated .com.wajam.mry.api.protobuf.POperation operations = 2;
-    java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.POperation> 
-        getOperationsList();
-    com.wajam.mry.api.protobuf.MryProtobuf.POperation getOperations(int index);
-    int getOperationsCount();
-    java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.POperationOrBuilder> 
-        getOperationsOrBuilderList();
-    com.wajam.mry.api.protobuf.MryProtobuf.POperationOrBuilder getOperationsOrBuilder(
-        int index);
+    // repeated uint32 operationAddresses = 2;
+    java.util.List<java.lang.Integer> getOperationAddressesList();
+    int getOperationAddressesCount();
+    int getOperationAddresses(int index);
     
-    // repeated .com.wajam.mry.api.protobuf.PVariable variables = 3;
-    java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PVariable> 
-        getVariablesList();
-    com.wajam.mry.api.protobuf.MryProtobuf.PVariable getVariables(int index);
-    int getVariablesCount();
-    java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder> 
-        getVariablesOrBuilderList();
-    com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder getVariablesOrBuilder(
-        int index);
+    // repeated uint32 variableAddresses = 3;
+    java.util.List<java.lang.Integer> getVariableAddressesList();
+    int getVariableAddressesCount();
+    int getVariableAddresses(int index);
   }
   public static final class PBlock extends
-      com.google.protobuf.GeneratedMessage.ExtendableMessage<
-        PBlock> implements PBlockOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements PBlockOrBuilder {
     // Use PBlock.newBuilder() to construct.
     private PBlock(Builder builder) {
       super(builder);
@@ -1445,52 +2674,38 @@ public final class MryProtobuf {
       return varSeq_;
     }
     
-    // repeated .com.wajam.mry.api.protobuf.POperation operations = 2;
-    public static final int OPERATIONS_FIELD_NUMBER = 2;
-    private java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.POperation> operations_;
-    public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.POperation> getOperationsList() {
-      return operations_;
+    // repeated uint32 operationAddresses = 2;
+    public static final int OPERATIONADDRESSES_FIELD_NUMBER = 2;
+    private java.util.List<java.lang.Integer> operationAddresses_;
+    public java.util.List<java.lang.Integer>
+        getOperationAddressesList() {
+      return operationAddresses_;
     }
-    public java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.POperationOrBuilder> 
-        getOperationsOrBuilderList() {
-      return operations_;
+    public int getOperationAddressesCount() {
+      return operationAddresses_.size();
     }
-    public int getOperationsCount() {
-      return operations_.size();
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.POperation getOperations(int index) {
-      return operations_.get(index);
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.POperationOrBuilder getOperationsOrBuilder(
-        int index) {
-      return operations_.get(index);
+    public int getOperationAddresses(int index) {
+      return operationAddresses_.get(index);
     }
     
-    // repeated .com.wajam.mry.api.protobuf.PVariable variables = 3;
-    public static final int VARIABLES_FIELD_NUMBER = 3;
-    private java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PVariable> variables_;
-    public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PVariable> getVariablesList() {
-      return variables_;
+    // repeated uint32 variableAddresses = 3;
+    public static final int VARIABLEADDRESSES_FIELD_NUMBER = 3;
+    private java.util.List<java.lang.Integer> variableAddresses_;
+    public java.util.List<java.lang.Integer>
+        getVariableAddressesList() {
+      return variableAddresses_;
     }
-    public java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder> 
-        getVariablesOrBuilderList() {
-      return variables_;
+    public int getVariableAddressesCount() {
+      return variableAddresses_.size();
     }
-    public int getVariablesCount() {
-      return variables_.size();
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PVariable getVariables(int index) {
-      return variables_.get(index);
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder getVariablesOrBuilder(
-        int index) {
-      return variables_.get(index);
+    public int getVariableAddresses(int index) {
+      return variableAddresses_.get(index);
     }
     
     private void initFields() {
       varSeq_ = 0;
-      operations_ = java.util.Collections.emptyList();
-      variables_ = java.util.Collections.emptyList();
+      operationAddresses_ = java.util.Collections.emptyList();;
+      variableAddresses_ = java.util.Collections.emptyList();;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -1501,22 +2716,6 @@ public final class MryProtobuf {
         memoizedIsInitialized = 0;
         return false;
       }
-      for (int i = 0; i < getOperationsCount(); i++) {
-        if (!getOperations(i).isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-      }
-      for (int i = 0; i < getVariablesCount(); i++) {
-        if (!getVariables(i).isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-      }
-      if (!extensionsAreInitialized()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -1524,19 +2723,15 @@ public final class MryProtobuf {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      com.google.protobuf.GeneratedMessage
-        .ExtendableMessage<com.wajam.mry.api.protobuf.MryProtobuf.PBlock>.ExtensionWriter extensionWriter =
-          newExtensionWriter();
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         output.writeUInt32(1, varSeq_);
       }
-      for (int i = 0; i < operations_.size(); i++) {
-        output.writeMessage(2, operations_.get(i));
+      for (int i = 0; i < operationAddresses_.size(); i++) {
+        output.writeUInt32(2, operationAddresses_.get(i));
       }
-      for (int i = 0; i < variables_.size(); i++) {
-        output.writeMessage(3, variables_.get(i));
+      for (int i = 0; i < variableAddresses_.size(); i++) {
+        output.writeUInt32(3, variableAddresses_.get(i));
       }
-      extensionWriter.writeUntil(201, output);
       getUnknownFields().writeTo(output);
     }
     
@@ -1550,15 +2745,24 @@ public final class MryProtobuf {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(1, varSeq_);
       }
-      for (int i = 0; i < operations_.size(); i++) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, operations_.get(i));
+      {
+        int dataSize = 0;
+        for (int i = 0; i < operationAddresses_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeUInt32SizeNoTag(operationAddresses_.get(i));
+        }
+        size += dataSize;
+        size += 1 * getOperationAddressesList().size();
       }
-      for (int i = 0; i < variables_.size(); i++) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(3, variables_.get(i));
+      {
+        int dataSize = 0;
+        for (int i = 0; i < variableAddresses_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeUInt32SizeNoTag(variableAddresses_.get(i));
+        }
+        size += dataSize;
+        size += 1 * getVariableAddressesList().size();
       }
-      size += extensionsSerializedSize();
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
@@ -1652,8 +2856,8 @@ public final class MryProtobuf {
       return builder;
     }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.ExtendableBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PBlock, Builder> implements com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PBlock_descriptor;
@@ -1675,8 +2879,6 @@ public final class MryProtobuf {
       }
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-          getOperationsFieldBuilder();
-          getVariablesFieldBuilder();
         }
       }
       private static Builder create() {
@@ -1687,18 +2889,10 @@ public final class MryProtobuf {
         super.clear();
         varSeq_ = 0;
         bitField0_ = (bitField0_ & ~0x00000001);
-        if (operationsBuilder_ == null) {
-          operations_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
-        } else {
-          operationsBuilder_.clear();
-        }
-        if (variablesBuilder_ == null) {
-          variables_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000004);
-        } else {
-          variablesBuilder_.clear();
-        }
+        operationAddresses_ = java.util.Collections.emptyList();;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        variableAddresses_ = java.util.Collections.emptyList();;
+        bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
       
@@ -1741,24 +2935,16 @@ public final class MryProtobuf {
           to_bitField0_ |= 0x00000001;
         }
         result.varSeq_ = varSeq_;
-        if (operationsBuilder_ == null) {
-          if (((bitField0_ & 0x00000002) == 0x00000002)) {
-            operations_ = java.util.Collections.unmodifiableList(operations_);
-            bitField0_ = (bitField0_ & ~0x00000002);
-          }
-          result.operations_ = operations_;
-        } else {
-          result.operations_ = operationsBuilder_.build();
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          operationAddresses_ = java.util.Collections.unmodifiableList(operationAddresses_);
+          bitField0_ = (bitField0_ & ~0x00000002);
         }
-        if (variablesBuilder_ == null) {
-          if (((bitField0_ & 0x00000004) == 0x00000004)) {
-            variables_ = java.util.Collections.unmodifiableList(variables_);
-            bitField0_ = (bitField0_ & ~0x00000004);
-          }
-          result.variables_ = variables_;
-        } else {
-          result.variables_ = variablesBuilder_.build();
+        result.operationAddresses_ = operationAddresses_;
+        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+          variableAddresses_ = java.util.Collections.unmodifiableList(variableAddresses_);
+          bitField0_ = (bitField0_ & ~0x00000004);
         }
+        result.variableAddresses_ = variableAddresses_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1778,81 +2964,32 @@ public final class MryProtobuf {
         if (other.hasVarSeq()) {
           setVarSeq(other.getVarSeq());
         }
-        if (operationsBuilder_ == null) {
-          if (!other.operations_.isEmpty()) {
-            if (operations_.isEmpty()) {
-              operations_ = other.operations_;
-              bitField0_ = (bitField0_ & ~0x00000002);
-            } else {
-              ensureOperationsIsMutable();
-              operations_.addAll(other.operations_);
-            }
-            onChanged();
+        if (!other.operationAddresses_.isEmpty()) {
+          if (operationAddresses_.isEmpty()) {
+            operationAddresses_ = other.operationAddresses_;
+            bitField0_ = (bitField0_ & ~0x00000002);
+          } else {
+            ensureOperationAddressesIsMutable();
+            operationAddresses_.addAll(other.operationAddresses_);
           }
-        } else {
-          if (!other.operations_.isEmpty()) {
-            if (operationsBuilder_.isEmpty()) {
-              operationsBuilder_.dispose();
-              operationsBuilder_ = null;
-              operations_ = other.operations_;
-              bitField0_ = (bitField0_ & ~0x00000002);
-              operationsBuilder_ = 
-                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
-                   getOperationsFieldBuilder() : null;
-            } else {
-              operationsBuilder_.addAllMessages(other.operations_);
-            }
-          }
+          onChanged();
         }
-        if (variablesBuilder_ == null) {
-          if (!other.variables_.isEmpty()) {
-            if (variables_.isEmpty()) {
-              variables_ = other.variables_;
-              bitField0_ = (bitField0_ & ~0x00000004);
-            } else {
-              ensureVariablesIsMutable();
-              variables_.addAll(other.variables_);
-            }
-            onChanged();
+        if (!other.variableAddresses_.isEmpty()) {
+          if (variableAddresses_.isEmpty()) {
+            variableAddresses_ = other.variableAddresses_;
+            bitField0_ = (bitField0_ & ~0x00000004);
+          } else {
+            ensureVariableAddressesIsMutable();
+            variableAddresses_.addAll(other.variableAddresses_);
           }
-        } else {
-          if (!other.variables_.isEmpty()) {
-            if (variablesBuilder_.isEmpty()) {
-              variablesBuilder_.dispose();
-              variablesBuilder_ = null;
-              variables_ = other.variables_;
-              bitField0_ = (bitField0_ & ~0x00000004);
-              variablesBuilder_ = 
-                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
-                   getVariablesFieldBuilder() : null;
-            } else {
-              variablesBuilder_.addAllMessages(other.variables_);
-            }
-          }
+          onChanged();
         }
-        this.mergeExtensionFields(other);
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
       
       public final boolean isInitialized() {
         if (!hasVarSeq()) {
-          
-          return false;
-        }
-        for (int i = 0; i < getOperationsCount(); i++) {
-          if (!getOperations(i).isInitialized()) {
-            
-            return false;
-          }
-        }
-        for (int i = 0; i < getVariablesCount(); i++) {
-          if (!getVariables(i).isInitialized()) {
-            
-            return false;
-          }
-        }
-        if (!extensionsAreInitialized()) {
           
           return false;
         }
@@ -1887,16 +3024,32 @@ public final class MryProtobuf {
               varSeq_ = input.readUInt32();
               break;
             }
+            case 16: {
+              ensureOperationAddressesIsMutable();
+              operationAddresses_.add(input.readUInt32());
+              break;
+            }
             case 18: {
-              com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.POperation.newBuilder();
-              input.readMessage(subBuilder, extensionRegistry);
-              addOperations(subBuilder.buildPartial());
+              int length = input.readRawVarint32();
+              int limit = input.pushLimit(length);
+              while (input.getBytesUntilLimit() > 0) {
+                addOperationAddresses(input.readUInt32());
+              }
+              input.popLimit(limit);
+              break;
+            }
+            case 24: {
+              ensureVariableAddressesIsMutable();
+              variableAddresses_.add(input.readUInt32());
               break;
             }
             case 26: {
-              com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PVariable.newBuilder();
-              input.readMessage(subBuilder, extensionRegistry);
-              addVariables(subBuilder.buildPartial());
+              int length = input.readRawVarint32();
+              int limit = input.pushLimit(length);
+              while (input.getBytesUntilLimit() > 0) {
+                addVariableAddresses(input.readUInt32());
+              }
+              input.popLimit(limit);
               break;
             }
           }
@@ -1926,376 +3079,94 @@ public final class MryProtobuf {
         return this;
       }
       
-      // repeated .com.wajam.mry.api.protobuf.POperation operations = 2;
-      private java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.POperation> operations_ =
-        java.util.Collections.emptyList();
-      private void ensureOperationsIsMutable() {
+      // repeated uint32 operationAddresses = 2;
+      private java.util.List<java.lang.Integer> operationAddresses_ = java.util.Collections.emptyList();;
+      private void ensureOperationAddressesIsMutable() {
         if (!((bitField0_ & 0x00000002) == 0x00000002)) {
-          operations_ = new java.util.ArrayList<com.wajam.mry.api.protobuf.MryProtobuf.POperation>(operations_);
+          operationAddresses_ = new java.util.ArrayList<java.lang.Integer>(operationAddresses_);
           bitField0_ |= 0x00000002;
          }
       }
-      
-      private com.google.protobuf.RepeatedFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.POperation, com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder, com.wajam.mry.api.protobuf.MryProtobuf.POperationOrBuilder> operationsBuilder_;
-      
-      public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.POperation> getOperationsList() {
-        if (operationsBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(operations_);
-        } else {
-          return operationsBuilder_.getMessageList();
-        }
+      public java.util.List<java.lang.Integer>
+          getOperationAddressesList() {
+        return java.util.Collections.unmodifiableList(operationAddresses_);
       }
-      public int getOperationsCount() {
-        if (operationsBuilder_ == null) {
-          return operations_.size();
-        } else {
-          return operationsBuilder_.getCount();
-        }
+      public int getOperationAddressesCount() {
+        return operationAddresses_.size();
       }
-      public com.wajam.mry.api.protobuf.MryProtobuf.POperation getOperations(int index) {
-        if (operationsBuilder_ == null) {
-          return operations_.get(index);
-        } else {
-          return operationsBuilder_.getMessage(index);
-        }
+      public int getOperationAddresses(int index) {
+        return operationAddresses_.get(index);
       }
-      public Builder setOperations(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.POperation value) {
-        if (operationsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureOperationsIsMutable();
-          operations_.set(index, value);
-          onChanged();
-        } else {
-          operationsBuilder_.setMessage(index, value);
-        }
+      public Builder setOperationAddresses(
+          int index, int value) {
+        ensureOperationAddressesIsMutable();
+        operationAddresses_.set(index, value);
+        onChanged();
         return this;
       }
-      public Builder setOperations(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder builderForValue) {
-        if (operationsBuilder_ == null) {
-          ensureOperationsIsMutable();
-          operations_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          operationsBuilder_.setMessage(index, builderForValue.build());
-        }
+      public Builder addOperationAddresses(int value) {
+        ensureOperationAddressesIsMutable();
+        operationAddresses_.add(value);
+        onChanged();
         return this;
       }
-      public Builder addOperations(com.wajam.mry.api.protobuf.MryProtobuf.POperation value) {
-        if (operationsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureOperationsIsMutable();
-          operations_.add(value);
-          onChanged();
-        } else {
-          operationsBuilder_.addMessage(value);
-        }
+      public Builder addAllOperationAddresses(
+          java.lang.Iterable<? extends java.lang.Integer> values) {
+        ensureOperationAddressesIsMutable();
+        super.addAll(values, operationAddresses_);
+        onChanged();
         return this;
       }
-      public Builder addOperations(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.POperation value) {
-        if (operationsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureOperationsIsMutable();
-          operations_.add(index, value);
-          onChanged();
-        } else {
-          operationsBuilder_.addMessage(index, value);
-        }
+      public Builder clearOperationAddresses() {
+        operationAddresses_ = java.util.Collections.emptyList();;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        onChanged();
         return this;
-      }
-      public Builder addOperations(
-          com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder builderForValue) {
-        if (operationsBuilder_ == null) {
-          ensureOperationsIsMutable();
-          operations_.add(builderForValue.build());
-          onChanged();
-        } else {
-          operationsBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      public Builder addOperations(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder builderForValue) {
-        if (operationsBuilder_ == null) {
-          ensureOperationsIsMutable();
-          operations_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          operationsBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      public Builder addAllOperations(
-          java.lang.Iterable<? extends com.wajam.mry.api.protobuf.MryProtobuf.POperation> values) {
-        if (operationsBuilder_ == null) {
-          ensureOperationsIsMutable();
-          super.addAll(values, operations_);
-          onChanged();
-        } else {
-          operationsBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      public Builder clearOperations() {
-        if (operationsBuilder_ == null) {
-          operations_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
-          onChanged();
-        } else {
-          operationsBuilder_.clear();
-        }
-        return this;
-      }
-      public Builder removeOperations(int index) {
-        if (operationsBuilder_ == null) {
-          ensureOperationsIsMutable();
-          operations_.remove(index);
-          onChanged();
-        } else {
-          operationsBuilder_.remove(index);
-        }
-        return this;
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder getOperationsBuilder(
-          int index) {
-        return getOperationsFieldBuilder().getBuilder(index);
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.POperationOrBuilder getOperationsOrBuilder(
-          int index) {
-        if (operationsBuilder_ == null) {
-          return operations_.get(index);  } else {
-          return operationsBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      public java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.POperationOrBuilder> 
-           getOperationsOrBuilderList() {
-        if (operationsBuilder_ != null) {
-          return operationsBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(operations_);
-        }
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder addOperationsBuilder() {
-        return getOperationsFieldBuilder().addBuilder(
-            com.wajam.mry.api.protobuf.MryProtobuf.POperation.getDefaultInstance());
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder addOperationsBuilder(
-          int index) {
-        return getOperationsFieldBuilder().addBuilder(
-            index, com.wajam.mry.api.protobuf.MryProtobuf.POperation.getDefaultInstance());
-      }
-      public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder> 
-           getOperationsBuilderList() {
-        return getOperationsFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.POperation, com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder, com.wajam.mry.api.protobuf.MryProtobuf.POperationOrBuilder> 
-          getOperationsFieldBuilder() {
-        if (operationsBuilder_ == null) {
-          operationsBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
-              com.wajam.mry.api.protobuf.MryProtobuf.POperation, com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder, com.wajam.mry.api.protobuf.MryProtobuf.POperationOrBuilder>(
-                  operations_,
-                  ((bitField0_ & 0x00000002) == 0x00000002),
-                  getParentForChildren(),
-                  isClean());
-          operations_ = null;
-        }
-        return operationsBuilder_;
       }
       
-      // repeated .com.wajam.mry.api.protobuf.PVariable variables = 3;
-      private java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PVariable> variables_ =
-        java.util.Collections.emptyList();
-      private void ensureVariablesIsMutable() {
+      // repeated uint32 variableAddresses = 3;
+      private java.util.List<java.lang.Integer> variableAddresses_ = java.util.Collections.emptyList();;
+      private void ensureVariableAddressesIsMutable() {
         if (!((bitField0_ & 0x00000004) == 0x00000004)) {
-          variables_ = new java.util.ArrayList<com.wajam.mry.api.protobuf.MryProtobuf.PVariable>(variables_);
+          variableAddresses_ = new java.util.ArrayList<java.lang.Integer>(variableAddresses_);
           bitField0_ |= 0x00000004;
          }
       }
-      
-      private com.google.protobuf.RepeatedFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PVariable, com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder> variablesBuilder_;
-      
-      public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PVariable> getVariablesList() {
-        if (variablesBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(variables_);
-        } else {
-          return variablesBuilder_.getMessageList();
-        }
+      public java.util.List<java.lang.Integer>
+          getVariableAddressesList() {
+        return java.util.Collections.unmodifiableList(variableAddresses_);
       }
-      public int getVariablesCount() {
-        if (variablesBuilder_ == null) {
-          return variables_.size();
-        } else {
-          return variablesBuilder_.getCount();
-        }
+      public int getVariableAddressesCount() {
+        return variableAddresses_.size();
       }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PVariable getVariables(int index) {
-        if (variablesBuilder_ == null) {
-          return variables_.get(index);
-        } else {
-          return variablesBuilder_.getMessage(index);
-        }
+      public int getVariableAddresses(int index) {
+        return variableAddresses_.get(index);
       }
-      public Builder setVariables(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PVariable value) {
-        if (variablesBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVariablesIsMutable();
-          variables_.set(index, value);
-          onChanged();
-        } else {
-          variablesBuilder_.setMessage(index, value);
-        }
+      public Builder setVariableAddresses(
+          int index, int value) {
+        ensureVariableAddressesIsMutable();
+        variableAddresses_.set(index, value);
+        onChanged();
         return this;
       }
-      public Builder setVariables(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder builderForValue) {
-        if (variablesBuilder_ == null) {
-          ensureVariablesIsMutable();
-          variables_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          variablesBuilder_.setMessage(index, builderForValue.build());
-        }
+      public Builder addVariableAddresses(int value) {
+        ensureVariableAddressesIsMutable();
+        variableAddresses_.add(value);
+        onChanged();
         return this;
       }
-      public Builder addVariables(com.wajam.mry.api.protobuf.MryProtobuf.PVariable value) {
-        if (variablesBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVariablesIsMutable();
-          variables_.add(value);
-          onChanged();
-        } else {
-          variablesBuilder_.addMessage(value);
-        }
+      public Builder addAllVariableAddresses(
+          java.lang.Iterable<? extends java.lang.Integer> values) {
+        ensureVariableAddressesIsMutable();
+        super.addAll(values, variableAddresses_);
+        onChanged();
         return this;
       }
-      public Builder addVariables(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PVariable value) {
-        if (variablesBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVariablesIsMutable();
-          variables_.add(index, value);
-          onChanged();
-        } else {
-          variablesBuilder_.addMessage(index, value);
-        }
+      public Builder clearVariableAddresses() {
+        variableAddresses_ = java.util.Collections.emptyList();;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        onChanged();
         return this;
-      }
-      public Builder addVariables(
-          com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder builderForValue) {
-        if (variablesBuilder_ == null) {
-          ensureVariablesIsMutable();
-          variables_.add(builderForValue.build());
-          onChanged();
-        } else {
-          variablesBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      public Builder addVariables(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder builderForValue) {
-        if (variablesBuilder_ == null) {
-          ensureVariablesIsMutable();
-          variables_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          variablesBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      public Builder addAllVariables(
-          java.lang.Iterable<? extends com.wajam.mry.api.protobuf.MryProtobuf.PVariable> values) {
-        if (variablesBuilder_ == null) {
-          ensureVariablesIsMutable();
-          super.addAll(values, variables_);
-          onChanged();
-        } else {
-          variablesBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      public Builder clearVariables() {
-        if (variablesBuilder_ == null) {
-          variables_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000004);
-          onChanged();
-        } else {
-          variablesBuilder_.clear();
-        }
-        return this;
-      }
-      public Builder removeVariables(int index) {
-        if (variablesBuilder_ == null) {
-          ensureVariablesIsMutable();
-          variables_.remove(index);
-          onChanged();
-        } else {
-          variablesBuilder_.remove(index);
-        }
-        return this;
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder getVariablesBuilder(
-          int index) {
-        return getVariablesFieldBuilder().getBuilder(index);
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder getVariablesOrBuilder(
-          int index) {
-        if (variablesBuilder_ == null) {
-          return variables_.get(index);  } else {
-          return variablesBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      public java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder> 
-           getVariablesOrBuilderList() {
-        if (variablesBuilder_ != null) {
-          return variablesBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(variables_);
-        }
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder addVariablesBuilder() {
-        return getVariablesFieldBuilder().addBuilder(
-            com.wajam.mry.api.protobuf.MryProtobuf.PVariable.getDefaultInstance());
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder addVariablesBuilder(
-          int index) {
-        return getVariablesFieldBuilder().addBuilder(
-            index, com.wajam.mry.api.protobuf.MryProtobuf.PVariable.getDefaultInstance());
-      }
-      public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder> 
-           getVariablesBuilderList() {
-        return getVariablesFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PVariable, com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder> 
-          getVariablesFieldBuilder() {
-        if (variablesBuilder_ == null) {
-          variablesBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
-              com.wajam.mry.api.protobuf.MryProtobuf.PVariable, com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder>(
-                  variables_,
-                  ((bitField0_ & 0x00000004) == 0x00000004),
-                  getParentForChildren(),
-                  isClean());
-          variables_ = null;
-        }
-        return variablesBuilder_;
       }
       
       // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PBlock)
@@ -2316,10 +3187,9 @@ public final class MryProtobuf {
     boolean hasId();
     int getId();
     
-    // optional .com.wajam.mry.api.protobuf.PTransactionValue value = 2;
-    boolean hasValue();
-    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue getValue();
-    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder getValueOrBuilder();
+    // optional uint32 valueAddress = 2;
+    boolean hasValueAddress();
+    int getValueAddress();
   }
   public static final class PVariable extends
       com.google.protobuf.GeneratedMessage
@@ -2360,22 +3230,19 @@ public final class MryProtobuf {
       return id_;
     }
     
-    // optional .com.wajam.mry.api.protobuf.PTransactionValue value = 2;
-    public static final int VALUE_FIELD_NUMBER = 2;
-    private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value_;
-    public boolean hasValue() {
+    // optional uint32 valueAddress = 2;
+    public static final int VALUEADDRESS_FIELD_NUMBER = 2;
+    private int valueAddress_;
+    public boolean hasValueAddress() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue getValue() {
-      return value_;
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder getValueOrBuilder() {
-      return value_;
+    public int getValueAddress() {
+      return valueAddress_;
     }
     
     private void initFields() {
       id_ = 0;
-      value_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
+      valueAddress_ = 0;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -2385,12 +3252,6 @@ public final class MryProtobuf {
       if (!hasId()) {
         memoizedIsInitialized = 0;
         return false;
-      }
-      if (hasValue()) {
-        if (!getValue().isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
       }
       memoizedIsInitialized = 1;
       return true;
@@ -2403,7 +3264,7 @@ public final class MryProtobuf {
         output.writeUInt32(1, id_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeMessage(2, value_);
+        output.writeUInt32(2, valueAddress_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -2420,7 +3281,7 @@ public final class MryProtobuf {
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, value_);
+          .computeUInt32Size(2, valueAddress_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -2538,7 +3399,6 @@ public final class MryProtobuf {
       }
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-          getValueFieldBuilder();
         }
       }
       private static Builder create() {
@@ -2549,11 +3409,7 @@ public final class MryProtobuf {
         super.clear();
         id_ = 0;
         bitField0_ = (bitField0_ & ~0x00000001);
-        if (valueBuilder_ == null) {
-          value_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
-        } else {
-          valueBuilder_.clear();
-        }
+        valueAddress_ = 0;
         bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
@@ -2600,11 +3456,7 @@ public final class MryProtobuf {
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
-        if (valueBuilder_ == null) {
-          result.value_ = value_;
-        } else {
-          result.value_ = valueBuilder_.build();
-        }
+        result.valueAddress_ = valueAddress_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -2624,8 +3476,8 @@ public final class MryProtobuf {
         if (other.hasId()) {
           setId(other.getId());
         }
-        if (other.hasValue()) {
-          mergeValue(other.getValue());
+        if (other.hasValueAddress()) {
+          setValueAddress(other.getValueAddress());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -2635,12 +3487,6 @@ public final class MryProtobuf {
         if (!hasId()) {
           
           return false;
-        }
-        if (hasValue()) {
-          if (!getValue().isInitialized()) {
-            
-            return false;
-          }
         }
         return true;
       }
@@ -2673,13 +3519,9 @@ public final class MryProtobuf {
               id_ = input.readUInt32();
               break;
             }
-            case 18: {
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.newBuilder();
-              if (hasValue()) {
-                subBuilder.mergeFrom(getValue());
-              }
-              input.readMessage(subBuilder, extensionRegistry);
-              setValue(subBuilder.buildPartial());
+            case 16: {
+              bitField0_ |= 0x00000002;
+              valueAddress_ = input.readUInt32();
               break;
             }
           }
@@ -2709,94 +3551,25 @@ public final class MryProtobuf {
         return this;
       }
       
-      // optional .com.wajam.mry.api.protobuf.PTransactionValue value = 2;
-      private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
-      private com.google.protobuf.SingleFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder> valueBuilder_;
-      public boolean hasValue() {
+      // optional uint32 valueAddress = 2;
+      private int valueAddress_ ;
+      public boolean hasValueAddress() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue getValue() {
-        if (valueBuilder_ == null) {
-          return value_;
-        } else {
-          return valueBuilder_.getMessage();
-        }
+      public int getValueAddress() {
+        return valueAddress_;
       }
-      public Builder setValue(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value) {
-        if (valueBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          value_ = value;
-          onChanged();
-        } else {
-          valueBuilder_.setMessage(value);
-        }
+      public Builder setValueAddress(int value) {
         bitField0_ |= 0x00000002;
-        return this;
-      }
-      public Builder setValue(
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder builderForValue) {
-        if (valueBuilder_ == null) {
-          value_ = builderForValue.build();
-          onChanged();
-        } else {
-          valueBuilder_.setMessage(builderForValue.build());
-        }
-        bitField0_ |= 0x00000002;
-        return this;
-      }
-      public Builder mergeValue(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value) {
-        if (valueBuilder_ == null) {
-          if (((bitField0_ & 0x00000002) == 0x00000002) &&
-              value_ != com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance()) {
-            value_ =
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.newBuilder(value_).mergeFrom(value).buildPartial();
-          } else {
-            value_ = value;
-          }
-          onChanged();
-        } else {
-          valueBuilder_.mergeFrom(value);
-        }
-        bitField0_ |= 0x00000002;
-        return this;
-      }
-      public Builder clearValue() {
-        if (valueBuilder_ == null) {
-          value_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
-          onChanged();
-        } else {
-          valueBuilder_.clear();
-        }
-        bitField0_ = (bitField0_ & ~0x00000002);
-        return this;
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder getValueBuilder() {
-        bitField0_ |= 0x00000002;
+        valueAddress_ = value;
         onChanged();
-        return getValueFieldBuilder().getBuilder();
+        return this;
       }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder getValueOrBuilder() {
-        if (valueBuilder_ != null) {
-          return valueBuilder_.getMessageOrBuilder();
-        } else {
-          return value_;
-        }
-      }
-      private com.google.protobuf.SingleFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder> 
-          getValueFieldBuilder() {
-        if (valueBuilder_ == null) {
-          valueBuilder_ = new com.google.protobuf.SingleFieldBuilder<
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder>(
-                  value_,
-                  getParentForChildren(),
-                  isClean());
-          value_ = null;
-        }
-        return valueBuilder_;
+      public Builder clearValueAddress() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        valueAddress_ = 0;
+        onChanged();
+        return this;
       }
       
       // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PVariable)
@@ -2808,2217 +3581,21 @@ public final class MryProtobuf {
     }
     
     // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PVariable)
-    public static final int VARIABLE_FIELD_NUMBER = 100;
-    public static final
-      com.google.protobuf.GeneratedMessage.GeneratedExtension<
-        com.wajam.mry.api.protobuf.MryProtobuf.PObject,
-        com.wajam.mry.api.protobuf.MryProtobuf.PVariable> variable = com.google.protobuf.GeneratedMessage
-            .newMessageScopedGeneratedExtension(
-          com.wajam.mry.api.protobuf.MryProtobuf.PVariable.getDefaultInstance(),
-          0,
-          com.wajam.mry.api.protobuf.MryProtobuf.PVariable.class,
-          com.wajam.mry.api.protobuf.MryProtobuf.PVariable.getDefaultInstance());
-  }
-  
-  public interface PTransactionValueOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
-    
-    // optional .com.wajam.mry.api.protobuf.PTransactionValue.Type type = 1;
-    boolean hasType();
-    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type getType();
-    
-    // optional int64 int_value = 2;
-    boolean hasIntValue();
-    long getIntValue();
-    
-    // optional bool bool_value = 3;
-    boolean hasBoolValue();
-    boolean getBoolValue();
-    
-    // optional double double_value = 4;
-    boolean hasDoubleValue();
-    double getDoubleValue();
-    
-    // optional string string_value = 5;
-    boolean hasStringValue();
-    String getStringValue();
-    
-    // optional bytes bytes_value = 6;
-    boolean hasBytesValue();
-    com.google.protobuf.ByteString getBytesValue();
-    
-    // optional .com.wajam.mry.api.protobuf.PTransactionCollection array = 7;
-    boolean hasArray();
-    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection getArray();
-    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder getArrayOrBuilder();
-    
-    // optional .com.wajam.mry.api.protobuf.PTransactionCollection map = 8;
-    boolean hasMap();
-    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection getMap();
-    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder getMapOrBuilder();
-  }
-  public static final class PTransactionValue extends
-      com.google.protobuf.GeneratedMessage
-      implements PTransactionValueOrBuilder {
-    // Use PTransactionValue.newBuilder() to construct.
-    private PTransactionValue(Builder builder) {
-      super(builder);
-    }
-    private PTransactionValue(boolean noInit) {}
-    
-    private static final PTransactionValue defaultInstance;
-    public static PTransactionValue getDefaultInstance() {
-      return defaultInstance;
-    }
-    
-    public PTransactionValue getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-    
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionValue_descriptor;
-    }
-    
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionValue_fieldAccessorTable;
-    }
-    
-    public enum Type
-        implements com.google.protobuf.ProtocolMessageEnum {
-      NULL(0, 1),
-      INT(1, 2),
-      BOOL(2, 3),
-      DOUBLE(3, 4),
-      STRING(4, 5),
-      BYTES(5, 6),
-      ARRAY(6, 7),
-      MAP(7, 8),
-      ;
-      
-      public static final int NULL_VALUE = 1;
-      public static final int INT_VALUE = 2;
-      public static final int BOOL_VALUE = 3;
-      public static final int DOUBLE_VALUE = 4;
-      public static final int STRING_VALUE = 5;
-      public static final int BYTES_VALUE = 6;
-      public static final int ARRAY_VALUE = 7;
-      public static final int MAP_VALUE = 8;
-      
-      
-      public final int getNumber() { return value; }
-      
-      public static Type valueOf(int value) {
-        switch (value) {
-          case 1: return NULL;
-          case 2: return INT;
-          case 3: return BOOL;
-          case 4: return DOUBLE;
-          case 5: return STRING;
-          case 6: return BYTES;
-          case 7: return ARRAY;
-          case 8: return MAP;
-          default: return null;
-        }
-      }
-      
-      public static com.google.protobuf.Internal.EnumLiteMap<Type>
-          internalGetValueMap() {
-        return internalValueMap;
-      }
-      private static com.google.protobuf.Internal.EnumLiteMap<Type>
-          internalValueMap =
-            new com.google.protobuf.Internal.EnumLiteMap<Type>() {
-              public Type findValueByNumber(int number) {
-                return Type.valueOf(number);
-              }
-            };
-      
-      public final com.google.protobuf.Descriptors.EnumValueDescriptor
-          getValueDescriptor() {
-        return getDescriptor().getValues().get(index);
-      }
-      public final com.google.protobuf.Descriptors.EnumDescriptor
-          getDescriptorForType() {
-        return getDescriptor();
-      }
-      public static final com.google.protobuf.Descriptors.EnumDescriptor
-          getDescriptor() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDescriptor().getEnumTypes().get(0);
-      }
-      
-      private static final Type[] VALUES = {
-        NULL, INT, BOOL, DOUBLE, STRING, BYTES, ARRAY, MAP, 
-      };
-      
-      public static Type valueOf(
-          com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
-        if (desc.getType() != getDescriptor()) {
-          throw new java.lang.IllegalArgumentException(
-            "EnumValueDescriptor is not for this type.");
-        }
-        return VALUES[desc.getIndex()];
-      }
-      
-      private final int index;
-      private final int value;
-      
-      private Type(int index, int value) {
-        this.index = index;
-        this.value = value;
-      }
-      
-      // @@protoc_insertion_point(enum_scope:com.wajam.mry.api.protobuf.PTransactionValue.Type)
-    }
-    
-    private int bitField0_;
-    // optional .com.wajam.mry.api.protobuf.PTransactionValue.Type type = 1;
-    public static final int TYPE_FIELD_NUMBER = 1;
-    private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type type_;
-    public boolean hasType() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type getType() {
-      return type_;
-    }
-    
-    // optional int64 int_value = 2;
-    public static final int INT_VALUE_FIELD_NUMBER = 2;
-    private long intValue_;
-    public boolean hasIntValue() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
-    }
-    public long getIntValue() {
-      return intValue_;
-    }
-    
-    // optional bool bool_value = 3;
-    public static final int BOOL_VALUE_FIELD_NUMBER = 3;
-    private boolean boolValue_;
-    public boolean hasBoolValue() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
-    }
-    public boolean getBoolValue() {
-      return boolValue_;
-    }
-    
-    // optional double double_value = 4;
-    public static final int DOUBLE_VALUE_FIELD_NUMBER = 4;
-    private double doubleValue_;
-    public boolean hasDoubleValue() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
-    }
-    public double getDoubleValue() {
-      return doubleValue_;
-    }
-    
-    // optional string string_value = 5;
-    public static final int STRING_VALUE_FIELD_NUMBER = 5;
-    private java.lang.Object stringValue_;
-    public boolean hasStringValue() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
-    }
-    public String getStringValue() {
-      java.lang.Object ref = stringValue_;
-      if (ref instanceof String) {
-        return (String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        String s = bs.toStringUtf8();
-        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
-          stringValue_ = s;
-        }
-        return s;
-      }
-    }
-    private com.google.protobuf.ByteString getStringValueBytes() {
-      java.lang.Object ref = stringValue_;
-      if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
-        stringValue_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-    
-    // optional bytes bytes_value = 6;
-    public static final int BYTES_VALUE_FIELD_NUMBER = 6;
-    private com.google.protobuf.ByteString bytesValue_;
-    public boolean hasBytesValue() {
-      return ((bitField0_ & 0x00000020) == 0x00000020);
-    }
-    public com.google.protobuf.ByteString getBytesValue() {
-      return bytesValue_;
-    }
-    
-    // optional .com.wajam.mry.api.protobuf.PTransactionCollection array = 7;
-    public static final int ARRAY_FIELD_NUMBER = 7;
-    private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection array_;
-    public boolean hasArray() {
-      return ((bitField0_ & 0x00000040) == 0x00000040);
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection getArray() {
-      return array_;
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder getArrayOrBuilder() {
-      return array_;
-    }
-    
-    // optional .com.wajam.mry.api.protobuf.PTransactionCollection map = 8;
-    public static final int MAP_FIELD_NUMBER = 8;
-    private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection map_;
-    public boolean hasMap() {
-      return ((bitField0_ & 0x00000080) == 0x00000080);
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection getMap() {
-      return map_;
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder getMapOrBuilder() {
-      return map_;
-    }
-    
-    private void initFields() {
-      type_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type.NULL;
-      intValue_ = 0L;
-      boolValue_ = false;
-      doubleValue_ = 0D;
-      stringValue_ = "";
-      bytesValue_ = com.google.protobuf.ByteString.EMPTY;
-      array_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
-      map_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
-    }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-      
-      if (hasArray()) {
-        if (!getArray().isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-      }
-      if (hasMap()) {
-        if (!getMap().isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-      }
-      memoizedIsInitialized = 1;
-      return true;
-    }
-    
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeEnum(1, type_.getNumber());
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeInt64(2, intValue_);
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        output.writeBool(3, boolValue_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        output.writeDouble(4, doubleValue_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        output.writeBytes(5, getStringValueBytes());
-      }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
-        output.writeBytes(6, bytesValue_);
-      }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
-        output.writeMessage(7, array_);
-      }
-      if (((bitField0_ & 0x00000080) == 0x00000080)) {
-        output.writeMessage(8, map_);
-      }
-      getUnknownFields().writeTo(output);
-    }
-    
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-    
-      size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeEnumSize(1, type_.getNumber());
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeInt64Size(2, intValue_);
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(3, boolValue_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeDoubleSize(4, doubleValue_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(5, getStringValueBytes());
-      }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(6, bytesValue_);
-      }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(7, array_);
-      }
-      if (((bitField0_ & 0x00000080) == 0x00000080)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(8, map_);
-      }
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-    
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
-    }
-    
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-    
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionValue_descriptor;
-      }
-      
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionValue_fieldAccessorTable;
-      }
-      
-      // Construct using com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-      
-      private Builder(BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-          getArrayFieldBuilder();
-          getMapFieldBuilder();
-        }
-      }
-      private static Builder create() {
-        return new Builder();
-      }
-      
-      public Builder clear() {
-        super.clear();
-        type_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type.NULL;
-        bitField0_ = (bitField0_ & ~0x00000001);
-        intValue_ = 0L;
-        bitField0_ = (bitField0_ & ~0x00000002);
-        boolValue_ = false;
-        bitField0_ = (bitField0_ & ~0x00000004);
-        doubleValue_ = 0D;
-        bitField0_ = (bitField0_ & ~0x00000008);
-        stringValue_ = "";
-        bitField0_ = (bitField0_ & ~0x00000010);
-        bytesValue_ = com.google.protobuf.ByteString.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000020);
-        if (arrayBuilder_ == null) {
-          array_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
-        } else {
-          arrayBuilder_.clear();
-        }
-        bitField0_ = (bitField0_ & ~0x00000040);
-        if (mapBuilder_ == null) {
-          map_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
-        } else {
-          mapBuilder_.clear();
-        }
-        bitField0_ = (bitField0_ & ~0x00000080);
-        return this;
-      }
-      
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
-      
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDescriptor();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue getDefaultInstanceForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue build() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-      
-      private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return result;
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue buildPartial() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue result = new com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue(this);
-        int from_bitField0_ = bitField0_;
-        int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
-          to_bitField0_ |= 0x00000001;
-        }
-        result.type_ = type_;
-        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
-          to_bitField0_ |= 0x00000002;
-        }
-        result.intValue_ = intValue_;
-        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
-          to_bitField0_ |= 0x00000004;
-        }
-        result.boolValue_ = boolValue_;
-        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
-          to_bitField0_ |= 0x00000008;
-        }
-        result.doubleValue_ = doubleValue_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
-          to_bitField0_ |= 0x00000010;
-        }
-        result.stringValue_ = stringValue_;
-        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
-          to_bitField0_ |= 0x00000020;
-        }
-        result.bytesValue_ = bytesValue_;
-        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
-          to_bitField0_ |= 0x00000040;
-        }
-        if (arrayBuilder_ == null) {
-          result.array_ = array_;
-        } else {
-          result.array_ = arrayBuilder_.build();
-        }
-        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
-          to_bitField0_ |= 0x00000080;
-        }
-        if (mapBuilder_ == null) {
-          result.map_ = map_;
-        } else {
-          result.map_ = mapBuilder_.build();
-        }
-        result.bitField0_ = to_bitField0_;
-        onBuilt();
-        return result;
-      }
-      
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue) {
-          return mergeFrom((com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-      
-      public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue other) {
-        if (other == com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance()) return this;
-        if (other.hasType()) {
-          setType(other.getType());
-        }
-        if (other.hasIntValue()) {
-          setIntValue(other.getIntValue());
-        }
-        if (other.hasBoolValue()) {
-          setBoolValue(other.getBoolValue());
-        }
-        if (other.hasDoubleValue()) {
-          setDoubleValue(other.getDoubleValue());
-        }
-        if (other.hasStringValue()) {
-          setStringValue(other.getStringValue());
-        }
-        if (other.hasBytesValue()) {
-          setBytesValue(other.getBytesValue());
-        }
-        if (other.hasArray()) {
-          mergeArray(other.getArray());
-        }
-        if (other.hasMap()) {
-          mergeMap(other.getMap());
-        }
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
-      
-      public final boolean isInitialized() {
-        if (hasArray()) {
-          if (!getArray().isInitialized()) {
-            
-            return false;
-          }
-        }
-        if (hasMap()) {
-          if (!getMap().isInitialized()) {
-            
-            return false;
-          }
-        }
-        return true;
-      }
-      
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              onChanged();
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                onChanged();
-                return this;
-              }
-              break;
-            }
-            case 8: {
-              int rawValue = input.readEnum();
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type value = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type.valueOf(rawValue);
-              if (value == null) {
-                unknownFields.mergeVarintField(1, rawValue);
-              } else {
-                bitField0_ |= 0x00000001;
-                type_ = value;
-              }
-              break;
-            }
-            case 16: {
-              bitField0_ |= 0x00000002;
-              intValue_ = input.readInt64();
-              break;
-            }
-            case 24: {
-              bitField0_ |= 0x00000004;
-              boolValue_ = input.readBool();
-              break;
-            }
-            case 33: {
-              bitField0_ |= 0x00000008;
-              doubleValue_ = input.readDouble();
-              break;
-            }
-            case 42: {
-              bitField0_ |= 0x00000010;
-              stringValue_ = input.readBytes();
-              break;
-            }
-            case 50: {
-              bitField0_ |= 0x00000020;
-              bytesValue_ = input.readBytes();
-              break;
-            }
-            case 58: {
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.newBuilder();
-              if (hasArray()) {
-                subBuilder.mergeFrom(getArray());
-              }
-              input.readMessage(subBuilder, extensionRegistry);
-              setArray(subBuilder.buildPartial());
-              break;
-            }
-            case 66: {
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.newBuilder();
-              if (hasMap()) {
-                subBuilder.mergeFrom(getMap());
-              }
-              input.readMessage(subBuilder, extensionRegistry);
-              setMap(subBuilder.buildPartial());
-              break;
-            }
-          }
-        }
-      }
-      
-      private int bitField0_;
-      
-      // optional .com.wajam.mry.api.protobuf.PTransactionValue.Type type = 1;
-      private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type type_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type.NULL;
-      public boolean hasType() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type getType() {
-        return type_;
-      }
-      public Builder setType(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type value) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        bitField0_ |= 0x00000001;
-        type_ = value;
-        onChanged();
-        return this;
-      }
-      public Builder clearType() {
-        bitField0_ = (bitField0_ & ~0x00000001);
-        type_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type.NULL;
-        onChanged();
-        return this;
-      }
-      
-      // optional int64 int_value = 2;
-      private long intValue_ ;
-      public boolean hasIntValue() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
-      }
-      public long getIntValue() {
-        return intValue_;
-      }
-      public Builder setIntValue(long value) {
-        bitField0_ |= 0x00000002;
-        intValue_ = value;
-        onChanged();
-        return this;
-      }
-      public Builder clearIntValue() {
-        bitField0_ = (bitField0_ & ~0x00000002);
-        intValue_ = 0L;
-        onChanged();
-        return this;
-      }
-      
-      // optional bool bool_value = 3;
-      private boolean boolValue_ ;
-      public boolean hasBoolValue() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
-      }
-      public boolean getBoolValue() {
-        return boolValue_;
-      }
-      public Builder setBoolValue(boolean value) {
-        bitField0_ |= 0x00000004;
-        boolValue_ = value;
-        onChanged();
-        return this;
-      }
-      public Builder clearBoolValue() {
-        bitField0_ = (bitField0_ & ~0x00000004);
-        boolValue_ = false;
-        onChanged();
-        return this;
-      }
-      
-      // optional double double_value = 4;
-      private double doubleValue_ ;
-      public boolean hasDoubleValue() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
-      }
-      public double getDoubleValue() {
-        return doubleValue_;
-      }
-      public Builder setDoubleValue(double value) {
-        bitField0_ |= 0x00000008;
-        doubleValue_ = value;
-        onChanged();
-        return this;
-      }
-      public Builder clearDoubleValue() {
-        bitField0_ = (bitField0_ & ~0x00000008);
-        doubleValue_ = 0D;
-        onChanged();
-        return this;
-      }
-      
-      // optional string string_value = 5;
-      private java.lang.Object stringValue_ = "";
-      public boolean hasStringValue() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
-      }
-      public String getStringValue() {
-        java.lang.Object ref = stringValue_;
-        if (!(ref instanceof String)) {
-          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-          stringValue_ = s;
-          return s;
-        } else {
-          return (String) ref;
-        }
-      }
-      public Builder setStringValue(String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000010;
-        stringValue_ = value;
-        onChanged();
-        return this;
-      }
-      public Builder clearStringValue() {
-        bitField0_ = (bitField0_ & ~0x00000010);
-        stringValue_ = getDefaultInstance().getStringValue();
-        onChanged();
-        return this;
-      }
-      void setStringValue(com.google.protobuf.ByteString value) {
-        bitField0_ |= 0x00000010;
-        stringValue_ = value;
-        onChanged();
-      }
-      
-      // optional bytes bytes_value = 6;
-      private com.google.protobuf.ByteString bytesValue_ = com.google.protobuf.ByteString.EMPTY;
-      public boolean hasBytesValue() {
-        return ((bitField0_ & 0x00000020) == 0x00000020);
-      }
-      public com.google.protobuf.ByteString getBytesValue() {
-        return bytesValue_;
-      }
-      public Builder setBytesValue(com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000020;
-        bytesValue_ = value;
-        onChanged();
-        return this;
-      }
-      public Builder clearBytesValue() {
-        bitField0_ = (bitField0_ & ~0x00000020);
-        bytesValue_ = getDefaultInstance().getBytesValue();
-        onChanged();
-        return this;
-      }
-      
-      // optional .com.wajam.mry.api.protobuf.PTransactionCollection array = 7;
-      private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection array_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
-      private com.google.protobuf.SingleFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder> arrayBuilder_;
-      public boolean hasArray() {
-        return ((bitField0_ & 0x00000040) == 0x00000040);
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection getArray() {
-        if (arrayBuilder_ == null) {
-          return array_;
-        } else {
-          return arrayBuilder_.getMessage();
-        }
-      }
-      public Builder setArray(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection value) {
-        if (arrayBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          array_ = value;
-          onChanged();
-        } else {
-          arrayBuilder_.setMessage(value);
-        }
-        bitField0_ |= 0x00000040;
-        return this;
-      }
-      public Builder setArray(
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder builderForValue) {
-        if (arrayBuilder_ == null) {
-          array_ = builderForValue.build();
-          onChanged();
-        } else {
-          arrayBuilder_.setMessage(builderForValue.build());
-        }
-        bitField0_ |= 0x00000040;
-        return this;
-      }
-      public Builder mergeArray(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection value) {
-        if (arrayBuilder_ == null) {
-          if (((bitField0_ & 0x00000040) == 0x00000040) &&
-              array_ != com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance()) {
-            array_ =
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.newBuilder(array_).mergeFrom(value).buildPartial();
-          } else {
-            array_ = value;
-          }
-          onChanged();
-        } else {
-          arrayBuilder_.mergeFrom(value);
-        }
-        bitField0_ |= 0x00000040;
-        return this;
-      }
-      public Builder clearArray() {
-        if (arrayBuilder_ == null) {
-          array_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
-          onChanged();
-        } else {
-          arrayBuilder_.clear();
-        }
-        bitField0_ = (bitField0_ & ~0x00000040);
-        return this;
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder getArrayBuilder() {
-        bitField0_ |= 0x00000040;
-        onChanged();
-        return getArrayFieldBuilder().getBuilder();
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder getArrayOrBuilder() {
-        if (arrayBuilder_ != null) {
-          return arrayBuilder_.getMessageOrBuilder();
-        } else {
-          return array_;
-        }
-      }
-      private com.google.protobuf.SingleFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder> 
-          getArrayFieldBuilder() {
-        if (arrayBuilder_ == null) {
-          arrayBuilder_ = new com.google.protobuf.SingleFieldBuilder<
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder>(
-                  array_,
-                  getParentForChildren(),
-                  isClean());
-          array_ = null;
-        }
-        return arrayBuilder_;
-      }
-      
-      // optional .com.wajam.mry.api.protobuf.PTransactionCollection map = 8;
-      private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection map_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
-      private com.google.protobuf.SingleFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder> mapBuilder_;
-      public boolean hasMap() {
-        return ((bitField0_ & 0x00000080) == 0x00000080);
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection getMap() {
-        if (mapBuilder_ == null) {
-          return map_;
-        } else {
-          return mapBuilder_.getMessage();
-        }
-      }
-      public Builder setMap(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection value) {
-        if (mapBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          map_ = value;
-          onChanged();
-        } else {
-          mapBuilder_.setMessage(value);
-        }
-        bitField0_ |= 0x00000080;
-        return this;
-      }
-      public Builder setMap(
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder builderForValue) {
-        if (mapBuilder_ == null) {
-          map_ = builderForValue.build();
-          onChanged();
-        } else {
-          mapBuilder_.setMessage(builderForValue.build());
-        }
-        bitField0_ |= 0x00000080;
-        return this;
-      }
-      public Builder mergeMap(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection value) {
-        if (mapBuilder_ == null) {
-          if (((bitField0_ & 0x00000080) == 0x00000080) &&
-              map_ != com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance()) {
-            map_ =
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.newBuilder(map_).mergeFrom(value).buildPartial();
-          } else {
-            map_ = value;
-          }
-          onChanged();
-        } else {
-          mapBuilder_.mergeFrom(value);
-        }
-        bitField0_ |= 0x00000080;
-        return this;
-      }
-      public Builder clearMap() {
-        if (mapBuilder_ == null) {
-          map_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
-          onChanged();
-        } else {
-          mapBuilder_.clear();
-        }
-        bitField0_ = (bitField0_ & ~0x00000080);
-        return this;
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder getMapBuilder() {
-        bitField0_ |= 0x00000080;
-        onChanged();
-        return getMapFieldBuilder().getBuilder();
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder getMapOrBuilder() {
-        if (mapBuilder_ != null) {
-          return mapBuilder_.getMessageOrBuilder();
-        } else {
-          return map_;
-        }
-      }
-      private com.google.protobuf.SingleFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder> 
-          getMapFieldBuilder() {
-        if (mapBuilder_ == null) {
-          mapBuilder_ = new com.google.protobuf.SingleFieldBuilder<
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder>(
-                  map_,
-                  getParentForChildren(),
-                  isClean());
-          map_ = null;
-        }
-        return mapBuilder_;
-      }
-      
-      // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PTransactionValue)
-    }
-    
-    static {
-      defaultInstance = new PTransactionValue(true);
-      defaultInstance.initFields();
-    }
-    
-    // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PTransactionValue)
-    public static final int VALUE_FIELD_NUMBER = 101;
-    public static final
-      com.google.protobuf.GeneratedMessage.GeneratedExtension<
-        com.wajam.mry.api.protobuf.MryProtobuf.PObject,
-        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue> value = com.google.protobuf.GeneratedMessage
-            .newMessageScopedGeneratedExtension(
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance(),
-          0,
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.class,
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance());
-  }
-  
-  public interface PTransactionCollectionOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
-    
-    // repeated .com.wajam.mry.api.protobuf.PTransactionCollectionValue values = 1;
-    java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue> 
-        getValuesList();
-    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue getValues(int index);
-    int getValuesCount();
-    java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder> 
-        getValuesOrBuilderList();
-    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder getValuesOrBuilder(
-        int index);
-  }
-  public static final class PTransactionCollection extends
-      com.google.protobuf.GeneratedMessage
-      implements PTransactionCollectionOrBuilder {
-    // Use PTransactionCollection.newBuilder() to construct.
-    private PTransactionCollection(Builder builder) {
-      super(builder);
-    }
-    private PTransactionCollection(boolean noInit) {}
-    
-    private static final PTransactionCollection defaultInstance;
-    public static PTransactionCollection getDefaultInstance() {
-      return defaultInstance;
-    }
-    
-    public PTransactionCollection getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-    
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_descriptor;
-    }
-    
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_fieldAccessorTable;
-    }
-    
-    // repeated .com.wajam.mry.api.protobuf.PTransactionCollectionValue values = 1;
-    public static final int VALUES_FIELD_NUMBER = 1;
-    private java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue> values_;
-    public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue> getValuesList() {
-      return values_;
-    }
-    public java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder> 
-        getValuesOrBuilderList() {
-      return values_;
-    }
-    public int getValuesCount() {
-      return values_.size();
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue getValues(int index) {
-      return values_.get(index);
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder getValuesOrBuilder(
-        int index) {
-      return values_.get(index);
-    }
-    
-    private void initFields() {
-      values_ = java.util.Collections.emptyList();
-    }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-      
-      for (int i = 0; i < getValuesCount(); i++) {
-        if (!getValues(i).isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-      }
-      memoizedIsInitialized = 1;
-      return true;
-    }
-    
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      for (int i = 0; i < values_.size(); i++) {
-        output.writeMessage(1, values_.get(i));
-      }
-      getUnknownFields().writeTo(output);
-    }
-    
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-    
-      size = 0;
-      for (int i = 0; i < values_.size(); i++) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, values_.get(i));
-      }
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-    
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
-    }
-    
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-    
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_descriptor;
-      }
-      
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_fieldAccessorTable;
-      }
-      
-      // Construct using com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-      
-      private Builder(BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-          getValuesFieldBuilder();
-        }
-      }
-      private static Builder create() {
-        return new Builder();
-      }
-      
-      public Builder clear() {
-        super.clear();
-        if (valuesBuilder_ == null) {
-          values_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000001);
-        } else {
-          valuesBuilder_.clear();
-        }
-        return this;
-      }
-      
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
-      
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDescriptor();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection getDefaultInstanceForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection build() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-      
-      private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return result;
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection buildPartial() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection result = new com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection(this);
-        int from_bitField0_ = bitField0_;
-        if (valuesBuilder_ == null) {
-          if (((bitField0_ & 0x00000001) == 0x00000001)) {
-            values_ = java.util.Collections.unmodifiableList(values_);
-            bitField0_ = (bitField0_ & ~0x00000001);
-          }
-          result.values_ = values_;
-        } else {
-          result.values_ = valuesBuilder_.build();
-        }
-        onBuilt();
-        return result;
-      }
-      
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection) {
-          return mergeFrom((com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-      
-      public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection other) {
-        if (other == com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance()) return this;
-        if (valuesBuilder_ == null) {
-          if (!other.values_.isEmpty()) {
-            if (values_.isEmpty()) {
-              values_ = other.values_;
-              bitField0_ = (bitField0_ & ~0x00000001);
-            } else {
-              ensureValuesIsMutable();
-              values_.addAll(other.values_);
-            }
-            onChanged();
-          }
-        } else {
-          if (!other.values_.isEmpty()) {
-            if (valuesBuilder_.isEmpty()) {
-              valuesBuilder_.dispose();
-              valuesBuilder_ = null;
-              values_ = other.values_;
-              bitField0_ = (bitField0_ & ~0x00000001);
-              valuesBuilder_ = 
-                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
-                   getValuesFieldBuilder() : null;
-            } else {
-              valuesBuilder_.addAllMessages(other.values_);
-            }
-          }
-        }
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
-      
-      public final boolean isInitialized() {
-        for (int i = 0; i < getValuesCount(); i++) {
-          if (!getValues(i).isInitialized()) {
-            
-            return false;
-          }
-        }
-        return true;
-      }
-      
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              onChanged();
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                onChanged();
-                return this;
-              }
-              break;
-            }
-            case 10: {
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.newBuilder();
-              input.readMessage(subBuilder, extensionRegistry);
-              addValues(subBuilder.buildPartial());
-              break;
-            }
-          }
-        }
-      }
-      
-      private int bitField0_;
-      
-      // repeated .com.wajam.mry.api.protobuf.PTransactionCollectionValue values = 1;
-      private java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue> values_ =
-        java.util.Collections.emptyList();
-      private void ensureValuesIsMutable() {
-        if (!((bitField0_ & 0x00000001) == 0x00000001)) {
-          values_ = new java.util.ArrayList<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue>(values_);
-          bitField0_ |= 0x00000001;
-         }
-      }
-      
-      private com.google.protobuf.RepeatedFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder> valuesBuilder_;
-      
-      public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue> getValuesList() {
-        if (valuesBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(values_);
-        } else {
-          return valuesBuilder_.getMessageList();
-        }
-      }
-      public int getValuesCount() {
-        if (valuesBuilder_ == null) {
-          return values_.size();
-        } else {
-          return valuesBuilder_.getCount();
-        }
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue getValues(int index) {
-        if (valuesBuilder_ == null) {
-          return values_.get(index);
-        } else {
-          return valuesBuilder_.getMessage(index);
-        }
-      }
-      public Builder setValues(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue value) {
-        if (valuesBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureValuesIsMutable();
-          values_.set(index, value);
-          onChanged();
-        } else {
-          valuesBuilder_.setMessage(index, value);
-        }
-        return this;
-      }
-      public Builder setValues(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder builderForValue) {
-        if (valuesBuilder_ == null) {
-          ensureValuesIsMutable();
-          values_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          valuesBuilder_.setMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      public Builder addValues(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue value) {
-        if (valuesBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureValuesIsMutable();
-          values_.add(value);
-          onChanged();
-        } else {
-          valuesBuilder_.addMessage(value);
-        }
-        return this;
-      }
-      public Builder addValues(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue value) {
-        if (valuesBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureValuesIsMutable();
-          values_.add(index, value);
-          onChanged();
-        } else {
-          valuesBuilder_.addMessage(index, value);
-        }
-        return this;
-      }
-      public Builder addValues(
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder builderForValue) {
-        if (valuesBuilder_ == null) {
-          ensureValuesIsMutable();
-          values_.add(builderForValue.build());
-          onChanged();
-        } else {
-          valuesBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      public Builder addValues(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder builderForValue) {
-        if (valuesBuilder_ == null) {
-          ensureValuesIsMutable();
-          values_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          valuesBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      public Builder addAllValues(
-          java.lang.Iterable<? extends com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue> values) {
-        if (valuesBuilder_ == null) {
-          ensureValuesIsMutable();
-          super.addAll(values, values_);
-          onChanged();
-        } else {
-          valuesBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      public Builder clearValues() {
-        if (valuesBuilder_ == null) {
-          values_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000001);
-          onChanged();
-        } else {
-          valuesBuilder_.clear();
-        }
-        return this;
-      }
-      public Builder removeValues(int index) {
-        if (valuesBuilder_ == null) {
-          ensureValuesIsMutable();
-          values_.remove(index);
-          onChanged();
-        } else {
-          valuesBuilder_.remove(index);
-        }
-        return this;
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder getValuesBuilder(
-          int index) {
-        return getValuesFieldBuilder().getBuilder(index);
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder getValuesOrBuilder(
-          int index) {
-        if (valuesBuilder_ == null) {
-          return values_.get(index);  } else {
-          return valuesBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      public java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder> 
-           getValuesOrBuilderList() {
-        if (valuesBuilder_ != null) {
-          return valuesBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(values_);
-        }
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder addValuesBuilder() {
-        return getValuesFieldBuilder().addBuilder(
-            com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.getDefaultInstance());
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder addValuesBuilder(
-          int index) {
-        return getValuesFieldBuilder().addBuilder(
-            index, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.getDefaultInstance());
-      }
-      public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder> 
-           getValuesBuilderList() {
-        return getValuesFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder> 
-          getValuesFieldBuilder() {
-        if (valuesBuilder_ == null) {
-          valuesBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder>(
-                  values_,
-                  ((bitField0_ & 0x00000001) == 0x00000001),
-                  getParentForChildren(),
-                  isClean());
-          values_ = null;
-        }
-        return valuesBuilder_;
-      }
-      
-      // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PTransactionCollection)
-    }
-    
-    static {
-      defaultInstance = new PTransactionCollection(true);
-      defaultInstance.initFields();
-    }
-    
-    // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PTransactionCollection)
-  }
-  
-  public interface PTransactionCollectionValueOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
-    
-    // required .com.wajam.mry.api.protobuf.PTransactionValue value = 1;
-    boolean hasValue();
-    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue getValue();
-    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder getValueOrBuilder();
-    
-    // optional string key = 2;
-    boolean hasKey();
-    String getKey();
-  }
-  public static final class PTransactionCollectionValue extends
-      com.google.protobuf.GeneratedMessage
-      implements PTransactionCollectionValueOrBuilder {
-    // Use PTransactionCollectionValue.newBuilder() to construct.
-    private PTransactionCollectionValue(Builder builder) {
-      super(builder);
-    }
-    private PTransactionCollectionValue(boolean noInit) {}
-    
-    private static final PTransactionCollectionValue defaultInstance;
-    public static PTransactionCollectionValue getDefaultInstance() {
-      return defaultInstance;
-    }
-    
-    public PTransactionCollectionValue getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-    
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_descriptor;
-    }
-    
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_fieldAccessorTable;
-    }
-    
-    private int bitField0_;
-    // required .com.wajam.mry.api.protobuf.PTransactionValue value = 1;
-    public static final int VALUE_FIELD_NUMBER = 1;
-    private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value_;
-    public boolean hasValue() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue getValue() {
-      return value_;
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder getValueOrBuilder() {
-      return value_;
-    }
-    
-    // optional string key = 2;
-    public static final int KEY_FIELD_NUMBER = 2;
-    private java.lang.Object key_;
-    public boolean hasKey() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
-    }
-    public String getKey() {
-      java.lang.Object ref = key_;
-      if (ref instanceof String) {
-        return (String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        String s = bs.toStringUtf8();
-        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
-          key_ = s;
-        }
-        return s;
-      }
-    }
-    private com.google.protobuf.ByteString getKeyBytes() {
-      java.lang.Object ref = key_;
-      if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
-        key_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-    
-    private void initFields() {
-      value_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
-      key_ = "";
-    }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-      
-      if (!hasValue()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!getValue().isInitialized()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      memoizedIsInitialized = 1;
-      return true;
-    }
-    
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeMessage(1, value_);
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeBytes(2, getKeyBytes());
-      }
-      getUnknownFields().writeTo(output);
-    }
-    
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-    
-      size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, value_);
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(2, getKeyBytes());
-      }
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-    
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
-    }
-    
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-    
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_descriptor;
-      }
-      
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_fieldAccessorTable;
-      }
-      
-      // Construct using com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-      
-      private Builder(BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-          getValueFieldBuilder();
-        }
-      }
-      private static Builder create() {
-        return new Builder();
-      }
-      
-      public Builder clear() {
-        super.clear();
-        if (valueBuilder_ == null) {
-          value_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
-        } else {
-          valueBuilder_.clear();
-        }
-        bitField0_ = (bitField0_ & ~0x00000001);
-        key_ = "";
-        bitField0_ = (bitField0_ & ~0x00000002);
-        return this;
-      }
-      
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
-      
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.getDescriptor();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue getDefaultInstanceForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.getDefaultInstance();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue build() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-      
-      private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return result;
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue buildPartial() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue result = new com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue(this);
-        int from_bitField0_ = bitField0_;
-        int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
-          to_bitField0_ |= 0x00000001;
-        }
-        if (valueBuilder_ == null) {
-          result.value_ = value_;
-        } else {
-          result.value_ = valueBuilder_.build();
-        }
-        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
-          to_bitField0_ |= 0x00000002;
-        }
-        result.key_ = key_;
-        result.bitField0_ = to_bitField0_;
-        onBuilt();
-        return result;
-      }
-      
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue) {
-          return mergeFrom((com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-      
-      public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue other) {
-        if (other == com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.getDefaultInstance()) return this;
-        if (other.hasValue()) {
-          mergeValue(other.getValue());
-        }
-        if (other.hasKey()) {
-          setKey(other.getKey());
-        }
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
-      
-      public final boolean isInitialized() {
-        if (!hasValue()) {
-          
-          return false;
-        }
-        if (!getValue().isInitialized()) {
-          
-          return false;
-        }
-        return true;
-      }
-      
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              onChanged();
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                onChanged();
-                return this;
-              }
-              break;
-            }
-            case 10: {
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.newBuilder();
-              if (hasValue()) {
-                subBuilder.mergeFrom(getValue());
-              }
-              input.readMessage(subBuilder, extensionRegistry);
-              setValue(subBuilder.buildPartial());
-              break;
-            }
-            case 18: {
-              bitField0_ |= 0x00000002;
-              key_ = input.readBytes();
-              break;
-            }
-          }
-        }
-      }
-      
-      private int bitField0_;
-      
-      // required .com.wajam.mry.api.protobuf.PTransactionValue value = 1;
-      private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
-      private com.google.protobuf.SingleFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder> valueBuilder_;
-      public boolean hasValue() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue getValue() {
-        if (valueBuilder_ == null) {
-          return value_;
-        } else {
-          return valueBuilder_.getMessage();
-        }
-      }
-      public Builder setValue(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value) {
-        if (valueBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          value_ = value;
-          onChanged();
-        } else {
-          valueBuilder_.setMessage(value);
-        }
-        bitField0_ |= 0x00000001;
-        return this;
-      }
-      public Builder setValue(
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder builderForValue) {
-        if (valueBuilder_ == null) {
-          value_ = builderForValue.build();
-          onChanged();
-        } else {
-          valueBuilder_.setMessage(builderForValue.build());
-        }
-        bitField0_ |= 0x00000001;
-        return this;
-      }
-      public Builder mergeValue(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value) {
-        if (valueBuilder_ == null) {
-          if (((bitField0_ & 0x00000001) == 0x00000001) &&
-              value_ != com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance()) {
-            value_ =
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.newBuilder(value_).mergeFrom(value).buildPartial();
-          } else {
-            value_ = value;
-          }
-          onChanged();
-        } else {
-          valueBuilder_.mergeFrom(value);
-        }
-        bitField0_ |= 0x00000001;
-        return this;
-      }
-      public Builder clearValue() {
-        if (valueBuilder_ == null) {
-          value_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
-          onChanged();
-        } else {
-          valueBuilder_.clear();
-        }
-        bitField0_ = (bitField0_ & ~0x00000001);
-        return this;
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder getValueBuilder() {
-        bitField0_ |= 0x00000001;
-        onChanged();
-        return getValueFieldBuilder().getBuilder();
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder getValueOrBuilder() {
-        if (valueBuilder_ != null) {
-          return valueBuilder_.getMessageOrBuilder();
-        } else {
-          return value_;
-        }
-      }
-      private com.google.protobuf.SingleFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder> 
-          getValueFieldBuilder() {
-        if (valueBuilder_ == null) {
-          valueBuilder_ = new com.google.protobuf.SingleFieldBuilder<
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder>(
-                  value_,
-                  getParentForChildren(),
-                  isClean());
-          value_ = null;
-        }
-        return valueBuilder_;
-      }
-      
-      // optional string key = 2;
-      private java.lang.Object key_ = "";
-      public boolean hasKey() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
-      }
-      public String getKey() {
-        java.lang.Object ref = key_;
-        if (!(ref instanceof String)) {
-          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-          key_ = s;
-          return s;
-        } else {
-          return (String) ref;
-        }
-      }
-      public Builder setKey(String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000002;
-        key_ = value;
-        onChanged();
-        return this;
-      }
-      public Builder clearKey() {
-        bitField0_ = (bitField0_ & ~0x00000002);
-        key_ = getDefaultInstance().getKey();
-        onChanged();
-        return this;
-      }
-      void setKey(com.google.protobuf.ByteString value) {
-        bitField0_ |= 0x00000002;
-        key_ = value;
-        onChanged();
-      }
-      
-      // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PTransactionCollectionValue)
-    }
-    
-    static {
-      defaultInstance = new PTransactionCollectionValue(true);
-      defaultInstance.initFields();
-    }
-    
-    // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PTransactionCollectionValue)
   }
   
   public interface POperationOrBuilder extends
       com.google.protobuf.GeneratedMessage.
           ExtendableMessageOrBuilder<POperation> {
     
-    // repeated .com.wajam.mry.api.protobuf.PVariable variables = 1;
-    java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PVariable> 
-        getVariablesList();
-    com.wajam.mry.api.protobuf.MryProtobuf.PVariable getVariables(int index);
-    int getVariablesCount();
-    java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder> 
-        getVariablesOrBuilderList();
-    com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder getVariablesOrBuilder(
-        int index);
+    // repeated uint32 variableAddresses = 1;
+    java.util.List<java.lang.Integer> getVariableAddressesList();
+    int getVariableAddressesCount();
+    int getVariableAddresses(int index);
     
-    // repeated .com.wajam.mry.api.protobuf.PObject objects = 2;
-    java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PObject> 
-        getObjectsList();
-    com.wajam.mry.api.protobuf.MryProtobuf.PObject getObjects(int index);
-    int getObjectsCount();
-    java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PObjectOrBuilder> 
-        getObjectsOrBuilderList();
-    com.wajam.mry.api.protobuf.MryProtobuf.PObjectOrBuilder getObjectsOrBuilder(
-        int index);
+    // repeated uint32 objectAddresses = 2;
+    java.util.List<java.lang.Integer> getObjectAddressesList();
+    int getObjectAddressesCount();
+    int getObjectAddresses(int index);
   }
   public static final class POperation extends
       com.google.protobuf.GeneratedMessage.ExtendableMessage<
@@ -5048,69 +3625,43 @@ public final class MryProtobuf {
       return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_POperation_fieldAccessorTable;
     }
     
-    // repeated .com.wajam.mry.api.protobuf.PVariable variables = 1;
-    public static final int VARIABLES_FIELD_NUMBER = 1;
-    private java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PVariable> variables_;
-    public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PVariable> getVariablesList() {
-      return variables_;
+    // repeated uint32 variableAddresses = 1;
+    public static final int VARIABLEADDRESSES_FIELD_NUMBER = 1;
+    private java.util.List<java.lang.Integer> variableAddresses_;
+    public java.util.List<java.lang.Integer>
+        getVariableAddressesList() {
+      return variableAddresses_;
     }
-    public java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder> 
-        getVariablesOrBuilderList() {
-      return variables_;
+    public int getVariableAddressesCount() {
+      return variableAddresses_.size();
     }
-    public int getVariablesCount() {
-      return variables_.size();
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PVariable getVariables(int index) {
-      return variables_.get(index);
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder getVariablesOrBuilder(
-        int index) {
-      return variables_.get(index);
+    public int getVariableAddresses(int index) {
+      return variableAddresses_.get(index);
     }
     
-    // repeated .com.wajam.mry.api.protobuf.PObject objects = 2;
-    public static final int OBJECTS_FIELD_NUMBER = 2;
-    private java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PObject> objects_;
-    public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PObject> getObjectsList() {
-      return objects_;
+    // repeated uint32 objectAddresses = 2;
+    public static final int OBJECTADDRESSES_FIELD_NUMBER = 2;
+    private java.util.List<java.lang.Integer> objectAddresses_;
+    public java.util.List<java.lang.Integer>
+        getObjectAddressesList() {
+      return objectAddresses_;
     }
-    public java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PObjectOrBuilder> 
-        getObjectsOrBuilderList() {
-      return objects_;
+    public int getObjectAddressesCount() {
+      return objectAddresses_.size();
     }
-    public int getObjectsCount() {
-      return objects_.size();
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PObject getObjects(int index) {
-      return objects_.get(index);
-    }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PObjectOrBuilder getObjectsOrBuilder(
-        int index) {
-      return objects_.get(index);
+    public int getObjectAddresses(int index) {
+      return objectAddresses_.get(index);
     }
     
     private void initFields() {
-      variables_ = java.util.Collections.emptyList();
-      objects_ = java.util.Collections.emptyList();
+      variableAddresses_ = java.util.Collections.emptyList();;
+      objectAddresses_ = java.util.Collections.emptyList();;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized != -1) return isInitialized == 1;
       
-      for (int i = 0; i < getVariablesCount(); i++) {
-        if (!getVariables(i).isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-      }
-      for (int i = 0; i < getObjectsCount(); i++) {
-        if (!getObjects(i).isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-      }
       if (!extensionsAreInitialized()) {
         memoizedIsInitialized = 0;
         return false;
@@ -5125,11 +3676,11 @@ public final class MryProtobuf {
       com.google.protobuf.GeneratedMessage
         .ExtendableMessage<com.wajam.mry.api.protobuf.MryProtobuf.POperation>.ExtensionWriter extensionWriter =
           newExtensionWriter();
-      for (int i = 0; i < variables_.size(); i++) {
-        output.writeMessage(1, variables_.get(i));
+      for (int i = 0; i < variableAddresses_.size(); i++) {
+        output.writeUInt32(1, variableAddresses_.get(i));
       }
-      for (int i = 0; i < objects_.size(); i++) {
-        output.writeMessage(2, objects_.get(i));
+      for (int i = 0; i < objectAddresses_.size(); i++) {
+        output.writeUInt32(2, objectAddresses_.get(i));
       }
       extensionWriter.writeUntil(201, output);
       getUnknownFields().writeTo(output);
@@ -5141,13 +3692,23 @@ public final class MryProtobuf {
       if (size != -1) return size;
     
       size = 0;
-      for (int i = 0; i < variables_.size(); i++) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, variables_.get(i));
+      {
+        int dataSize = 0;
+        for (int i = 0; i < variableAddresses_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeUInt32SizeNoTag(variableAddresses_.get(i));
+        }
+        size += dataSize;
+        size += 1 * getVariableAddressesList().size();
       }
-      for (int i = 0; i < objects_.size(); i++) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, objects_.get(i));
+      {
+        int dataSize = 0;
+        for (int i = 0; i < objectAddresses_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeUInt32SizeNoTag(objectAddresses_.get(i));
+        }
+        size += dataSize;
+        size += 1 * getObjectAddressesList().size();
       }
       size += extensionsSerializedSize();
       size += getUnknownFields().getSerializedSize();
@@ -5266,8 +3827,6 @@ public final class MryProtobuf {
       }
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-          getVariablesFieldBuilder();
-          getObjectsFieldBuilder();
         }
       }
       private static Builder create() {
@@ -5276,18 +3835,10 @@ public final class MryProtobuf {
       
       public Builder clear() {
         super.clear();
-        if (variablesBuilder_ == null) {
-          variables_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000001);
-        } else {
-          variablesBuilder_.clear();
-        }
-        if (objectsBuilder_ == null) {
-          objects_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
-        } else {
-          objectsBuilder_.clear();
-        }
+        variableAddresses_ = java.util.Collections.emptyList();;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        objectAddresses_ = java.util.Collections.emptyList();;
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
       
@@ -5325,24 +3876,16 @@ public final class MryProtobuf {
       public com.wajam.mry.api.protobuf.MryProtobuf.POperation buildPartial() {
         com.wajam.mry.api.protobuf.MryProtobuf.POperation result = new com.wajam.mry.api.protobuf.MryProtobuf.POperation(this);
         int from_bitField0_ = bitField0_;
-        if (variablesBuilder_ == null) {
-          if (((bitField0_ & 0x00000001) == 0x00000001)) {
-            variables_ = java.util.Collections.unmodifiableList(variables_);
-            bitField0_ = (bitField0_ & ~0x00000001);
-          }
-          result.variables_ = variables_;
-        } else {
-          result.variables_ = variablesBuilder_.build();
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          variableAddresses_ = java.util.Collections.unmodifiableList(variableAddresses_);
+          bitField0_ = (bitField0_ & ~0x00000001);
         }
-        if (objectsBuilder_ == null) {
-          if (((bitField0_ & 0x00000002) == 0x00000002)) {
-            objects_ = java.util.Collections.unmodifiableList(objects_);
-            bitField0_ = (bitField0_ & ~0x00000002);
-          }
-          result.objects_ = objects_;
-        } else {
-          result.objects_ = objectsBuilder_.build();
+        result.variableAddresses_ = variableAddresses_;
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          objectAddresses_ = java.util.Collections.unmodifiableList(objectAddresses_);
+          bitField0_ = (bitField0_ & ~0x00000002);
         }
+        result.objectAddresses_ = objectAddresses_;
         onBuilt();
         return result;
       }
@@ -5358,57 +3901,25 @@ public final class MryProtobuf {
       
       public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.POperation other) {
         if (other == com.wajam.mry.api.protobuf.MryProtobuf.POperation.getDefaultInstance()) return this;
-        if (variablesBuilder_ == null) {
-          if (!other.variables_.isEmpty()) {
-            if (variables_.isEmpty()) {
-              variables_ = other.variables_;
-              bitField0_ = (bitField0_ & ~0x00000001);
-            } else {
-              ensureVariablesIsMutable();
-              variables_.addAll(other.variables_);
-            }
-            onChanged();
+        if (!other.variableAddresses_.isEmpty()) {
+          if (variableAddresses_.isEmpty()) {
+            variableAddresses_ = other.variableAddresses_;
+            bitField0_ = (bitField0_ & ~0x00000001);
+          } else {
+            ensureVariableAddressesIsMutable();
+            variableAddresses_.addAll(other.variableAddresses_);
           }
-        } else {
-          if (!other.variables_.isEmpty()) {
-            if (variablesBuilder_.isEmpty()) {
-              variablesBuilder_.dispose();
-              variablesBuilder_ = null;
-              variables_ = other.variables_;
-              bitField0_ = (bitField0_ & ~0x00000001);
-              variablesBuilder_ = 
-                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
-                   getVariablesFieldBuilder() : null;
-            } else {
-              variablesBuilder_.addAllMessages(other.variables_);
-            }
-          }
+          onChanged();
         }
-        if (objectsBuilder_ == null) {
-          if (!other.objects_.isEmpty()) {
-            if (objects_.isEmpty()) {
-              objects_ = other.objects_;
-              bitField0_ = (bitField0_ & ~0x00000002);
-            } else {
-              ensureObjectsIsMutable();
-              objects_.addAll(other.objects_);
-            }
-            onChanged();
+        if (!other.objectAddresses_.isEmpty()) {
+          if (objectAddresses_.isEmpty()) {
+            objectAddresses_ = other.objectAddresses_;
+            bitField0_ = (bitField0_ & ~0x00000002);
+          } else {
+            ensureObjectAddressesIsMutable();
+            objectAddresses_.addAll(other.objectAddresses_);
           }
-        } else {
-          if (!other.objects_.isEmpty()) {
-            if (objectsBuilder_.isEmpty()) {
-              objectsBuilder_.dispose();
-              objectsBuilder_ = null;
-              objects_ = other.objects_;
-              bitField0_ = (bitField0_ & ~0x00000002);
-              objectsBuilder_ = 
-                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
-                   getObjectsFieldBuilder() : null;
-            } else {
-              objectsBuilder_.addAllMessages(other.objects_);
-            }
-          }
+          onChanged();
         }
         this.mergeExtensionFields(other);
         this.mergeUnknownFields(other.getUnknownFields());
@@ -5416,18 +3927,6 @@ public final class MryProtobuf {
       }
       
       public final boolean isInitialized() {
-        for (int i = 0; i < getVariablesCount(); i++) {
-          if (!getVariables(i).isInitialized()) {
-            
-            return false;
-          }
-        }
-        for (int i = 0; i < getObjectsCount(); i++) {
-          if (!getObjects(i).isInitialized()) {
-            
-            return false;
-          }
-        }
         if (!extensionsAreInitialized()) {
           
           return false;
@@ -5458,16 +3957,32 @@ public final class MryProtobuf {
               }
               break;
             }
+            case 8: {
+              ensureVariableAddressesIsMutable();
+              variableAddresses_.add(input.readUInt32());
+              break;
+            }
             case 10: {
-              com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PVariable.newBuilder();
-              input.readMessage(subBuilder, extensionRegistry);
-              addVariables(subBuilder.buildPartial());
+              int length = input.readRawVarint32();
+              int limit = input.pushLimit(length);
+              while (input.getBytesUntilLimit() > 0) {
+                addVariableAddresses(input.readUInt32());
+              }
+              input.popLimit(limit);
+              break;
+            }
+            case 16: {
+              ensureObjectAddressesIsMutable();
+              objectAddresses_.add(input.readUInt32());
               break;
             }
             case 18: {
-              com.wajam.mry.api.protobuf.MryProtobuf.PObject.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PObject.newBuilder();
-              input.readMessage(subBuilder, extensionRegistry);
-              addObjects(subBuilder.buildPartial());
+              int length = input.readRawVarint32();
+              int limit = input.pushLimit(length);
+              while (input.getBytesUntilLimit() > 0) {
+                addObjectAddresses(input.readUInt32());
+              }
+              input.popLimit(limit);
               break;
             }
           }
@@ -5476,376 +3991,94 @@ public final class MryProtobuf {
       
       private int bitField0_;
       
-      // repeated .com.wajam.mry.api.protobuf.PVariable variables = 1;
-      private java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PVariable> variables_ =
-        java.util.Collections.emptyList();
-      private void ensureVariablesIsMutable() {
+      // repeated uint32 variableAddresses = 1;
+      private java.util.List<java.lang.Integer> variableAddresses_ = java.util.Collections.emptyList();;
+      private void ensureVariableAddressesIsMutable() {
         if (!((bitField0_ & 0x00000001) == 0x00000001)) {
-          variables_ = new java.util.ArrayList<com.wajam.mry.api.protobuf.MryProtobuf.PVariable>(variables_);
+          variableAddresses_ = new java.util.ArrayList<java.lang.Integer>(variableAddresses_);
           bitField0_ |= 0x00000001;
          }
       }
-      
-      private com.google.protobuf.RepeatedFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PVariable, com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder> variablesBuilder_;
-      
-      public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PVariable> getVariablesList() {
-        if (variablesBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(variables_);
-        } else {
-          return variablesBuilder_.getMessageList();
-        }
+      public java.util.List<java.lang.Integer>
+          getVariableAddressesList() {
+        return java.util.Collections.unmodifiableList(variableAddresses_);
       }
-      public int getVariablesCount() {
-        if (variablesBuilder_ == null) {
-          return variables_.size();
-        } else {
-          return variablesBuilder_.getCount();
-        }
+      public int getVariableAddressesCount() {
+        return variableAddresses_.size();
       }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PVariable getVariables(int index) {
-        if (variablesBuilder_ == null) {
-          return variables_.get(index);
-        } else {
-          return variablesBuilder_.getMessage(index);
-        }
+      public int getVariableAddresses(int index) {
+        return variableAddresses_.get(index);
       }
-      public Builder setVariables(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PVariable value) {
-        if (variablesBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVariablesIsMutable();
-          variables_.set(index, value);
-          onChanged();
-        } else {
-          variablesBuilder_.setMessage(index, value);
-        }
+      public Builder setVariableAddresses(
+          int index, int value) {
+        ensureVariableAddressesIsMutable();
+        variableAddresses_.set(index, value);
+        onChanged();
         return this;
       }
-      public Builder setVariables(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder builderForValue) {
-        if (variablesBuilder_ == null) {
-          ensureVariablesIsMutable();
-          variables_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          variablesBuilder_.setMessage(index, builderForValue.build());
-        }
+      public Builder addVariableAddresses(int value) {
+        ensureVariableAddressesIsMutable();
+        variableAddresses_.add(value);
+        onChanged();
         return this;
       }
-      public Builder addVariables(com.wajam.mry.api.protobuf.MryProtobuf.PVariable value) {
-        if (variablesBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVariablesIsMutable();
-          variables_.add(value);
-          onChanged();
-        } else {
-          variablesBuilder_.addMessage(value);
-        }
+      public Builder addAllVariableAddresses(
+          java.lang.Iterable<? extends java.lang.Integer> values) {
+        ensureVariableAddressesIsMutable();
+        super.addAll(values, variableAddresses_);
+        onChanged();
         return this;
       }
-      public Builder addVariables(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PVariable value) {
-        if (variablesBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVariablesIsMutable();
-          variables_.add(index, value);
-          onChanged();
-        } else {
-          variablesBuilder_.addMessage(index, value);
-        }
+      public Builder clearVariableAddresses() {
+        variableAddresses_ = java.util.Collections.emptyList();;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        onChanged();
         return this;
-      }
-      public Builder addVariables(
-          com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder builderForValue) {
-        if (variablesBuilder_ == null) {
-          ensureVariablesIsMutable();
-          variables_.add(builderForValue.build());
-          onChanged();
-        } else {
-          variablesBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      public Builder addVariables(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder builderForValue) {
-        if (variablesBuilder_ == null) {
-          ensureVariablesIsMutable();
-          variables_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          variablesBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      public Builder addAllVariables(
-          java.lang.Iterable<? extends com.wajam.mry.api.protobuf.MryProtobuf.PVariable> values) {
-        if (variablesBuilder_ == null) {
-          ensureVariablesIsMutable();
-          super.addAll(values, variables_);
-          onChanged();
-        } else {
-          variablesBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      public Builder clearVariables() {
-        if (variablesBuilder_ == null) {
-          variables_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000001);
-          onChanged();
-        } else {
-          variablesBuilder_.clear();
-        }
-        return this;
-      }
-      public Builder removeVariables(int index) {
-        if (variablesBuilder_ == null) {
-          ensureVariablesIsMutable();
-          variables_.remove(index);
-          onChanged();
-        } else {
-          variablesBuilder_.remove(index);
-        }
-        return this;
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder getVariablesBuilder(
-          int index) {
-        return getVariablesFieldBuilder().getBuilder(index);
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder getVariablesOrBuilder(
-          int index) {
-        if (variablesBuilder_ == null) {
-          return variables_.get(index);  } else {
-          return variablesBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      public java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder> 
-           getVariablesOrBuilderList() {
-        if (variablesBuilder_ != null) {
-          return variablesBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(variables_);
-        }
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder addVariablesBuilder() {
-        return getVariablesFieldBuilder().addBuilder(
-            com.wajam.mry.api.protobuf.MryProtobuf.PVariable.getDefaultInstance());
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder addVariablesBuilder(
-          int index) {
-        return getVariablesFieldBuilder().addBuilder(
-            index, com.wajam.mry.api.protobuf.MryProtobuf.PVariable.getDefaultInstance());
-      }
-      public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder> 
-           getVariablesBuilderList() {
-        return getVariablesFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PVariable, com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder> 
-          getVariablesFieldBuilder() {
-        if (variablesBuilder_ == null) {
-          variablesBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
-              com.wajam.mry.api.protobuf.MryProtobuf.PVariable, com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PVariableOrBuilder>(
-                  variables_,
-                  ((bitField0_ & 0x00000001) == 0x00000001),
-                  getParentForChildren(),
-                  isClean());
-          variables_ = null;
-        }
-        return variablesBuilder_;
       }
       
-      // repeated .com.wajam.mry.api.protobuf.PObject objects = 2;
-      private java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PObject> objects_ =
-        java.util.Collections.emptyList();
-      private void ensureObjectsIsMutable() {
+      // repeated uint32 objectAddresses = 2;
+      private java.util.List<java.lang.Integer> objectAddresses_ = java.util.Collections.emptyList();;
+      private void ensureObjectAddressesIsMutable() {
         if (!((bitField0_ & 0x00000002) == 0x00000002)) {
-          objects_ = new java.util.ArrayList<com.wajam.mry.api.protobuf.MryProtobuf.PObject>(objects_);
+          objectAddresses_ = new java.util.ArrayList<java.lang.Integer>(objectAddresses_);
           bitField0_ |= 0x00000002;
          }
       }
-      
-      private com.google.protobuf.RepeatedFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PObject, com.wajam.mry.api.protobuf.MryProtobuf.PObject.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PObjectOrBuilder> objectsBuilder_;
-      
-      public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PObject> getObjectsList() {
-        if (objectsBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(objects_);
-        } else {
-          return objectsBuilder_.getMessageList();
-        }
+      public java.util.List<java.lang.Integer>
+          getObjectAddressesList() {
+        return java.util.Collections.unmodifiableList(objectAddresses_);
       }
-      public int getObjectsCount() {
-        if (objectsBuilder_ == null) {
-          return objects_.size();
-        } else {
-          return objectsBuilder_.getCount();
-        }
+      public int getObjectAddressesCount() {
+        return objectAddresses_.size();
       }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PObject getObjects(int index) {
-        if (objectsBuilder_ == null) {
-          return objects_.get(index);
-        } else {
-          return objectsBuilder_.getMessage(index);
-        }
+      public int getObjectAddresses(int index) {
+        return objectAddresses_.get(index);
       }
-      public Builder setObjects(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PObject value) {
-        if (objectsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureObjectsIsMutable();
-          objects_.set(index, value);
-          onChanged();
-        } else {
-          objectsBuilder_.setMessage(index, value);
-        }
+      public Builder setObjectAddresses(
+          int index, int value) {
+        ensureObjectAddressesIsMutable();
+        objectAddresses_.set(index, value);
+        onChanged();
         return this;
       }
-      public Builder setObjects(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PObject.Builder builderForValue) {
-        if (objectsBuilder_ == null) {
-          ensureObjectsIsMutable();
-          objects_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          objectsBuilder_.setMessage(index, builderForValue.build());
-        }
+      public Builder addObjectAddresses(int value) {
+        ensureObjectAddressesIsMutable();
+        objectAddresses_.add(value);
+        onChanged();
         return this;
       }
-      public Builder addObjects(com.wajam.mry.api.protobuf.MryProtobuf.PObject value) {
-        if (objectsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureObjectsIsMutable();
-          objects_.add(value);
-          onChanged();
-        } else {
-          objectsBuilder_.addMessage(value);
-        }
+      public Builder addAllObjectAddresses(
+          java.lang.Iterable<? extends java.lang.Integer> values) {
+        ensureObjectAddressesIsMutable();
+        super.addAll(values, objectAddresses_);
+        onChanged();
         return this;
       }
-      public Builder addObjects(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PObject value) {
-        if (objectsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureObjectsIsMutable();
-          objects_.add(index, value);
-          onChanged();
-        } else {
-          objectsBuilder_.addMessage(index, value);
-        }
+      public Builder clearObjectAddresses() {
+        objectAddresses_ = java.util.Collections.emptyList();;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        onChanged();
         return this;
-      }
-      public Builder addObjects(
-          com.wajam.mry.api.protobuf.MryProtobuf.PObject.Builder builderForValue) {
-        if (objectsBuilder_ == null) {
-          ensureObjectsIsMutable();
-          objects_.add(builderForValue.build());
-          onChanged();
-        } else {
-          objectsBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      public Builder addObjects(
-          int index, com.wajam.mry.api.protobuf.MryProtobuf.PObject.Builder builderForValue) {
-        if (objectsBuilder_ == null) {
-          ensureObjectsIsMutable();
-          objects_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          objectsBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      public Builder addAllObjects(
-          java.lang.Iterable<? extends com.wajam.mry.api.protobuf.MryProtobuf.PObject> values) {
-        if (objectsBuilder_ == null) {
-          ensureObjectsIsMutable();
-          super.addAll(values, objects_);
-          onChanged();
-        } else {
-          objectsBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      public Builder clearObjects() {
-        if (objectsBuilder_ == null) {
-          objects_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
-          onChanged();
-        } else {
-          objectsBuilder_.clear();
-        }
-        return this;
-      }
-      public Builder removeObjects(int index) {
-        if (objectsBuilder_ == null) {
-          ensureObjectsIsMutable();
-          objects_.remove(index);
-          onChanged();
-        } else {
-          objectsBuilder_.remove(index);
-        }
-        return this;
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PObject.Builder getObjectsBuilder(
-          int index) {
-        return getObjectsFieldBuilder().getBuilder(index);
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PObjectOrBuilder getObjectsOrBuilder(
-          int index) {
-        if (objectsBuilder_ == null) {
-          return objects_.get(index);  } else {
-          return objectsBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      public java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PObjectOrBuilder> 
-           getObjectsOrBuilderList() {
-        if (objectsBuilder_ != null) {
-          return objectsBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(objects_);
-        }
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PObject.Builder addObjectsBuilder() {
-        return getObjectsFieldBuilder().addBuilder(
-            com.wajam.mry.api.protobuf.MryProtobuf.PObject.getDefaultInstance());
-      }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PObject.Builder addObjectsBuilder(
-          int index) {
-        return getObjectsFieldBuilder().addBuilder(
-            index, com.wajam.mry.api.protobuf.MryProtobuf.PObject.getDefaultInstance());
-      }
-      public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PObject.Builder> 
-           getObjectsBuilderList() {
-        return getObjectsFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PObject, com.wajam.mry.api.protobuf.MryProtobuf.PObject.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PObjectOrBuilder> 
-          getObjectsFieldBuilder() {
-        if (objectsBuilder_ == null) {
-          objectsBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
-              com.wajam.mry.api.protobuf.MryProtobuf.PObject, com.wajam.mry.api.protobuf.MryProtobuf.PObject.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PObjectOrBuilder>(
-                  objects_,
-                  ((bitField0_ & 0x00000002) == 0x00000002),
-                  getParentForChildren(),
-                  isClean());
-          objects_ = null;
-        }
-        return objectsBuilder_;
       }
       
       // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.POperation)
@@ -7861,6 +6094,2182 @@ public final class MryProtobuf {
           com.wajam.mry.api.protobuf.MryProtobuf.PProjection.getDefaultInstance());
   }
   
+  public interface PTransactionValueOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // optional .com.wajam.mry.api.protobuf.PTransactionValue.Type type = 1;
+    boolean hasType();
+    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type getType();
+    
+    // optional int64 int_value = 2;
+    boolean hasIntValue();
+    long getIntValue();
+    
+    // optional bool bool_value = 3;
+    boolean hasBoolValue();
+    boolean getBoolValue();
+    
+    // optional double double_value = 4;
+    boolean hasDoubleValue();
+    double getDoubleValue();
+    
+    // optional string string_value = 5;
+    boolean hasStringValue();
+    String getStringValue();
+    
+    // optional bytes bytes_value = 6;
+    boolean hasBytesValue();
+    com.google.protobuf.ByteString getBytesValue();
+    
+    // optional .com.wajam.mry.api.protobuf.PTransactionCollection array = 7;
+    boolean hasArray();
+    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection getArray();
+    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder getArrayOrBuilder();
+    
+    // optional .com.wajam.mry.api.protobuf.PTransactionCollection map = 8;
+    boolean hasMap();
+    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection getMap();
+    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder getMapOrBuilder();
+  }
+  public static final class PTransactionValue extends
+      com.google.protobuf.GeneratedMessage
+      implements PTransactionValueOrBuilder {
+    // Use PTransactionValue.newBuilder() to construct.
+    private PTransactionValue(Builder builder) {
+      super(builder);
+    }
+    private PTransactionValue(boolean noInit) {}
+    
+    private static final PTransactionValue defaultInstance;
+    public static PTransactionValue getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public PTransactionValue getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionValue_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionValue_fieldAccessorTable;
+    }
+    
+    public enum Type
+        implements com.google.protobuf.ProtocolMessageEnum {
+      NULL(0, 1),
+      INT(1, 2),
+      BOOL(2, 3),
+      DOUBLE(3, 4),
+      STRING(4, 5),
+      BYTES(5, 6),
+      ARRAY(6, 7),
+      MAP(7, 8),
+      ;
+      
+      public static final int NULL_VALUE = 1;
+      public static final int INT_VALUE = 2;
+      public static final int BOOL_VALUE = 3;
+      public static final int DOUBLE_VALUE = 4;
+      public static final int STRING_VALUE = 5;
+      public static final int BYTES_VALUE = 6;
+      public static final int ARRAY_VALUE = 7;
+      public static final int MAP_VALUE = 8;
+      
+      
+      public final int getNumber() { return value; }
+      
+      public static Type valueOf(int value) {
+        switch (value) {
+          case 1: return NULL;
+          case 2: return INT;
+          case 3: return BOOL;
+          case 4: return DOUBLE;
+          case 5: return STRING;
+          case 6: return BYTES;
+          case 7: return ARRAY;
+          case 8: return MAP;
+          default: return null;
+        }
+      }
+      
+      public static com.google.protobuf.Internal.EnumLiteMap<Type>
+          internalGetValueMap() {
+        return internalValueMap;
+      }
+      private static com.google.protobuf.Internal.EnumLiteMap<Type>
+          internalValueMap =
+            new com.google.protobuf.Internal.EnumLiteMap<Type>() {
+              public Type findValueByNumber(int number) {
+                return Type.valueOf(number);
+              }
+            };
+      
+      public final com.google.protobuf.Descriptors.EnumValueDescriptor
+          getValueDescriptor() {
+        return getDescriptor().getValues().get(index);
+      }
+      public final com.google.protobuf.Descriptors.EnumDescriptor
+          getDescriptorForType() {
+        return getDescriptor();
+      }
+      public static final com.google.protobuf.Descriptors.EnumDescriptor
+          getDescriptor() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDescriptor().getEnumTypes().get(0);
+      }
+      
+      private static final Type[] VALUES = {
+        NULL, INT, BOOL, DOUBLE, STRING, BYTES, ARRAY, MAP, 
+      };
+      
+      public static Type valueOf(
+          com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+        if (desc.getType() != getDescriptor()) {
+          throw new java.lang.IllegalArgumentException(
+            "EnumValueDescriptor is not for this type.");
+        }
+        return VALUES[desc.getIndex()];
+      }
+      
+      private final int index;
+      private final int value;
+      
+      private Type(int index, int value) {
+        this.index = index;
+        this.value = value;
+      }
+      
+      // @@protoc_insertion_point(enum_scope:com.wajam.mry.api.protobuf.PTransactionValue.Type)
+    }
+    
+    private int bitField0_;
+    // optional .com.wajam.mry.api.protobuf.PTransactionValue.Type type = 1;
+    public static final int TYPE_FIELD_NUMBER = 1;
+    private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type type_;
+    public boolean hasType() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type getType() {
+      return type_;
+    }
+    
+    // optional int64 int_value = 2;
+    public static final int INT_VALUE_FIELD_NUMBER = 2;
+    private long intValue_;
+    public boolean hasIntValue() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public long getIntValue() {
+      return intValue_;
+    }
+    
+    // optional bool bool_value = 3;
+    public static final int BOOL_VALUE_FIELD_NUMBER = 3;
+    private boolean boolValue_;
+    public boolean hasBoolValue() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public boolean getBoolValue() {
+      return boolValue_;
+    }
+    
+    // optional double double_value = 4;
+    public static final int DOUBLE_VALUE_FIELD_NUMBER = 4;
+    private double doubleValue_;
+    public boolean hasDoubleValue() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    public double getDoubleValue() {
+      return doubleValue_;
+    }
+    
+    // optional string string_value = 5;
+    public static final int STRING_VALUE_FIELD_NUMBER = 5;
+    private java.lang.Object stringValue_;
+    public boolean hasStringValue() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    public String getStringValue() {
+      java.lang.Object ref = stringValue_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          stringValue_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getStringValueBytes() {
+      java.lang.Object ref = stringValue_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        stringValue_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    
+    // optional bytes bytes_value = 6;
+    public static final int BYTES_VALUE_FIELD_NUMBER = 6;
+    private com.google.protobuf.ByteString bytesValue_;
+    public boolean hasBytesValue() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    public com.google.protobuf.ByteString getBytesValue() {
+      return bytesValue_;
+    }
+    
+    // optional .com.wajam.mry.api.protobuf.PTransactionCollection array = 7;
+    public static final int ARRAY_FIELD_NUMBER = 7;
+    private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection array_;
+    public boolean hasArray() {
+      return ((bitField0_ & 0x00000040) == 0x00000040);
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection getArray() {
+      return array_;
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder getArrayOrBuilder() {
+      return array_;
+    }
+    
+    // optional .com.wajam.mry.api.protobuf.PTransactionCollection map = 8;
+    public static final int MAP_FIELD_NUMBER = 8;
+    private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection map_;
+    public boolean hasMap() {
+      return ((bitField0_ & 0x00000080) == 0x00000080);
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection getMap() {
+      return map_;
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder getMapOrBuilder() {
+      return map_;
+    }
+    
+    private void initFields() {
+      type_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type.NULL;
+      intValue_ = 0L;
+      boolValue_ = false;
+      doubleValue_ = 0D;
+      stringValue_ = "";
+      bytesValue_ = com.google.protobuf.ByteString.EMPTY;
+      array_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
+      map_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (hasArray()) {
+        if (!getArray().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      if (hasMap()) {
+        if (!getMap().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+    
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeEnum(1, type_.getNumber());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeInt64(2, intValue_);
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBool(3, boolValue_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeDouble(4, doubleValue_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeBytes(5, getStringValueBytes());
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeBytes(6, bytesValue_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        output.writeMessage(7, array_);
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        output.writeMessage(8, map_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+    
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+    
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(1, type_.getNumber());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(2, intValue_);
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(3, boolValue_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(4, doubleValue_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(5, getStringValueBytes());
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(6, bytesValue_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(7, array_);
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(8, map_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+    
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+    
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+    
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionValue_descriptor;
+      }
+      
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionValue_fieldAccessorTable;
+      }
+      
+      // Construct using com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getArrayFieldBuilder();
+          getMapFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+      
+      public Builder clear() {
+        super.clear();
+        type_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type.NULL;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        intValue_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        boolValue_ = false;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        doubleValue_ = 0D;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        stringValue_ = "";
+        bitField0_ = (bitField0_ & ~0x00000010);
+        bytesValue_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000020);
+        if (arrayBuilder_ == null) {
+          array_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
+        } else {
+          arrayBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000040);
+        if (mapBuilder_ == null) {
+          map_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
+        } else {
+          mapBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000080);
+        return this;
+      }
+      
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDescriptor();
+      }
+      
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue getDefaultInstanceForType() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
+      }
+      
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue build() {
+        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+      
+      private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return result;
+      }
+      
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue buildPartial() {
+        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue result = new com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.type_ = type_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.intValue_ = intValue_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.boolValue_ = boolValue_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.doubleValue_ = doubleValue_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.stringValue_ = stringValue_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.bytesValue_ = bytesValue_;
+        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          to_bitField0_ |= 0x00000040;
+        }
+        if (arrayBuilder_ == null) {
+          result.array_ = array_;
+        } else {
+          result.array_ = arrayBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+          to_bitField0_ |= 0x00000080;
+        }
+        if (mapBuilder_ == null) {
+          result.map_ = map_;
+        } else {
+          result.map_ = mapBuilder_.build();
+        }
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+      
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue) {
+          return mergeFrom((com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+      
+      public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue other) {
+        if (other == com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance()) return this;
+        if (other.hasType()) {
+          setType(other.getType());
+        }
+        if (other.hasIntValue()) {
+          setIntValue(other.getIntValue());
+        }
+        if (other.hasBoolValue()) {
+          setBoolValue(other.getBoolValue());
+        }
+        if (other.hasDoubleValue()) {
+          setDoubleValue(other.getDoubleValue());
+        }
+        if (other.hasStringValue()) {
+          setStringValue(other.getStringValue());
+        }
+        if (other.hasBytesValue()) {
+          setBytesValue(other.getBytesValue());
+        }
+        if (other.hasArray()) {
+          mergeArray(other.getArray());
+        }
+        if (other.hasMap()) {
+          mergeMap(other.getMap());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+      
+      public final boolean isInitialized() {
+        if (hasArray()) {
+          if (!getArray().isInitialized()) {
+            
+            return false;
+          }
+        }
+        if (hasMap()) {
+          if (!getMap().isInitialized()) {
+            
+            return false;
+          }
+        }
+        return true;
+      }
+      
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder(
+            this.getUnknownFields());
+        while (true) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              this.setUnknownFields(unknownFields.build());
+              onChanged();
+              return this;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                this.setUnknownFields(unknownFields.build());
+                onChanged();
+                return this;
+              }
+              break;
+            }
+            case 8: {
+              int rawValue = input.readEnum();
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type value = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type.valueOf(rawValue);
+              if (value == null) {
+                unknownFields.mergeVarintField(1, rawValue);
+              } else {
+                bitField0_ |= 0x00000001;
+                type_ = value;
+              }
+              break;
+            }
+            case 16: {
+              bitField0_ |= 0x00000002;
+              intValue_ = input.readInt64();
+              break;
+            }
+            case 24: {
+              bitField0_ |= 0x00000004;
+              boolValue_ = input.readBool();
+              break;
+            }
+            case 33: {
+              bitField0_ |= 0x00000008;
+              doubleValue_ = input.readDouble();
+              break;
+            }
+            case 42: {
+              bitField0_ |= 0x00000010;
+              stringValue_ = input.readBytes();
+              break;
+            }
+            case 50: {
+              bitField0_ |= 0x00000020;
+              bytesValue_ = input.readBytes();
+              break;
+            }
+            case 58: {
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.newBuilder();
+              if (hasArray()) {
+                subBuilder.mergeFrom(getArray());
+              }
+              input.readMessage(subBuilder, extensionRegistry);
+              setArray(subBuilder.buildPartial());
+              break;
+            }
+            case 66: {
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.newBuilder();
+              if (hasMap()) {
+                subBuilder.mergeFrom(getMap());
+              }
+              input.readMessage(subBuilder, extensionRegistry);
+              setMap(subBuilder.buildPartial());
+              break;
+            }
+          }
+        }
+      }
+      
+      private int bitField0_;
+      
+      // optional .com.wajam.mry.api.protobuf.PTransactionValue.Type type = 1;
+      private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type type_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type.NULL;
+      public boolean hasType() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type getType() {
+        return type_;
+      }
+      public Builder setType(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        bitField0_ |= 0x00000001;
+        type_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearType() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        type_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Type.NULL;
+        onChanged();
+        return this;
+      }
+      
+      // optional int64 int_value = 2;
+      private long intValue_ ;
+      public boolean hasIntValue() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      public long getIntValue() {
+        return intValue_;
+      }
+      public Builder setIntValue(long value) {
+        bitField0_ |= 0x00000002;
+        intValue_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearIntValue() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        intValue_ = 0L;
+        onChanged();
+        return this;
+      }
+      
+      // optional bool bool_value = 3;
+      private boolean boolValue_ ;
+      public boolean hasBoolValue() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      public boolean getBoolValue() {
+        return boolValue_;
+      }
+      public Builder setBoolValue(boolean value) {
+        bitField0_ |= 0x00000004;
+        boolValue_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearBoolValue() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        boolValue_ = false;
+        onChanged();
+        return this;
+      }
+      
+      // optional double double_value = 4;
+      private double doubleValue_ ;
+      public boolean hasDoubleValue() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      public double getDoubleValue() {
+        return doubleValue_;
+      }
+      public Builder setDoubleValue(double value) {
+        bitField0_ |= 0x00000008;
+        doubleValue_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearDoubleValue() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        doubleValue_ = 0D;
+        onChanged();
+        return this;
+      }
+      
+      // optional string string_value = 5;
+      private java.lang.Object stringValue_ = "";
+      public boolean hasStringValue() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      public String getStringValue() {
+        java.lang.Object ref = stringValue_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          stringValue_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
+      }
+      public Builder setStringValue(String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+        stringValue_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearStringValue() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        stringValue_ = getDefaultInstance().getStringValue();
+        onChanged();
+        return this;
+      }
+      void setStringValue(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000010;
+        stringValue_ = value;
+        onChanged();
+      }
+      
+      // optional bytes bytes_value = 6;
+      private com.google.protobuf.ByteString bytesValue_ = com.google.protobuf.ByteString.EMPTY;
+      public boolean hasBytesValue() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      public com.google.protobuf.ByteString getBytesValue() {
+        return bytesValue_;
+      }
+      public Builder setBytesValue(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000020;
+        bytesValue_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearBytesValue() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        bytesValue_ = getDefaultInstance().getBytesValue();
+        onChanged();
+        return this;
+      }
+      
+      // optional .com.wajam.mry.api.protobuf.PTransactionCollection array = 7;
+      private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection array_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder> arrayBuilder_;
+      public boolean hasArray() {
+        return ((bitField0_ & 0x00000040) == 0x00000040);
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection getArray() {
+        if (arrayBuilder_ == null) {
+          return array_;
+        } else {
+          return arrayBuilder_.getMessage();
+        }
+      }
+      public Builder setArray(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection value) {
+        if (arrayBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          array_ = value;
+          onChanged();
+        } else {
+          arrayBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000040;
+        return this;
+      }
+      public Builder setArray(
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder builderForValue) {
+        if (arrayBuilder_ == null) {
+          array_ = builderForValue.build();
+          onChanged();
+        } else {
+          arrayBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000040;
+        return this;
+      }
+      public Builder mergeArray(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection value) {
+        if (arrayBuilder_ == null) {
+          if (((bitField0_ & 0x00000040) == 0x00000040) &&
+              array_ != com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance()) {
+            array_ =
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.newBuilder(array_).mergeFrom(value).buildPartial();
+          } else {
+            array_ = value;
+          }
+          onChanged();
+        } else {
+          arrayBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000040;
+        return this;
+      }
+      public Builder clearArray() {
+        if (arrayBuilder_ == null) {
+          array_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
+          onChanged();
+        } else {
+          arrayBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000040);
+        return this;
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder getArrayBuilder() {
+        bitField0_ |= 0x00000040;
+        onChanged();
+        return getArrayFieldBuilder().getBuilder();
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder getArrayOrBuilder() {
+        if (arrayBuilder_ != null) {
+          return arrayBuilder_.getMessageOrBuilder();
+        } else {
+          return array_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder> 
+          getArrayFieldBuilder() {
+        if (arrayBuilder_ == null) {
+          arrayBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder>(
+                  array_,
+                  getParentForChildren(),
+                  isClean());
+          array_ = null;
+        }
+        return arrayBuilder_;
+      }
+      
+      // optional .com.wajam.mry.api.protobuf.PTransactionCollection map = 8;
+      private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection map_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder> mapBuilder_;
+      public boolean hasMap() {
+        return ((bitField0_ & 0x00000080) == 0x00000080);
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection getMap() {
+        if (mapBuilder_ == null) {
+          return map_;
+        } else {
+          return mapBuilder_.getMessage();
+        }
+      }
+      public Builder setMap(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection value) {
+        if (mapBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          map_ = value;
+          onChanged();
+        } else {
+          mapBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000080;
+        return this;
+      }
+      public Builder setMap(
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder builderForValue) {
+        if (mapBuilder_ == null) {
+          map_ = builderForValue.build();
+          onChanged();
+        } else {
+          mapBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000080;
+        return this;
+      }
+      public Builder mergeMap(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection value) {
+        if (mapBuilder_ == null) {
+          if (((bitField0_ & 0x00000080) == 0x00000080) &&
+              map_ != com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance()) {
+            map_ =
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.newBuilder(map_).mergeFrom(value).buildPartial();
+          } else {
+            map_ = value;
+          }
+          onChanged();
+        } else {
+          mapBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000080;
+        return this;
+      }
+      public Builder clearMap() {
+        if (mapBuilder_ == null) {
+          map_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
+          onChanged();
+        } else {
+          mapBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000080);
+        return this;
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder getMapBuilder() {
+        bitField0_ |= 0x00000080;
+        onChanged();
+        return getMapFieldBuilder().getBuilder();
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder getMapOrBuilder() {
+        if (mapBuilder_ != null) {
+          return mapBuilder_.getMessageOrBuilder();
+        } else {
+          return map_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder> 
+          getMapFieldBuilder() {
+        if (mapBuilder_ == null) {
+          mapBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder>(
+                  map_,
+                  getParentForChildren(),
+                  isClean());
+          map_ = null;
+        }
+        return mapBuilder_;
+      }
+      
+      // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PTransactionValue)
+    }
+    
+    static {
+      defaultInstance = new PTransactionValue(true);
+      defaultInstance.initFields();
+    }
+    
+    // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PTransactionValue)
+  }
+  
+  public interface PTransactionCollectionOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // repeated .com.wajam.mry.api.protobuf.PTransactionCollectionValue values = 1;
+    java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue> 
+        getValuesList();
+    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue getValues(int index);
+    int getValuesCount();
+    java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder> 
+        getValuesOrBuilderList();
+    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder getValuesOrBuilder(
+        int index);
+  }
+  public static final class PTransactionCollection extends
+      com.google.protobuf.GeneratedMessage
+      implements PTransactionCollectionOrBuilder {
+    // Use PTransactionCollection.newBuilder() to construct.
+    private PTransactionCollection(Builder builder) {
+      super(builder);
+    }
+    private PTransactionCollection(boolean noInit) {}
+    
+    private static final PTransactionCollection defaultInstance;
+    public static PTransactionCollection getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public PTransactionCollection getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_fieldAccessorTable;
+    }
+    
+    // repeated .com.wajam.mry.api.protobuf.PTransactionCollectionValue values = 1;
+    public static final int VALUES_FIELD_NUMBER = 1;
+    private java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue> values_;
+    public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue> getValuesList() {
+      return values_;
+    }
+    public java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder> 
+        getValuesOrBuilderList() {
+      return values_;
+    }
+    public int getValuesCount() {
+      return values_.size();
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue getValues(int index) {
+      return values_.get(index);
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder getValuesOrBuilder(
+        int index) {
+      return values_.get(index);
+    }
+    
+    private void initFields() {
+      values_ = java.util.Collections.emptyList();
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      for (int i = 0; i < getValuesCount(); i++) {
+        if (!getValues(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+    
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      for (int i = 0; i < values_.size(); i++) {
+        output.writeMessage(1, values_.get(i));
+      }
+      getUnknownFields().writeTo(output);
+    }
+    
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+    
+      size = 0;
+      for (int i = 0; i < values_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(1, values_.get(i));
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+    
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+    
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+    
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_descriptor;
+      }
+      
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_fieldAccessorTable;
+      }
+      
+      // Construct using com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getValuesFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+      
+      public Builder clear() {
+        super.clear();
+        if (valuesBuilder_ == null) {
+          values_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000001);
+        } else {
+          valuesBuilder_.clear();
+        }
+        return this;
+      }
+      
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDescriptor();
+      }
+      
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection getDefaultInstanceForType() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance();
+      }
+      
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection build() {
+        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+      
+      private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return result;
+      }
+      
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection buildPartial() {
+        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection result = new com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection(this);
+        int from_bitField0_ = bitField0_;
+        if (valuesBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001)) {
+            values_ = java.util.Collections.unmodifiableList(values_);
+            bitField0_ = (bitField0_ & ~0x00000001);
+          }
+          result.values_ = values_;
+        } else {
+          result.values_ = valuesBuilder_.build();
+        }
+        onBuilt();
+        return result;
+      }
+      
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection) {
+          return mergeFrom((com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+      
+      public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection other) {
+        if (other == com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.getDefaultInstance()) return this;
+        if (valuesBuilder_ == null) {
+          if (!other.values_.isEmpty()) {
+            if (values_.isEmpty()) {
+              values_ = other.values_;
+              bitField0_ = (bitField0_ & ~0x00000001);
+            } else {
+              ensureValuesIsMutable();
+              values_.addAll(other.values_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.values_.isEmpty()) {
+            if (valuesBuilder_.isEmpty()) {
+              valuesBuilder_.dispose();
+              valuesBuilder_ = null;
+              values_ = other.values_;
+              bitField0_ = (bitField0_ & ~0x00000001);
+              valuesBuilder_ = 
+                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
+                   getValuesFieldBuilder() : null;
+            } else {
+              valuesBuilder_.addAllMessages(other.values_);
+            }
+          }
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+      
+      public final boolean isInitialized() {
+        for (int i = 0; i < getValuesCount(); i++) {
+          if (!getValues(i).isInitialized()) {
+            
+            return false;
+          }
+        }
+        return true;
+      }
+      
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder(
+            this.getUnknownFields());
+        while (true) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              this.setUnknownFields(unknownFields.build());
+              onChanged();
+              return this;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                this.setUnknownFields(unknownFields.build());
+                onChanged();
+                return this;
+              }
+              break;
+            }
+            case 10: {
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.newBuilder();
+              input.readMessage(subBuilder, extensionRegistry);
+              addValues(subBuilder.buildPartial());
+              break;
+            }
+          }
+        }
+      }
+      
+      private int bitField0_;
+      
+      // repeated .com.wajam.mry.api.protobuf.PTransactionCollectionValue values = 1;
+      private java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue> values_ =
+        java.util.Collections.emptyList();
+      private void ensureValuesIsMutable() {
+        if (!((bitField0_ & 0x00000001) == 0x00000001)) {
+          values_ = new java.util.ArrayList<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue>(values_);
+          bitField0_ |= 0x00000001;
+         }
+      }
+      
+      private com.google.protobuf.RepeatedFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder> valuesBuilder_;
+      
+      public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue> getValuesList() {
+        if (valuesBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(values_);
+        } else {
+          return valuesBuilder_.getMessageList();
+        }
+      }
+      public int getValuesCount() {
+        if (valuesBuilder_ == null) {
+          return values_.size();
+        } else {
+          return valuesBuilder_.getCount();
+        }
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue getValues(int index) {
+        if (valuesBuilder_ == null) {
+          return values_.get(index);
+        } else {
+          return valuesBuilder_.getMessage(index);
+        }
+      }
+      public Builder setValues(
+          int index, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue value) {
+        if (valuesBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureValuesIsMutable();
+          values_.set(index, value);
+          onChanged();
+        } else {
+          valuesBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      public Builder setValues(
+          int index, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder builderForValue) {
+        if (valuesBuilder_ == null) {
+          ensureValuesIsMutable();
+          values_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          valuesBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      public Builder addValues(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue value) {
+        if (valuesBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureValuesIsMutable();
+          values_.add(value);
+          onChanged();
+        } else {
+          valuesBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      public Builder addValues(
+          int index, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue value) {
+        if (valuesBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureValuesIsMutable();
+          values_.add(index, value);
+          onChanged();
+        } else {
+          valuesBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      public Builder addValues(
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder builderForValue) {
+        if (valuesBuilder_ == null) {
+          ensureValuesIsMutable();
+          values_.add(builderForValue.build());
+          onChanged();
+        } else {
+          valuesBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      public Builder addValues(
+          int index, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder builderForValue) {
+        if (valuesBuilder_ == null) {
+          ensureValuesIsMutable();
+          values_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          valuesBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      public Builder addAllValues(
+          java.lang.Iterable<? extends com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue> values) {
+        if (valuesBuilder_ == null) {
+          ensureValuesIsMutable();
+          super.addAll(values, values_);
+          onChanged();
+        } else {
+          valuesBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      public Builder clearValues() {
+        if (valuesBuilder_ == null) {
+          values_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000001);
+          onChanged();
+        } else {
+          valuesBuilder_.clear();
+        }
+        return this;
+      }
+      public Builder removeValues(int index) {
+        if (valuesBuilder_ == null) {
+          ensureValuesIsMutable();
+          values_.remove(index);
+          onChanged();
+        } else {
+          valuesBuilder_.remove(index);
+        }
+        return this;
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder getValuesBuilder(
+          int index) {
+        return getValuesFieldBuilder().getBuilder(index);
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder getValuesOrBuilder(
+          int index) {
+        if (valuesBuilder_ == null) {
+          return values_.get(index);  } else {
+          return valuesBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      public java.util.List<? extends com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder> 
+           getValuesOrBuilderList() {
+        if (valuesBuilder_ != null) {
+          return valuesBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(values_);
+        }
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder addValuesBuilder() {
+        return getValuesFieldBuilder().addBuilder(
+            com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.getDefaultInstance());
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder addValuesBuilder(
+          int index) {
+        return getValuesFieldBuilder().addBuilder(
+            index, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.getDefaultInstance());
+      }
+      public java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder> 
+           getValuesBuilderList() {
+        return getValuesFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder> 
+          getValuesFieldBuilder() {
+        if (valuesBuilder_ == null) {
+          valuesBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder>(
+                  values_,
+                  ((bitField0_ & 0x00000001) == 0x00000001),
+                  getParentForChildren(),
+                  isClean());
+          values_ = null;
+        }
+        return valuesBuilder_;
+      }
+      
+      // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PTransactionCollection)
+    }
+    
+    static {
+      defaultInstance = new PTransactionCollection(true);
+      defaultInstance.initFields();
+    }
+    
+    // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PTransactionCollection)
+  }
+  
+  public interface PTransactionCollectionValueOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .com.wajam.mry.api.protobuf.PTransactionValue value = 1;
+    boolean hasValue();
+    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue getValue();
+    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder getValueOrBuilder();
+    
+    // optional string key = 2;
+    boolean hasKey();
+    String getKey();
+  }
+  public static final class PTransactionCollectionValue extends
+      com.google.protobuf.GeneratedMessage
+      implements PTransactionCollectionValueOrBuilder {
+    // Use PTransactionCollectionValue.newBuilder() to construct.
+    private PTransactionCollectionValue(Builder builder) {
+      super(builder);
+    }
+    private PTransactionCollectionValue(boolean noInit) {}
+    
+    private static final PTransactionCollectionValue defaultInstance;
+    public static PTransactionCollectionValue getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public PTransactionCollectionValue getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_fieldAccessorTable;
+    }
+    
+    private int bitField0_;
+    // required .com.wajam.mry.api.protobuf.PTransactionValue value = 1;
+    public static final int VALUE_FIELD_NUMBER = 1;
+    private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value_;
+    public boolean hasValue() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue getValue() {
+      return value_;
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder getValueOrBuilder() {
+      return value_;
+    }
+    
+    // optional string key = 2;
+    public static final int KEY_FIELD_NUMBER = 2;
+    private java.lang.Object key_;
+    public boolean hasKey() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getKey() {
+      java.lang.Object ref = key_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          key_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getKeyBytes() {
+      java.lang.Object ref = key_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        key_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    
+    private void initFields() {
+      value_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
+      key_ = "";
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasValue()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getValue().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+    
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, value_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getKeyBytes());
+      }
+      getUnknownFields().writeTo(output);
+    }
+    
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+    
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(1, value_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(2, getKeyBytes());
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+    
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+    
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+    
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValueOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_descriptor;
+      }
+      
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_fieldAccessorTable;
+      }
+      
+      // Construct using com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getValueFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+      
+      public Builder clear() {
+        super.clear();
+        if (valueBuilder_ == null) {
+          value_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
+        } else {
+          valueBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
+        key_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        return this;
+      }
+      
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.getDescriptor();
+      }
+      
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue getDefaultInstanceForType() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.getDefaultInstance();
+      }
+      
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue build() {
+        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+      
+      private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return result;
+      }
+      
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue buildPartial() {
+        com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue result = new com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        if (valueBuilder_ == null) {
+          result.value_ = value_;
+        } else {
+          result.value_ = valueBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.key_ = key_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+      
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue) {
+          return mergeFrom((com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+      
+      public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue other) {
+        if (other == com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.getDefaultInstance()) return this;
+        if (other.hasValue()) {
+          mergeValue(other.getValue());
+        }
+        if (other.hasKey()) {
+          setKey(other.getKey());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+      
+      public final boolean isInitialized() {
+        if (!hasValue()) {
+          
+          return false;
+        }
+        if (!getValue().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder(
+            this.getUnknownFields());
+        while (true) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              this.setUnknownFields(unknownFields.build());
+              onChanged();
+              return this;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                this.setUnknownFields(unknownFields.build());
+                onChanged();
+                return this;
+              }
+              break;
+            }
+            case 10: {
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.newBuilder();
+              if (hasValue()) {
+                subBuilder.mergeFrom(getValue());
+              }
+              input.readMessage(subBuilder, extensionRegistry);
+              setValue(subBuilder.buildPartial());
+              break;
+            }
+            case 18: {
+              bitField0_ |= 0x00000002;
+              key_ = input.readBytes();
+              break;
+            }
+          }
+        }
+      }
+      
+      private int bitField0_;
+      
+      // required .com.wajam.mry.api.protobuf.PTransactionValue value = 1;
+      private com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder> valueBuilder_;
+      public boolean hasValue() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue getValue() {
+        if (valueBuilder_ == null) {
+          return value_;
+        } else {
+          return valueBuilder_.getMessage();
+        }
+      }
+      public Builder setValue(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value) {
+        if (valueBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          value_ = value;
+          onChanged();
+        } else {
+          valueBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      public Builder setValue(
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder builderForValue) {
+        if (valueBuilder_ == null) {
+          value_ = builderForValue.build();
+          onChanged();
+        } else {
+          valueBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      public Builder mergeValue(com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue value) {
+        if (valueBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              value_ != com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance()) {
+            value_ =
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.newBuilder(value_).mergeFrom(value).buildPartial();
+          } else {
+            value_ = value;
+          }
+          onChanged();
+        } else {
+          valueBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      public Builder clearValue() {
+        if (valueBuilder_ == null) {
+          value_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.getDefaultInstance();
+          onChanged();
+        } else {
+          valueBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
+        return this;
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder getValueBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getValueFieldBuilder().getBuilder();
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder getValueOrBuilder() {
+        if (valueBuilder_ != null) {
+          return valueBuilder_.getMessageOrBuilder();
+        } else {
+          return value_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder> 
+          getValueFieldBuilder() {
+        if (valueBuilder_ == null) {
+          valueBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValueOrBuilder>(
+                  value_,
+                  getParentForChildren(),
+                  isClean());
+          value_ = null;
+        }
+        return valueBuilder_;
+      }
+      
+      // optional string key = 2;
+      private java.lang.Object key_ = "";
+      public boolean hasKey() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      public String getKey() {
+        java.lang.Object ref = key_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          key_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
+      }
+      public Builder setKey(String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        key_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearKey() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        key_ = getDefaultInstance().getKey();
+        onChanged();
+        return this;
+      }
+      void setKey(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        key_ = value;
+        onChanged();
+      }
+      
+      // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PTransactionCollectionValue)
+    }
+    
+    static {
+      defaultInstance = new PTransactionCollectionValue(true);
+      defaultInstance.initFields();
+    }
+    
+    // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PTransactionCollectionValue)
+  }
+  
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_com_wajam_mry_api_protobuf_PHeap_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_com_wajam_mry_api_protobuf_PHeap_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_com_wajam_mry_api_protobuf_PMryData_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_com_wajam_mry_api_protobuf_PMryData_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_com_wajam_mry_api_protobuf_PTransport_descriptor;
   private static
@@ -7872,11 +8281,6 @@ public final class MryProtobuf {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_com_wajam_mry_api_protobuf_PTransaction_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_wajam_mry_api_protobuf_PObject_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_com_wajam_mry_api_protobuf_PObject_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_com_wajam_mry_api_protobuf_PBlock_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -7886,21 +8290,6 @@ public final class MryProtobuf {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_com_wajam_mry_api_protobuf_PVariable_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_wajam_mry_api_protobuf_PTransactionValue_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_com_wajam_mry_api_protobuf_PTransactionValue_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_com_wajam_mry_api_protobuf_POperation_descriptor;
   private static
@@ -7941,6 +8330,21 @@ public final class MryProtobuf {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_com_wajam_mry_api_protobuf_PProjection_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_com_wajam_mry_api_protobuf_PTransactionValue_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_com_wajam_mry_api_protobuf_PTransactionValue_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_fieldAccessorTable;
   
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -7951,141 +8355,122 @@ public final class MryProtobuf {
   static {
     java.lang.String[] descriptorData = {
       "\n\021MryProtobuf.proto\022\032com.wajam.mry.api.p" +
-      "rotobuf\"\202\001\n\nPTransport\0223\n\007request\030\001 \001(\0132" +
-      "\".com.wajam.mry.api.protobuf.PBlock\022?\n\010r" +
-      "esponse\030\002 \003(\0132-.com.wajam.mry.api.protob" +
-      "uf.PTransactionValue\"}\n\014PTransaction\022\n\n\002" +
-      "id\030\001 \001(\r2a\n\013transaction\022\".com.wajam.mry." +
-      "api.protobuf.PBlock\030d \001(\0132(.com.wajam.mr" +
-      "y.api.protobuf.PTransaction\"\020\n\007PObject*\005" +
-      "\010d\020\311\001\"\225\001\n\006PBlock\022\016\n\006varSeq\030\001 \002(\r\022:\n\noper" +
-      "ations\030\002 \003(\0132&.com.wajam.mry.api.protobu",
-      "f.POperation\0228\n\tvariables\030\003 \003(\0132%.com.wa" +
-      "jam.mry.api.protobuf.PVariable*\005\010d\020\311\001\"\263\001" +
-      "\n\tPVariable\022\n\n\002id\030\001 \002(\r\022<\n\005value\030\002 \001(\0132-" +
-      ".com.wajam.mry.api.protobuf.PTransaction" +
-      "Value2\\\n\010variable\022#.com.wajam.mry.api.pr" +
-      "otobuf.PObject\030d \001(\0132%.com.wajam.mry.api" +
-      ".protobuf.PVariable\"\200\004\n\021PTransactionValu" +
-      "e\022@\n\004type\030\001 \001(\01622.com.wajam.mry.api.prot" +
-      "obuf.PTransactionValue.Type\022\021\n\tint_value" +
-      "\030\002 \001(\003\022\022\n\nbool_value\030\003 \001(\010\022\024\n\014double_val",
-      "ue\030\004 \001(\001\022\024\n\014string_value\030\005 \001(\t\022\023\n\013bytes_" +
-      "value\030\006 \001(\014\022A\n\005array\030\007 \001(\01322.com.wajam.m" +
-      "ry.api.protobuf.PTransactionCollection\022?" +
-      "\n\003map\030\010 \001(\01322.com.wajam.mry.api.protobuf" +
-      ".PTransactionCollection\"Z\n\004Type\022\010\n\004NULL\020" +
-      "\001\022\007\n\003INT\020\002\022\010\n\004BOOL\020\003\022\n\n\006DOUBLE\020\004\022\n\n\006STRI" +
-      "NG\020\005\022\t\n\005BYTES\020\006\022\t\n\005ARRAY\020\007\022\007\n\003MAP\020\0102a\n\005v" +
-      "alue\022#.com.wajam.mry.api.protobuf.PObjec" +
-      "t\030e \001(\0132-.com.wajam.mry.api.protobuf.PTr" +
-      "ansactionValue\"a\n\026PTransactionCollection",
-      "\022G\n\006values\030\001 \003(\01327.com.wajam.mry.api.pro" +
-      "tobuf.PTransactionCollectionValue\"h\n\033PTr" +
-      "ansactionCollectionValue\022<\n\005value\030\001 \002(\0132" +
-      "-.com.wajam.mry.api.protobuf.PTransactio" +
-      "nValue\022\013\n\003key\030\002 \001(\t\"\203\001\n\nPOperation\0228\n\tva" +
-      "riables\030\001 \003(\0132%.com.wajam.mry.api.protob" +
-      "uf.PVariable\0224\n\007objects\030\002 \003(\0132#.com.waja" +
-      "m.mry.api.protobuf.PObject*\005\010d\020\311\001\"c\n\007PRe" +
-      "turn2X\n\003ret\022&.com.wajam.mry.api.protobuf" +
-      ".POperation\030d \001(\0132#.com.wajam.mry.api.pr",
-      "otobuf.PReturn\"`\n\005PFrom2W\n\004from\022&.com.wa" +
-      "jam.mry.api.protobuf.POperation\030e \001(\0132!." +
-      "com.wajam.mry.api.protobuf.PFrom\"]\n\004PGet" +
-      "2U\n\003get\022&.com.wajam.mry.api.protobuf.POp" +
-      "eration\030f \001(\0132 .com.wajam.mry.api.protob" +
-      "uf.PGet\"]\n\004PSet2U\n\003set\022&.com.wajam.mry.a" +
-      "pi.protobuf.POperation\030g \001(\0132 .com.wajam" +
-      ".mry.api.protobuf.PSet\"f\n\007PDelete2[\n\006del" +
-      "ete\022&.com.wajam.mry.api.protobuf.POperat" +
-      "ion\030h \001(\0132#.com.wajam.mry.api.protobuf.P",
-      "Delete\"c\n\006PLimit2Y\n\005limit\022&.com.wajam.mr" +
-      "y.api.protobuf.POperation\030i \001(\0132\".com.wa" +
-      "jam.mry.api.protobuf.PLimit\"r\n\013PProjecti" +
-      "on2c\n\nprojection\022&.com.wajam.mry.api.pro" +
-      "tobuf.POperation\030j \001(\0132\'.com.wajam.mry.a" +
-      "pi.protobuf.PProjectionB\002H\001"
+      "rotobuf\"=\n\005PHeap\0224\n\006values\030\001 \003(\0132$.com.w" +
+      "ajam.mry.api.protobuf.PMryData\"\256\002\n\010PMryD" +
+      "ata\022=\n\013transaction\030\001 \001(\0132(.com.wajam.mry" +
+      ".api.protobuf.PTransaction\0221\n\005block\030\002 \001(" +
+      "\0132\".com.wajam.mry.api.protobuf.PBlock\0227\n" +
+      "\010variable\030\003 \001(\0132%.com.wajam.mry.api.prot" +
+      "obuf.PVariable\0229\n\toperation\030\004 \001(\0132&.com." +
+      "wajam.mry.api.protobuf.POperation\022<\n\005val" +
+      "ue\030\005 \001(\0132-.com.wajam.mry.api.protobuf.PT",
+      "ransactionValue\"n\n\nPTransport\022/\n\004heap\030\003 " +
+      "\001(\0132!.com.wajam.mry.api.protobuf.PHeap\022\026" +
+      "\n\016requestAddress\030\001 \001(\r\022\027\n\017responseAddres" +
+      "s\030\002 \003(\r\"0\n\014PTransaction\022\n\n\002id\030\001 \001(\r\022\024\n\014b" +
+      "lockAddress\030\002 \001(\r\"O\n\006PBlock\022\016\n\006varSeq\030\001 " +
+      "\002(\r\022\032\n\022operationAddresses\030\002 \003(\r\022\031\n\021varia" +
+      "bleAddresses\030\003 \003(\r\"-\n\tPVariable\022\n\n\002id\030\001 " +
+      "\002(\r\022\024\n\014valueAddress\030\002 \001(\r\"G\n\nPOperation\022" +
+      "\031\n\021variableAddresses\030\001 \003(\r\022\027\n\017objectAddr" +
+      "esses\030\002 \003(\r*\005\010d\020\311\001\"c\n\007PReturn2X\n\003ret\022&.c",
+      "om.wajam.mry.api.protobuf.POperation\030d \001" +
+      "(\0132#.com.wajam.mry.api.protobuf.PReturn\"" +
+      "`\n\005PFrom2W\n\004from\022&.com.wajam.mry.api.pro" +
+      "tobuf.POperation\030e \001(\0132!.com.wajam.mry.a" +
+      "pi.protobuf.PFrom\"]\n\004PGet2U\n\003get\022&.com.w" +
+      "ajam.mry.api.protobuf.POperation\030f \001(\0132 " +
+      ".com.wajam.mry.api.protobuf.PGet\"]\n\004PSet" +
+      "2U\n\003set\022&.com.wajam.mry.api.protobuf.POp" +
+      "eration\030g \001(\0132 .com.wajam.mry.api.protob" +
+      "uf.PSet\"f\n\007PDelete2[\n\006delete\022&.com.wajam",
+      ".mry.api.protobuf.POperation\030h \001(\0132#.com" +
+      ".wajam.mry.api.protobuf.PDelete\"c\n\006PLimi" +
+      "t2Y\n\005limit\022&.com.wajam.mry.api.protobuf." +
+      "POperation\030i \001(\0132\".com.wajam.mry.api.pro" +
+      "tobuf.PLimit\"r\n\013PProjection2c\n\nprojectio" +
+      "n\022&.com.wajam.mry.api.protobuf.POperatio" +
+      "n\030j \001(\0132\'.com.wajam.mry.api.protobuf.PPr" +
+      "ojection\"\235\003\n\021PTransactionValue\022@\n\004type\030\001" +
+      " \001(\01622.com.wajam.mry.api.protobuf.PTrans" +
+      "actionValue.Type\022\021\n\tint_value\030\002 \001(\003\022\022\n\nb",
+      "ool_value\030\003 \001(\010\022\024\n\014double_value\030\004 \001(\001\022\024\n" +
+      "\014string_value\030\005 \001(\t\022\023\n\013bytes_value\030\006 \001(\014" +
+      "\022A\n\005array\030\007 \001(\01322.com.wajam.mry.api.prot" +
+      "obuf.PTransactionCollection\022?\n\003map\030\010 \001(\013" +
+      "22.com.wajam.mry.api.protobuf.PTransacti" +
+      "onCollection\"Z\n\004Type\022\010\n\004NULL\020\001\022\007\n\003INT\020\002\022" +
+      "\010\n\004BOOL\020\003\022\n\n\006DOUBLE\020\004\022\n\n\006STRING\020\005\022\t\n\005BYT" +
+      "ES\020\006\022\t\n\005ARRAY\020\007\022\007\n\003MAP\020\010\"a\n\026PTransaction" +
+      "Collection\022G\n\006values\030\001 \003(\01327.com.wajam.m" +
+      "ry.api.protobuf.PTransactionCollectionVa",
+      "lue\"h\n\033PTransactionCollectionValue\022<\n\005va" +
+      "lue\030\001 \002(\0132-.com.wajam.mry.api.protobuf.P" +
+      "TransactionValue\022\013\n\003key\030\002 \001(\tB\002H\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
         public com.google.protobuf.ExtensionRegistry assignDescriptors(
             com.google.protobuf.Descriptors.FileDescriptor root) {
           descriptor = root;
-          internal_static_com_wajam_mry_api_protobuf_PTransport_descriptor =
+          internal_static_com_wajam_mry_api_protobuf_PHeap_descriptor =
             getDescriptor().getMessageTypes().get(0);
+          internal_static_com_wajam_mry_api_protobuf_PHeap_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_com_wajam_mry_api_protobuf_PHeap_descriptor,
+              new java.lang.String[] { "Values", },
+              com.wajam.mry.api.protobuf.MryProtobuf.PHeap.class,
+              com.wajam.mry.api.protobuf.MryProtobuf.PHeap.Builder.class);
+          internal_static_com_wajam_mry_api_protobuf_PMryData_descriptor =
+            getDescriptor().getMessageTypes().get(1);
+          internal_static_com_wajam_mry_api_protobuf_PMryData_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_com_wajam_mry_api_protobuf_PMryData_descriptor,
+              new java.lang.String[] { "Transaction", "Block", "Variable", "Operation", "Value", },
+              com.wajam.mry.api.protobuf.MryProtobuf.PMryData.class,
+              com.wajam.mry.api.protobuf.MryProtobuf.PMryData.Builder.class);
+          internal_static_com_wajam_mry_api_protobuf_PTransport_descriptor =
+            getDescriptor().getMessageTypes().get(2);
           internal_static_com_wajam_mry_api_protobuf_PTransport_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_PTransport_descriptor,
-              new java.lang.String[] { "Request", "Response", },
+              new java.lang.String[] { "Heap", "RequestAddress", "ResponseAddress", },
               com.wajam.mry.api.protobuf.MryProtobuf.PTransport.class,
               com.wajam.mry.api.protobuf.MryProtobuf.PTransport.Builder.class);
           internal_static_com_wajam_mry_api_protobuf_PTransaction_descriptor =
-            getDescriptor().getMessageTypes().get(1);
+            getDescriptor().getMessageTypes().get(3);
           internal_static_com_wajam_mry_api_protobuf_PTransaction_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_PTransaction_descriptor,
-              new java.lang.String[] { "Id", },
+              new java.lang.String[] { "Id", "BlockAddress", },
               com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.class,
               com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.Builder.class);
-          internal_static_com_wajam_mry_api_protobuf_PObject_descriptor =
-            getDescriptor().getMessageTypes().get(2);
-          internal_static_com_wajam_mry_api_protobuf_PObject_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_com_wajam_mry_api_protobuf_PObject_descriptor,
-              new java.lang.String[] { },
-              com.wajam.mry.api.protobuf.MryProtobuf.PObject.class,
-              com.wajam.mry.api.protobuf.MryProtobuf.PObject.Builder.class);
           internal_static_com_wajam_mry_api_protobuf_PBlock_descriptor =
-            getDescriptor().getMessageTypes().get(3);
+            getDescriptor().getMessageTypes().get(4);
           internal_static_com_wajam_mry_api_protobuf_PBlock_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_PBlock_descriptor,
-              new java.lang.String[] { "VarSeq", "Operations", "Variables", },
+              new java.lang.String[] { "VarSeq", "OperationAddresses", "VariableAddresses", },
               com.wajam.mry.api.protobuf.MryProtobuf.PBlock.class,
               com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder.class);
           internal_static_com_wajam_mry_api_protobuf_PVariable_descriptor =
-            getDescriptor().getMessageTypes().get(4);
+            getDescriptor().getMessageTypes().get(5);
           internal_static_com_wajam_mry_api_protobuf_PVariable_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_PVariable_descriptor,
-              new java.lang.String[] { "Id", "Value", },
+              new java.lang.String[] { "Id", "ValueAddress", },
               com.wajam.mry.api.protobuf.MryProtobuf.PVariable.class,
               com.wajam.mry.api.protobuf.MryProtobuf.PVariable.Builder.class);
-          internal_static_com_wajam_mry_api_protobuf_PTransactionValue_descriptor =
-            getDescriptor().getMessageTypes().get(5);
-          internal_static_com_wajam_mry_api_protobuf_PTransactionValue_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_com_wajam_mry_api_protobuf_PTransactionValue_descriptor,
-              new java.lang.String[] { "Type", "IntValue", "BoolValue", "DoubleValue", "StringValue", "BytesValue", "Array", "Map", },
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.class,
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder.class);
-          internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_descriptor =
-            getDescriptor().getMessageTypes().get(6);
-          internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_descriptor,
-              new java.lang.String[] { "Values", },
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.class,
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder.class);
-          internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_descriptor =
-            getDescriptor().getMessageTypes().get(7);
-          internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_descriptor,
-              new java.lang.String[] { "Value", "Key", },
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.class,
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder.class);
           internal_static_com_wajam_mry_api_protobuf_POperation_descriptor =
-            getDescriptor().getMessageTypes().get(8);
+            getDescriptor().getMessageTypes().get(6);
           internal_static_com_wajam_mry_api_protobuf_POperation_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_POperation_descriptor,
-              new java.lang.String[] { "Variables", "Objects", },
+              new java.lang.String[] { "VariableAddresses", "ObjectAddresses", },
               com.wajam.mry.api.protobuf.MryProtobuf.POperation.class,
               com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder.class);
           internal_static_com_wajam_mry_api_protobuf_PReturn_descriptor =
-            getDescriptor().getMessageTypes().get(9);
+            getDescriptor().getMessageTypes().get(7);
           internal_static_com_wajam_mry_api_protobuf_PReturn_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_PReturn_descriptor,
@@ -8093,7 +8478,7 @@ public final class MryProtobuf {
               com.wajam.mry.api.protobuf.MryProtobuf.PReturn.class,
               com.wajam.mry.api.protobuf.MryProtobuf.PReturn.Builder.class);
           internal_static_com_wajam_mry_api_protobuf_PFrom_descriptor =
-            getDescriptor().getMessageTypes().get(10);
+            getDescriptor().getMessageTypes().get(8);
           internal_static_com_wajam_mry_api_protobuf_PFrom_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_PFrom_descriptor,
@@ -8101,7 +8486,7 @@ public final class MryProtobuf {
               com.wajam.mry.api.protobuf.MryProtobuf.PFrom.class,
               com.wajam.mry.api.protobuf.MryProtobuf.PFrom.Builder.class);
           internal_static_com_wajam_mry_api_protobuf_PGet_descriptor =
-            getDescriptor().getMessageTypes().get(11);
+            getDescriptor().getMessageTypes().get(9);
           internal_static_com_wajam_mry_api_protobuf_PGet_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_PGet_descriptor,
@@ -8109,7 +8494,7 @@ public final class MryProtobuf {
               com.wajam.mry.api.protobuf.MryProtobuf.PGet.class,
               com.wajam.mry.api.protobuf.MryProtobuf.PGet.Builder.class);
           internal_static_com_wajam_mry_api_protobuf_PSet_descriptor =
-            getDescriptor().getMessageTypes().get(12);
+            getDescriptor().getMessageTypes().get(10);
           internal_static_com_wajam_mry_api_protobuf_PSet_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_PSet_descriptor,
@@ -8117,7 +8502,7 @@ public final class MryProtobuf {
               com.wajam.mry.api.protobuf.MryProtobuf.PSet.class,
               com.wajam.mry.api.protobuf.MryProtobuf.PSet.Builder.class);
           internal_static_com_wajam_mry_api_protobuf_PDelete_descriptor =
-            getDescriptor().getMessageTypes().get(13);
+            getDescriptor().getMessageTypes().get(11);
           internal_static_com_wajam_mry_api_protobuf_PDelete_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_PDelete_descriptor,
@@ -8125,7 +8510,7 @@ public final class MryProtobuf {
               com.wajam.mry.api.protobuf.MryProtobuf.PDelete.class,
               com.wajam.mry.api.protobuf.MryProtobuf.PDelete.Builder.class);
           internal_static_com_wajam_mry_api_protobuf_PLimit_descriptor =
-            getDescriptor().getMessageTypes().get(14);
+            getDescriptor().getMessageTypes().get(12);
           internal_static_com_wajam_mry_api_protobuf_PLimit_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_PLimit_descriptor,
@@ -8133,13 +8518,37 @@ public final class MryProtobuf {
               com.wajam.mry.api.protobuf.MryProtobuf.PLimit.class,
               com.wajam.mry.api.protobuf.MryProtobuf.PLimit.Builder.class);
           internal_static_com_wajam_mry_api_protobuf_PProjection_descriptor =
-            getDescriptor().getMessageTypes().get(15);
+            getDescriptor().getMessageTypes().get(13);
           internal_static_com_wajam_mry_api_protobuf_PProjection_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_PProjection_descriptor,
               new java.lang.String[] { },
               com.wajam.mry.api.protobuf.MryProtobuf.PProjection.class,
               com.wajam.mry.api.protobuf.MryProtobuf.PProjection.Builder.class);
+          internal_static_com_wajam_mry_api_protobuf_PTransactionValue_descriptor =
+            getDescriptor().getMessageTypes().get(14);
+          internal_static_com_wajam_mry_api_protobuf_PTransactionValue_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_com_wajam_mry_api_protobuf_PTransactionValue_descriptor,
+              new java.lang.String[] { "Type", "IntValue", "BoolValue", "DoubleValue", "StringValue", "BytesValue", "Array", "Map", },
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.class,
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder.class);
+          internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_descriptor =
+            getDescriptor().getMessageTypes().get(15);
+          internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_descriptor,
+              new java.lang.String[] { "Values", },
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.class,
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder.class);
+          internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_descriptor =
+            getDescriptor().getMessageTypes().get(16);
+          internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_descriptor,
+              new java.lang.String[] { "Value", "Key", },
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.class,
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollectionValue.Builder.class);
           return null;
         }
       };

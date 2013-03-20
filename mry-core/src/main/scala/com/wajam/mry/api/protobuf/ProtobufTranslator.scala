@@ -12,46 +12,96 @@ import com.wajam.mry.api.Transport
  */
 class ProtobufTranslator extends ProtocolTranslator {
 
-  import ProtobufTranslator._
-
   def encodeTransaction(transaction: Transaction): Array[Byte] = {
-    encodePTransaction(transaction).build().toByteArray
+
+    val tra = new InternalProtobufTranslator()
+
+    tra.encodePTransaction(transaction).build().toByteArray
   }
 
   def decodeTransaction(data: Array[Byte]): Transaction = {
-    decodePTransaction(PTransaction.parseFrom(data))
+
+    val tra = new InternalProtobufTranslator()
+
+    tra.decodePTransaction(PTransaction.parseFrom(data))
   }
 
-  def encodeValue(value: Value): Array[Byte] = encodePValue(value).build.toByteArray
+  /* EncodeValue and DecodeValue doesn't used PHead, it's for legacy reason (all data in db use that format)
+     and because they don't need it*/
 
-  def decodeValue(data: Array[Byte]): Value = decodePValue(PTransactionValue.parseFrom(data))
+  def encodeValue(value: Value): Array[Byte] = {
+
+    val tra = new InternalProtobufTranslator()
+
+    tra.encodePValue(value).build.toByteArray
+  }
+
+  def decodeValue(data: Array[Byte]): Value = {
+
+    val tra = new InternalProtobufTranslator()
+
+    tra.decodePValue(PTransactionValue.parseFrom(data))
+  }
 
   def encodeAll(transport: Transport): Array[Byte] = {
-    encodePTransport(transport).build().toByteArray
+
+    val tra = new InternalProtobufTranslator()
+
+     tra.encodePTransport(transport).build().toByteArray
   }
 
   def decodeAll(data: Array[Byte]): Transport = {
-    decodePTransport(PTransport.parseFrom(data))
+
+    val tra = new InternalProtobufTranslator()
+
+    tra.decodePTransport(PTransport.parseFrom(data))
   }
 }
 
-object ProtobufTranslator {
+private class InternalProtobufTranslator {
 
-  private def encodePTransport(transport: Transport): PTransport.Builder =  {
+  val pHeap = PHeap.newBuilder()
+  var currentAddress = 0 // I don't think will have more than 2^31 object
+
+  private def addToHeap(mryData: AnyRef): Int = {
+
+    val pMryData = PMryData.newBuilder()
+
+    mryData match {
+      case value: PTransaction => pMryData.setTransaction(value)
+      case value: PBlock => pMryData.setBlock(value)
+      case value: PVariable => pMryData.setVariable(value)
+      case value: POperation => pMryData.setOperation(value)
+      case value: PTransactionValue => pMryData.setValue(value)
+    }
+
+    pHeap.addValues(pMryData)
+
+    currentAddress += 1
+    currentAddress
+  }
+
+  def encodePTransport(transport: Transport): PTransport.Builder =  {
     val Transport(request, response) = transport
 
     val pTransport = PTransport.newBuilder()
 
-    for (r <- request)
-      pTransport.setRequest(encodePTransaction(r))
+    pTransport.setHeap(pHeap)
 
-    for (r <- response)
-      pTransport.addResponse(encodePValue(r))
+    for (r <- request) {
+      val trx = encodePTransaction(r)
+      pTransport.setRequestAddress(addToHeap(trx))
+    }
+
+    for (r <- response) {
+      val value = encodePValue(r)
+      pTransport.addResponseAddress(addToHeap(value))
+    }
 
     pTransport
   }
 
-  private def decodePTransport(transport: PTransport): Transport = {
+  def decodePTransport(transport: PTransport): Transport = {
 
     val request: Option[Transaction] =
       if (transport.hasRequest)
@@ -72,7 +122,7 @@ object ProtobufTranslator {
 //    null
 //  }
 
-  private def encodePObject(obj: Object): PObject.Builder = {
+  def encodePObject(obj: Object): PObject.Builder = {
 
     val pObj = PObject.newBuilder()
 
@@ -88,11 +138,11 @@ object ProtobufTranslator {
     pObj
   }
 
-  private def decodePObject(pObj: PObject): Object = {
+  def decodePObject(pObj: PObject): Object = {
     throw new RuntimeException("Not implemented")
   }
 
-  private def encodePTransaction(transaction: Transaction): PTransaction.Builder =  {
+  def encodePTransaction(transaction: Transaction): PTransaction.Builder =  {
     val pTransaction = PTransaction.newBuilder()
 
     pTransaction.setId(transaction.id)
@@ -104,7 +154,7 @@ object ProtobufTranslator {
     pTransaction
   }
 
-  private def decodePTransaction(pTransaction: PTransaction): Transaction =  {
+  def decodePTransaction(pTransaction: PTransaction): Transaction =  {
 
     val transaction = new Transaction()
     transaction.id = pTransaction.getId
@@ -114,7 +164,7 @@ object ProtobufTranslator {
     transaction
   }
 
-  private def encodePBlock(block: Block): PBlock.Builder =  {
+  def encodePBlock(block: Block): PBlock.Builder =  {
     val pBlock = PBlock.newBuilder()
 
     pBlock.addAllVariables(block.variables.map(encodePVariable(_).build()))
@@ -124,14 +174,14 @@ object ProtobufTranslator {
     pBlock
   }
 
-  private def decodePBlock(block: Block, pBlock: PBlock) {
+  def decodePBlock(block: Block, pBlock: PBlock) {
     block.operations = pBlock.getOperationsList().map(decodePOperation(_)).toList
     block.variables = pBlock.getVariablesList().map(decodePVariable(_)).toList
 
     block.varSeq = pBlock.getVarSeq
   }
 
-  private def encodePVariable(variable: Variable):PVariable.Builder =  {
+  def encodePVariable(variable: Variable):PVariable.Builder =  {
     val pVariable = PVariable.newBuilder()
 
     // DO NOT serialize sourceBlock, it will be available at reconstruction
@@ -141,11 +191,11 @@ object ProtobufTranslator {
     pVariable.setValue(encodePValue(variable.value))
   }
 
-  private def decodePVariable(pVariable: PVariable): Variable =  {
+  def decodePVariable(pVariable: PVariable): Variable =  {
     throw new RuntimeException("Not implemented")
   }
 
-  private def encodePOperation(operation: Operation): POperation.Builder =  {
+  def encodePOperation(operation: Operation): POperation.Builder =  {
 
     import Operation._
 
@@ -171,7 +221,7 @@ object ProtobufTranslator {
     }
   }
 
-  private def decodePOperation(pOperation: POperation): Operation = {
+  def decodePOperation(pOperation: POperation): Operation = {
 
     val os: OperationSource = null
 
@@ -202,7 +252,7 @@ object ProtobufTranslator {
     }
   }
 
-  private def encodePValue(value: Value): PTransactionValue.Builder = {
+  def encodePValue(value: Value): PTransactionValue.Builder = {
     value.serializableValue match {
       case strValue: StringValue =>
         PTransactionValue.newBuilder()
@@ -257,7 +307,7 @@ object ProtobufTranslator {
     }
   }
 
-  private def decodePValue(protoVal: PTransactionValue): Value = {
+  def decodePValue(protoVal: PTransactionValue): Value = {
     protoVal.getType match {
       case PTransactionValue.Type.STRING =>
         StringValue(protoVal.getStringValue)
