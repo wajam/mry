@@ -7,14 +7,14 @@ import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service._
 import com.wajam.nrv.tracing.Traced
 import com.wajam.nrv.data.InMessage
-import com.wajam.nrv.utils.{Promise, Future}
+import com.wajam.nrv.utils.{CurrentTime, Promise, Future}
 import com.wajam.nrv.consistency.Consistency
 
 /**
  * MRY database
  */
 class Database[T <: Storage](serviceName: String = "database")
-  extends Service(serviceName) with Logging with Instrumented with Traced {
+  extends Service(serviceName) with CurrentTime with Logging with Instrumented with Traced {
 
   var storages = Map[String, T]()
 
@@ -105,7 +105,7 @@ class Database[T <: Storage](serviceName: String = "database")
   }, ActionMethod.GET))
   remoteReadExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
 
-  private def transactionTimeout = math.max(responseTimeout * 0.9, responseTimeout - 1000)
+  private def transactionTimeout = math.max(responseTimeout * 0.75, responseTimeout - 500)
 
   private def execute(req: InMessage) {
     var values: Seq[Value] = null
@@ -115,9 +115,9 @@ class Database[T <: Storage](serviceName: String = "database")
     try {
       val transaction = req.getData[Transaction]
 
-      val startTime = System.currentTimeMillis()
+      val startTime = currentTime
       transaction.execute(context)
-      val elapsedTime = System.currentTimeMillis() - startTime
+      val elapsedTime = currentTime - startTime
       if (elapsedTime > transactionTimeout) {
         throw new TimeoutException("Database transaction took too much time to execute", Some(elapsedTime))
       }
