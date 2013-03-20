@@ -21,10 +21,10 @@ public final class MryProtobuf {
   public interface PTransportOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
     
-    // optional .com.wajam.mry.api.protobuf.PTransaction request = 1;
+    // optional .com.wajam.mry.api.protobuf.PBlock request = 1;
     boolean hasRequest();
-    com.wajam.mry.api.protobuf.MryProtobuf.PTransaction getRequest();
-    com.wajam.mry.api.protobuf.MryProtobuf.PTransactionOrBuilder getRequestOrBuilder();
+    com.wajam.mry.api.protobuf.MryProtobuf.PBlock getRequest();
+    com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder getRequestOrBuilder();
     
     // repeated .com.wajam.mry.api.protobuf.PTransactionValue response = 2;
     java.util.List<com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue> 
@@ -65,16 +65,16 @@ public final class MryProtobuf {
     }
     
     private int bitField0_;
-    // optional .com.wajam.mry.api.protobuf.PTransaction request = 1;
+    // optional .com.wajam.mry.api.protobuf.PBlock request = 1;
     public static final int REQUEST_FIELD_NUMBER = 1;
-    private com.wajam.mry.api.protobuf.MryProtobuf.PTransaction request_;
+    private com.wajam.mry.api.protobuf.MryProtobuf.PBlock request_;
     public boolean hasRequest() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PTransaction getRequest() {
+    public com.wajam.mry.api.protobuf.MryProtobuf.PBlock getRequest() {
       return request_;
     }
-    public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionOrBuilder getRequestOrBuilder() {
+    public com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder getRequestOrBuilder() {
       return request_;
     }
     
@@ -100,7 +100,7 @@ public final class MryProtobuf {
     }
     
     private void initFields() {
-      request_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.getDefaultInstance();
+      request_ = com.wajam.mry.api.protobuf.MryProtobuf.PBlock.getDefaultInstance();
       response_ = java.util.Collections.emptyList();
     }
     private byte memoizedIsInitialized = -1;
@@ -108,6 +108,12 @@ public final class MryProtobuf {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized != -1) return isInitialized == 1;
       
+      if (hasRequest()) {
+        if (!getRequest().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
       for (int i = 0; i < getResponseCount(); i++) {
         if (!getResponse(i).isInitialized()) {
           memoizedIsInitialized = 0;
@@ -271,7 +277,7 @@ public final class MryProtobuf {
       public Builder clear() {
         super.clear();
         if (requestBuilder_ == null) {
-          request_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.getDefaultInstance();
+          request_ = com.wajam.mry.api.protobuf.MryProtobuf.PBlock.getDefaultInstance();
         } else {
           requestBuilder_.clear();
         }
@@ -387,6 +393,12 @@ public final class MryProtobuf {
       }
       
       public final boolean isInitialized() {
+        if (hasRequest()) {
+          if (!getRequest().isInitialized()) {
+            
+            return false;
+          }
+        }
         for (int i = 0; i < getResponseCount(); i++) {
           if (!getResponse(i).isInitialized()) {
             
@@ -420,7 +432,7 @@ public final class MryProtobuf {
               break;
             }
             case 10: {
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.newBuilder();
+              com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder subBuilder = com.wajam.mry.api.protobuf.MryProtobuf.PBlock.newBuilder();
               if (hasRequest()) {
                 subBuilder.mergeFrom(getRequest());
               }
@@ -440,21 +452,21 @@ public final class MryProtobuf {
       
       private int bitField0_;
       
-      // optional .com.wajam.mry.api.protobuf.PTransaction request = 1;
-      private com.wajam.mry.api.protobuf.MryProtobuf.PTransaction request_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.getDefaultInstance();
+      // optional .com.wajam.mry.api.protobuf.PBlock request = 1;
+      private com.wajam.mry.api.protobuf.MryProtobuf.PBlock request_ = com.wajam.mry.api.protobuf.MryProtobuf.PBlock.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransaction, com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionOrBuilder> requestBuilder_;
+          com.wajam.mry.api.protobuf.MryProtobuf.PBlock, com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder> requestBuilder_;
       public boolean hasRequest() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransaction getRequest() {
+      public com.wajam.mry.api.protobuf.MryProtobuf.PBlock getRequest() {
         if (requestBuilder_ == null) {
           return request_;
         } else {
           return requestBuilder_.getMessage();
         }
       }
-      public Builder setRequest(com.wajam.mry.api.protobuf.MryProtobuf.PTransaction value) {
+      public Builder setRequest(com.wajam.mry.api.protobuf.MryProtobuf.PBlock value) {
         if (requestBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
@@ -468,7 +480,7 @@ public final class MryProtobuf {
         return this;
       }
       public Builder setRequest(
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.Builder builderForValue) {
+          com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder builderForValue) {
         if (requestBuilder_ == null) {
           request_ = builderForValue.build();
           onChanged();
@@ -478,12 +490,12 @@ public final class MryProtobuf {
         bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder mergeRequest(com.wajam.mry.api.protobuf.MryProtobuf.PTransaction value) {
+      public Builder mergeRequest(com.wajam.mry.api.protobuf.MryProtobuf.PBlock value) {
         if (requestBuilder_ == null) {
           if (((bitField0_ & 0x00000001) == 0x00000001) &&
-              request_ != com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.getDefaultInstance()) {
+              request_ != com.wajam.mry.api.protobuf.MryProtobuf.PBlock.getDefaultInstance()) {
             request_ =
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.newBuilder(request_).mergeFrom(value).buildPartial();
+              com.wajam.mry.api.protobuf.MryProtobuf.PBlock.newBuilder(request_).mergeFrom(value).buildPartial();
           } else {
             request_ = value;
           }
@@ -496,7 +508,7 @@ public final class MryProtobuf {
       }
       public Builder clearRequest() {
         if (requestBuilder_ == null) {
-          request_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.getDefaultInstance();
+          request_ = com.wajam.mry.api.protobuf.MryProtobuf.PBlock.getDefaultInstance();
           onChanged();
         } else {
           requestBuilder_.clear();
@@ -504,12 +516,12 @@ public final class MryProtobuf {
         bitField0_ = (bitField0_ & ~0x00000001);
         return this;
       }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.Builder getRequestBuilder() {
+      public com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder getRequestBuilder() {
         bitField0_ |= 0x00000001;
         onChanged();
         return getRequestFieldBuilder().getBuilder();
       }
-      public com.wajam.mry.api.protobuf.MryProtobuf.PTransactionOrBuilder getRequestOrBuilder() {
+      public com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder getRequestOrBuilder() {
         if (requestBuilder_ != null) {
           return requestBuilder_.getMessageOrBuilder();
         } else {
@@ -517,11 +529,11 @@ public final class MryProtobuf {
         }
       }
       private com.google.protobuf.SingleFieldBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.PTransaction, com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionOrBuilder> 
+          com.wajam.mry.api.protobuf.MryProtobuf.PBlock, com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder> 
           getRequestFieldBuilder() {
         if (requestBuilder_ == null) {
           requestBuilder_ = new com.google.protobuf.SingleFieldBuilder<
-              com.wajam.mry.api.protobuf.MryProtobuf.PTransaction, com.wajam.mry.api.protobuf.MryProtobuf.PTransaction.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PTransactionOrBuilder>(
+              com.wajam.mry.api.protobuf.MryProtobuf.PBlock, com.wajam.mry.api.protobuf.MryProtobuf.PBlock.Builder, com.wajam.mry.api.protobuf.MryProtobuf.PBlockOrBuilder>(
                   request_,
                   getParentForChildren(),
                   isClean());
@@ -7939,61 +7951,61 @@ public final class MryProtobuf {
   static {
     java.lang.String[] descriptorData = {
       "\n\021MryProtobuf.proto\022\032com.wajam.mry.api.p" +
-      "rotobuf\"\210\001\n\nPTransport\0229\n\007request\030\001 \001(\0132" +
-      "(.com.wajam.mry.api.protobuf.PTransactio" +
-      "n\022?\n\010response\030\002 \003(\0132-.com.wajam.mry.api." +
-      "protobuf.PTransactionValue\"}\n\014PTransacti" +
-      "on\022\n\n\002id\030\001 \001(\r2a\n\013transaction\022\".com.waja" +
-      "m.mry.api.protobuf.PBlock\030d \001(\0132(.com.wa" +
-      "jam.mry.api.protobuf.PTransaction\"\020\n\007POb" +
-      "ject*\005\010d\020\311\001\"\225\001\n\006PBlock\022\016\n\006varSeq\030\001 \002(\r\022:" +
-      "\n\noperations\030\002 \003(\0132&.com.wajam.mry.api.p",
-      "rotobuf.POperation\0228\n\tvariables\030\003 \003(\0132%." +
-      "com.wajam.mry.api.protobuf.PVariable*\005\010d" +
-      "\020\311\001\"\263\001\n\tPVariable\022\n\n\002id\030\001 \002(\r\022<\n\005value\030\002" +
-      " \001(\0132-.com.wajam.mry.api.protobuf.PTrans" +
-      "actionValue2\\\n\010variable\022#.com.wajam.mry." +
-      "api.protobuf.PObject\030d \001(\0132%.com.wajam.m" +
-      "ry.api.protobuf.PVariable\"\200\004\n\021PTransacti" +
-      "onValue\022@\n\004type\030\001 \001(\01622.com.wajam.mry.ap" +
-      "i.protobuf.PTransactionValue.Type\022\021\n\tint" +
-      "_value\030\002 \001(\003\022\022\n\nbool_value\030\003 \001(\010\022\024\n\014doub",
-      "le_value\030\004 \001(\001\022\024\n\014string_value\030\005 \001(\t\022\023\n\013" +
-      "bytes_value\030\006 \001(\014\022A\n\005array\030\007 \001(\01322.com.w" +
-      "ajam.mry.api.protobuf.PTransactionCollec" +
-      "tion\022?\n\003map\030\010 \001(\01322.com.wajam.mry.api.pr" +
-      "otobuf.PTransactionCollection\"Z\n\004Type\022\010\n" +
-      "\004NULL\020\001\022\007\n\003INT\020\002\022\010\n\004BOOL\020\003\022\n\n\006DOUBLE\020\004\022\n" +
-      "\n\006STRING\020\005\022\t\n\005BYTES\020\006\022\t\n\005ARRAY\020\007\022\007\n\003MAP\020" +
-      "\0102a\n\005value\022#.com.wajam.mry.api.protobuf." +
-      "PObject\030e \001(\0132-.com.wajam.mry.api.protob" +
-      "uf.PTransactionValue\"a\n\026PTransactionColl",
-      "ection\022G\n\006values\030\001 \003(\01327.com.wajam.mry.a" +
-      "pi.protobuf.PTransactionCollectionValue\"" +
-      "h\n\033PTransactionCollectionValue\022<\n\005value\030" +
-      "\001 \002(\0132-.com.wajam.mry.api.protobuf.PTran" +
-      "sactionValue\022\013\n\003key\030\002 \001(\t\"\203\001\n\nPOperation" +
-      "\0228\n\tvariables\030\001 \003(\0132%.com.wajam.mry.api." +
-      "protobuf.PVariable\0224\n\007objects\030\002 \003(\0132#.co" +
-      "m.wajam.mry.api.protobuf.PObject*\005\010d\020\311\001\"" +
-      "c\n\007PReturn2X\n\003ret\022&.com.wajam.mry.api.pr" +
-      "otobuf.POperation\030d \001(\0132#.com.wajam.mry.",
-      "api.protobuf.PReturn\"`\n\005PFrom2W\n\004from\022&." +
-      "com.wajam.mry.api.protobuf.POperation\030e " +
-      "\001(\0132!.com.wajam.mry.api.protobuf.PFrom\"]" +
-      "\n\004PGet2U\n\003get\022&.com.wajam.mry.api.protob" +
-      "uf.POperation\030f \001(\0132 .com.wajam.mry.api." +
-      "protobuf.PGet\"]\n\004PSet2U\n\003set\022&.com.wajam" +
-      ".mry.api.protobuf.POperation\030g \001(\0132 .com" +
-      ".wajam.mry.api.protobuf.PSet\"f\n\007PDelete2" +
-      "[\n\006delete\022&.com.wajam.mry.api.protobuf.P" +
-      "Operation\030h \001(\0132#.com.wajam.mry.api.prot",
-      "obuf.PDelete\"c\n\006PLimit2Y\n\005limit\022&.com.wa" +
-      "jam.mry.api.protobuf.POperation\030i \001(\0132\"." +
-      "com.wajam.mry.api.protobuf.PLimit\"r\n\013PPr" +
-      "ojection2c\n\nprojection\022&.com.wajam.mry.a" +
-      "pi.protobuf.POperation\030j \001(\0132\'.com.wajam" +
-      ".mry.api.protobuf.PProjectionB\002H\001"
+      "rotobuf\"\202\001\n\nPTransport\0223\n\007request\030\001 \001(\0132" +
+      "\".com.wajam.mry.api.protobuf.PBlock\022?\n\010r" +
+      "esponse\030\002 \003(\0132-.com.wajam.mry.api.protob" +
+      "uf.PTransactionValue\"}\n\014PTransaction\022\n\n\002" +
+      "id\030\001 \001(\r2a\n\013transaction\022\".com.wajam.mry." +
+      "api.protobuf.PBlock\030d \001(\0132(.com.wajam.mr" +
+      "y.api.protobuf.PTransaction\"\020\n\007PObject*\005" +
+      "\010d\020\311\001\"\225\001\n\006PBlock\022\016\n\006varSeq\030\001 \002(\r\022:\n\noper" +
+      "ations\030\002 \003(\0132&.com.wajam.mry.api.protobu",
+      "f.POperation\0228\n\tvariables\030\003 \003(\0132%.com.wa" +
+      "jam.mry.api.protobuf.PVariable*\005\010d\020\311\001\"\263\001" +
+      "\n\tPVariable\022\n\n\002id\030\001 \002(\r\022<\n\005value\030\002 \001(\0132-" +
+      ".com.wajam.mry.api.protobuf.PTransaction" +
+      "Value2\\\n\010variable\022#.com.wajam.mry.api.pr" +
+      "otobuf.PObject\030d \001(\0132%.com.wajam.mry.api" +
+      ".protobuf.PVariable\"\200\004\n\021PTransactionValu" +
+      "e\022@\n\004type\030\001 \001(\01622.com.wajam.mry.api.prot" +
+      "obuf.PTransactionValue.Type\022\021\n\tint_value" +
+      "\030\002 \001(\003\022\022\n\nbool_value\030\003 \001(\010\022\024\n\014double_val",
+      "ue\030\004 \001(\001\022\024\n\014string_value\030\005 \001(\t\022\023\n\013bytes_" +
+      "value\030\006 \001(\014\022A\n\005array\030\007 \001(\01322.com.wajam.m" +
+      "ry.api.protobuf.PTransactionCollection\022?" +
+      "\n\003map\030\010 \001(\01322.com.wajam.mry.api.protobuf" +
+      ".PTransactionCollection\"Z\n\004Type\022\010\n\004NULL\020" +
+      "\001\022\007\n\003INT\020\002\022\010\n\004BOOL\020\003\022\n\n\006DOUBLE\020\004\022\n\n\006STRI" +
+      "NG\020\005\022\t\n\005BYTES\020\006\022\t\n\005ARRAY\020\007\022\007\n\003MAP\020\0102a\n\005v" +
+      "alue\022#.com.wajam.mry.api.protobuf.PObjec" +
+      "t\030e \001(\0132-.com.wajam.mry.api.protobuf.PTr" +
+      "ansactionValue\"a\n\026PTransactionCollection",
+      "\022G\n\006values\030\001 \003(\01327.com.wajam.mry.api.pro" +
+      "tobuf.PTransactionCollectionValue\"h\n\033PTr" +
+      "ansactionCollectionValue\022<\n\005value\030\001 \002(\0132" +
+      "-.com.wajam.mry.api.protobuf.PTransactio" +
+      "nValue\022\013\n\003key\030\002 \001(\t\"\203\001\n\nPOperation\0228\n\tva" +
+      "riables\030\001 \003(\0132%.com.wajam.mry.api.protob" +
+      "uf.PVariable\0224\n\007objects\030\002 \003(\0132#.com.waja" +
+      "m.mry.api.protobuf.PObject*\005\010d\020\311\001\"c\n\007PRe" +
+      "turn2X\n\003ret\022&.com.wajam.mry.api.protobuf" +
+      ".POperation\030d \001(\0132#.com.wajam.mry.api.pr",
+      "otobuf.PReturn\"`\n\005PFrom2W\n\004from\022&.com.wa" +
+      "jam.mry.api.protobuf.POperation\030e \001(\0132!." +
+      "com.wajam.mry.api.protobuf.PFrom\"]\n\004PGet" +
+      "2U\n\003get\022&.com.wajam.mry.api.protobuf.POp" +
+      "eration\030f \001(\0132 .com.wajam.mry.api.protob" +
+      "uf.PGet\"]\n\004PSet2U\n\003set\022&.com.wajam.mry.a" +
+      "pi.protobuf.POperation\030g \001(\0132 .com.wajam" +
+      ".mry.api.protobuf.PSet\"f\n\007PDelete2[\n\006del" +
+      "ete\022&.com.wajam.mry.api.protobuf.POperat" +
+      "ion\030h \001(\0132#.com.wajam.mry.api.protobuf.P",
+      "Delete\"c\n\006PLimit2Y\n\005limit\022&.com.wajam.mr" +
+      "y.api.protobuf.POperation\030i \001(\0132\".com.wa" +
+      "jam.mry.api.protobuf.PLimit\"r\n\013PProjecti" +
+      "on2c\n\nprojection\022&.com.wajam.mry.api.pro" +
+      "tobuf.POperation\030j \001(\0132\'.com.wajam.mry.a" +
+      "pi.protobuf.PProjectionB\002H\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {

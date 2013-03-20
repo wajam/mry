@@ -6,7 +6,7 @@ option optimize_for = SPEED;
 // But with implicit type
 
 message PTransport {
-	optional PTransaction request = 1;
+	optional PBlock /* <Transaction> */ request = 1;
 	repeated PTransactionValue response = 2;
 }
 

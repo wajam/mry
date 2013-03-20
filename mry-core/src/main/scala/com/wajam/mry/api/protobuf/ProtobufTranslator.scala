@@ -51,7 +51,7 @@ object ProtobufTranslator {
     pTransport
   }
 
-  private def decodePTransport(transport: PTransport): Transport =  {
+  private def decodePTransport(transport: PTransport): Transport = {
 
     val request: Option[Transaction] =
       if (transport.hasRequest)
@@ -89,7 +89,7 @@ object ProtobufTranslator {
   }
 
   private def decodePObject(pObj: PObject): Object = {
-    null
+    throw new RuntimeException("Not implemented")
   }
 
   private def encodePTransaction(transaction: Transaction): PTransaction.Builder =  {
@@ -108,6 +108,8 @@ object ProtobufTranslator {
 
     val transaction = new Transaction()
     transaction.id = pTransaction.getId
+    val block =  pTransaction.getExtensiosn
+    decodePBlock(transaction,)
 
     transaction
   }
@@ -123,7 +125,10 @@ object ProtobufTranslator {
   }
 
   private def decodePBlock(block: Block, pBlock: PBlock) {
-    null
+    block.operations = pBlock.getOperationsList().map(decodePOperation(_)).toList
+    block.variables = pBlock.getVariablesList().map(decodePVariable(_)).toList
+
+    block.varSeq = pBlock.getVarSeq
   }
 
   private def encodePVariable(variable: Variable):PVariable.Builder =  {
@@ -137,7 +142,7 @@ object ProtobufTranslator {
   }
 
   private def decodePVariable(pVariable: PVariable): Variable =  {
-    null
+    throw new RuntimeException("Not implemented")
   }
 
   private def encodePOperation(operation: Operation): POperation.Builder =  {
