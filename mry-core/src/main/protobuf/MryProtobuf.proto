@@ -59,6 +59,7 @@ message POperation {
 
     repeated uint32 /* <PVariable> */ variableAddresses = 1;
     repeated uint32 /* <PObject> */ objectAddresses = 2;
+    optional uint32 /* <Link To OperationSource> */ sourceAddress = 3;
 }
 
 message PReturn {

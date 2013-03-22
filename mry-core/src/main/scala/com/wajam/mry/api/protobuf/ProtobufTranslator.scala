@@ -118,6 +118,29 @@ private class InternalProtobufTranslator {
     pMryData.asInstanceOf[T]
   }
 
+  def decodeHeapToPool(heap: PHeap) = {
+
+     null
+  }
+
+  def decodeBlockBoundsFromHeapToPool(block: Block, heap: PHeap) = {
+
+    // Yield map with address
+    val mappedData = heap.getValuesList.zipWithIndex
+
+    // Decode values and register them to pool
+    val values = mappedData.filter(_._1.hasValue).map((v) => v._2 -> decodePValue(v._1.getValue))
+    values.foreach((v) => registerDecodedData(v._1, v._2))
+
+    // Decode variables and register them to pool
+    val variables = mappedData.filter(_._1.hasVariable).map((v) => v._2 -> decodePVariable(block, v._1.getVariable))
+    variables.foreach((v) => registerDecodedData(v._1, v._2))
+
+    // Decode variables and register them to pool
+    val operations = mappedData.filter(_._1.hasOperation).map((v) => v._2 -> decodePOperation(block, v._1.getOperation))
+    operations.foreach((v) => registerDecodedData(v._1, v._2))
+  }
+
   def encodePTransport(transport: Transport): PTransport.Builder =  {
     val Transport(request, response) = transport
 
@@ -201,10 +224,6 @@ private class InternalProtobufTranslator {
     transaction
   }
 
-  def relinkVariable(block: PBlock) = {
-
-  }
-
   def encodePBlock(block: Block): PBlock.Builder =  {
     val pBlock = PBlock.newBuilder()
 
@@ -270,7 +289,7 @@ private class InternalProtobufTranslator {
 
   def decodePOperation(block: Block, pOperation: POperation): Operation = {
 
-    val os: OperationSource = null
+    val os: OperationSource = getDecodedData[OperationSource](pOperation.getSourceAddress)
 
     val operationExtensions = Seq(
       PReturn.ret,

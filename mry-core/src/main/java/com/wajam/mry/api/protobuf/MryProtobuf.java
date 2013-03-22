@@ -3596,6 +3596,10 @@ public final class MryProtobuf {
     java.util.List<java.lang.Integer> getObjectAddressesList();
     int getObjectAddressesCount();
     int getObjectAddresses(int index);
+    
+    // optional uint32 sourceAddress = 3;
+    boolean hasSourceAddress();
+    int getSourceAddress();
   }
   public static final class POperation extends
       com.google.protobuf.GeneratedMessage.ExtendableMessage<
@@ -3625,6 +3629,7 @@ public final class MryProtobuf {
       return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_POperation_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // repeated uint32 variableAddresses = 1;
     public static final int VARIABLEADDRESSES_FIELD_NUMBER = 1;
     private java.util.List<java.lang.Integer> variableAddresses_;
@@ -3653,9 +3658,20 @@ public final class MryProtobuf {
       return objectAddresses_.get(index);
     }
     
+    // optional uint32 sourceAddress = 3;
+    public static final int SOURCEADDRESS_FIELD_NUMBER = 3;
+    private int sourceAddress_;
+    public boolean hasSourceAddress() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public int getSourceAddress() {
+      return sourceAddress_;
+    }
+    
     private void initFields() {
       variableAddresses_ = java.util.Collections.emptyList();;
       objectAddresses_ = java.util.Collections.emptyList();;
+      sourceAddress_ = 0;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -3681,6 +3697,9 @@ public final class MryProtobuf {
       }
       for (int i = 0; i < objectAddresses_.size(); i++) {
         output.writeUInt32(2, objectAddresses_.get(i));
+      }
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeUInt32(3, sourceAddress_);
       }
       extensionWriter.writeUntil(201, output);
       getUnknownFields().writeTo(output);
@@ -3709,6 +3728,10 @@ public final class MryProtobuf {
         }
         size += dataSize;
         size += 1 * getObjectAddressesList().size();
+      }
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(3, sourceAddress_);
       }
       size += extensionsSerializedSize();
       size += getUnknownFields().getSerializedSize();
@@ -3839,6 +3862,8 @@ public final class MryProtobuf {
         bitField0_ = (bitField0_ & ~0x00000001);
         objectAddresses_ = java.util.Collections.emptyList();;
         bitField0_ = (bitField0_ & ~0x00000002);
+        sourceAddress_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
       
@@ -3876,6 +3901,7 @@ public final class MryProtobuf {
       public com.wajam.mry.api.protobuf.MryProtobuf.POperation buildPartial() {
         com.wajam.mry.api.protobuf.MryProtobuf.POperation result = new com.wajam.mry.api.protobuf.MryProtobuf.POperation(this);
         int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
         if (((bitField0_ & 0x00000001) == 0x00000001)) {
           variableAddresses_ = java.util.Collections.unmodifiableList(variableAddresses_);
           bitField0_ = (bitField0_ & ~0x00000001);
@@ -3886,6 +3912,11 @@ public final class MryProtobuf {
           bitField0_ = (bitField0_ & ~0x00000002);
         }
         result.objectAddresses_ = objectAddresses_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.sourceAddress_ = sourceAddress_;
+        result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
@@ -3920,6 +3951,9 @@ public final class MryProtobuf {
             objectAddresses_.addAll(other.objectAddresses_);
           }
           onChanged();
+        }
+        if (other.hasSourceAddress()) {
+          setSourceAddress(other.getSourceAddress());
         }
         this.mergeExtensionFields(other);
         this.mergeUnknownFields(other.getUnknownFields());
@@ -3983,6 +4017,11 @@ public final class MryProtobuf {
                 addObjectAddresses(input.readUInt32());
               }
               input.popLimit(limit);
+              break;
+            }
+            case 24: {
+              bitField0_ |= 0x00000004;
+              sourceAddress_ = input.readUInt32();
               break;
             }
           }
@@ -4077,6 +4116,27 @@ public final class MryProtobuf {
       public Builder clearObjectAddresses() {
         objectAddresses_ = java.util.Collections.emptyList();;
         bitField0_ = (bitField0_ & ~0x00000002);
+        onChanged();
+        return this;
+      }
+      
+      // optional uint32 sourceAddress = 3;
+      private int sourceAddress_ ;
+      public boolean hasSourceAddress() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      public int getSourceAddress() {
+        return sourceAddress_;
+      }
+      public Builder setSourceAddress(int value) {
+        bitField0_ |= 0x00000004;
+        sourceAddress_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearSourceAddress() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        sourceAddress_ = 0;
         onChanged();
         return this;
       }
@@ -8371,42 +8431,43 @@ public final class MryProtobuf {
       "\014blockAddress\030\002 \001(\r\"O\n\006PBlock\022\016\n\006varSeq\030" +
       "\001 \002(\r\022\032\n\022operationAddresses\030\002 \003(\r\022\031\n\021var" +
       "iableAddresses\030\003 \003(\r\"-\n\tPVariable\022\n\n\002id\030" +
-      "\001 \002(\r\022\024\n\014valueAddress\030\002 \001(\r\"G\n\nPOperatio" +
+      "\001 \002(\r\022\024\n\014valueAddress\030\002 \001(\r\"^\n\nPOperatio" +
       "n\022\031\n\021variableAddresses\030\001 \003(\r\022\027\n\017objectAd" +
-      "dresses\030\002 \003(\r*\005\010d\020\311\001\"c\n\007PReturn2X\n\003ret\022&",
-      ".com.wajam.mry.api.protobuf.POperation\030d" +
-      " \001(\0132#.com.wajam.mry.api.protobuf.PRetur" +
-      "n\"`\n\005PFrom2W\n\004from\022&.com.wajam.mry.api.p" +
-      "rotobuf.POperation\030e \001(\0132!.com.wajam.mry" +
-      ".api.protobuf.PFrom\"]\n\004PGet2U\n\003get\022&.com" +
-      ".wajam.mry.api.protobuf.POperation\030f \001(\013" +
-      "2 .com.wajam.mry.api.protobuf.PGet\"]\n\004PS" +
-      "et2U\n\003set\022&.com.wajam.mry.api.protobuf.P" +
-      "Operation\030g \001(\0132 .com.wajam.mry.api.prot" +
-      "obuf.PSet\"f\n\007PDelete2[\n\006delete\022&.com.waj",
-      "am.mry.api.protobuf.POperation\030h \001(\0132#.c" +
-      "om.wajam.mry.api.protobuf.PDelete\"c\n\006PLi" +
-      "mit2Y\n\005limit\022&.com.wajam.mry.api.protobu" +
-      "f.POperation\030i \001(\0132\".com.wajam.mry.api.p" +
-      "rotobuf.PLimit\"r\n\013PProjection2c\n\nproject" +
-      "ion\022&.com.wajam.mry.api.protobuf.POperat" +
-      "ion\030j \001(\0132\'.com.wajam.mry.api.protobuf.P" +
-      "Projection\"\235\003\n\021PTransactionValue\022@\n\004type" +
-      "\030\001 \001(\01622.com.wajam.mry.api.protobuf.PTra" +
-      "nsactionValue.Type\022\021\n\tint_value\030\002 \001(\003\022\022\n",
-      "\nbool_value\030\003 \001(\010\022\024\n\014double_value\030\004 \001(\001\022" +
-      "\024\n\014string_value\030\005 \001(\t\022\023\n\013bytes_value\030\006 \001" +
-      "(\014\022A\n\005array\030\007 \001(\01322.com.wajam.mry.api.pr" +
-      "otobuf.PTransactionCollection\022?\n\003map\030\010 \001" +
-      "(\01322.com.wajam.mry.api.protobuf.PTransac" +
-      "tionCollection\"Z\n\004Type\022\010\n\004NULL\020\001\022\007\n\003INT\020" +
-      "\002\022\010\n\004BOOL\020\003\022\n\n\006DOUBLE\020\004\022\n\n\006STRING\020\005\022\t\n\005B" +
-      "YTES\020\006\022\t\n\005ARRAY\020\007\022\007\n\003MAP\020\010\"a\n\026PTransacti" +
-      "onCollection\022G\n\006values\030\001 \003(\01327.com.wajam" +
-      ".mry.api.protobuf.PTransactionCollection",
-      "Value\"h\n\033PTransactionCollectionValue\022<\n\005" +
-      "value\030\001 \002(\0132-.com.wajam.mry.api.protobuf" +
-      ".PTransactionValue\022\013\n\003key\030\002 \001(\tB\002H\001"
+      "dresses\030\002 \003(\r\022\025\n\rsourceAddress\030\003 \001(\r*\005\010d",
+      "\020\311\001\"c\n\007PReturn2X\n\003ret\022&.com.wajam.mry.ap" +
+      "i.protobuf.POperation\030d \001(\0132#.com.wajam." +
+      "mry.api.protobuf.PReturn\"`\n\005PFrom2W\n\004fro" +
+      "m\022&.com.wajam.mry.api.protobuf.POperatio" +
+      "n\030e \001(\0132!.com.wajam.mry.api.protobuf.PFr" +
+      "om\"]\n\004PGet2U\n\003get\022&.com.wajam.mry.api.pr" +
+      "otobuf.POperation\030f \001(\0132 .com.wajam.mry." +
+      "api.protobuf.PGet\"]\n\004PSet2U\n\003set\022&.com.w" +
+      "ajam.mry.api.protobuf.POperation\030g \001(\0132 " +
+      ".com.wajam.mry.api.protobuf.PSet\"f\n\007PDel",
+      "ete2[\n\006delete\022&.com.wajam.mry.api.protob" +
+      "uf.POperation\030h \001(\0132#.com.wajam.mry.api." +
+      "protobuf.PDelete\"c\n\006PLimit2Y\n\005limit\022&.co" +
+      "m.wajam.mry.api.protobuf.POperation\030i \001(" +
+      "\0132\".com.wajam.mry.api.protobuf.PLimit\"r\n" +
+      "\013PProjection2c\n\nprojection\022&.com.wajam.m" +
+      "ry.api.protobuf.POperation\030j \001(\0132\'.com.w" +
+      "ajam.mry.api.protobuf.PProjection\"\235\003\n\021PT" +
+      "ransactionValue\022@\n\004type\030\001 \001(\01622.com.waja" +
+      "m.mry.api.protobuf.PTransactionValue.Typ",
+      "e\022\021\n\tint_value\030\002 \001(\003\022\022\n\nbool_value\030\003 \001(\010" +
+      "\022\024\n\014double_value\030\004 \001(\001\022\024\n\014string_value\030\005" +
+      " \001(\t\022\023\n\013bytes_value\030\006 \001(\014\022A\n\005array\030\007 \001(\013" +
+      "22.com.wajam.mry.api.protobuf.PTransacti" +
+      "onCollection\022?\n\003map\030\010 \001(\01322.com.wajam.mr" +
+      "y.api.protobuf.PTransactionCollection\"Z\n" +
+      "\004Type\022\010\n\004NULL\020\001\022\007\n\003INT\020\002\022\010\n\004BOOL\020\003\022\n\n\006DO" +
+      "UBLE\020\004\022\n\n\006STRING\020\005\022\t\n\005BYTES\020\006\022\t\n\005ARRAY\020\007" +
+      "\022\007\n\003MAP\020\010\"a\n\026PTransactionCollection\022G\n\006v" +
+      "alues\030\001 \003(\01327.com.wajam.mry.api.protobuf",
+      ".PTransactionCollectionValue\"h\n\033PTransac" +
+      "tionCollectionValue\022<\n\005value\030\001 \002(\0132-.com" +
+      ".wajam.mry.api.protobuf.PTransactionValu" +
+      "e\022\013\n\003key\030\002 \001(\tB\002H\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -8466,7 +8527,7 @@ public final class MryProtobuf {
           internal_static_com_wajam_mry_api_protobuf_POperation_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_POperation_descriptor,
-              new java.lang.String[] { "VariableAddresses", "ObjectAddresses", },
+              new java.lang.String[] { "VariableAddresses", "ObjectAddresses", "SourceAddress", },
               com.wajam.mry.api.protobuf.MryProtobuf.POperation.class,
               com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder.class);
           internal_static_com_wajam_mry_api_protobuf_PReturn_descriptor =
