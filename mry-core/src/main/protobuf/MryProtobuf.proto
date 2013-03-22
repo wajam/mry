@@ -54,54 +54,21 @@ message PVariable {
 
 message POperation {
 
-	// Enable extensions
-	extensions 100 to 200;
-
-    repeated uint32 /* <PVariable> */ variableAddresses = 1;
-    repeated uint32 /* <PObject> */ objectAddresses = 2;
-    optional uint32 /* <Link To OperationSource> */ sourceAddress = 3;
-}
-
-message PReturn {
-    extend POperation {
-        optional PReturn ret = 100;
+    enum Type {
+        Return= 1;
+        From = 2;
+        Get = 3;
+        Set = 4;
+        Delete = 5;
+        Limit = 6;
+        Projection = 7;
     }
-}
 
-message PFrom {
-    extend POperation {
-        optional PFrom from = 101;
-    }
-}
+    optional Type type = 1;
 
-message PGet {
-    extend POperation {
-        optional PGet get = 102;
-    }
-}
-
-message PSet {
-    extend POperation {
-        optional PSet set = 103;
-    }
-}
-
-message PDelete {
-    extend POperation {
-        optional PDelete delete = 104;
-    }
-}
-
-message PLimit {
-    extend POperation {
-        optional PLimit limit = 105;
-    }
-}
-
-message PProjection {
-    extend POperation {
-        optional PProjection projection = 106;
-    }
+    repeated uint32 /* <PVariable> */ variableAddresses = 2;
+    repeated uint32 /* <PObject> */ objectAddresses = 3;
+    optional uint32 /* <Link To OperationSource> */ sourceAddress = 4;
 }
 
 /* Values */

@@ -7,13 +7,6 @@ public final class MryProtobuf {
   private MryProtobuf() {}
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistry registry) {
-    registry.add(com.wajam.mry.api.protobuf.MryProtobuf.PReturn.ret);
-    registry.add(com.wajam.mry.api.protobuf.MryProtobuf.PFrom.from);
-    registry.add(com.wajam.mry.api.protobuf.MryProtobuf.PGet.get);
-    registry.add(com.wajam.mry.api.protobuf.MryProtobuf.PSet.set);
-    registry.add(com.wajam.mry.api.protobuf.MryProtobuf.PDelete.delete);
-    registry.add(com.wajam.mry.api.protobuf.MryProtobuf.PLimit.limit);
-    registry.add(com.wajam.mry.api.protobuf.MryProtobuf.PProjection.projection);
   }
   public interface PHeapOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
@@ -724,12 +717,6 @@ public final class MryProtobuf {
           return false;
         }
       }
-      if (hasOperation()) {
-        if (!getOperation().isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-      }
       if (hasValue()) {
         if (!getValue().isInitialized()) {
           memoizedIsInitialized = 0;
@@ -1068,12 +1055,6 @@ public final class MryProtobuf {
         }
         if (hasVariable()) {
           if (!getVariable().isInitialized()) {
-            
-            return false;
-          }
-        }
-        if (hasOperation()) {
-          if (!getOperation().isInitialized()) {
             
             return false;
           }
@@ -3583,27 +3564,30 @@ public final class MryProtobuf {
     // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PVariable)
   }
   
-  public interface POperationOrBuilder extends
-      com.google.protobuf.GeneratedMessage.
-          ExtendableMessageOrBuilder<POperation> {
+  public interface POperationOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
     
-    // repeated uint32 variableAddresses = 1;
+    // optional .com.wajam.mry.api.protobuf.POperation.Type type = 1;
+    boolean hasType();
+    com.wajam.mry.api.protobuf.MryProtobuf.POperation.Type getType();
+    
+    // repeated uint32 variableAddresses = 2;
     java.util.List<java.lang.Integer> getVariableAddressesList();
     int getVariableAddressesCount();
     int getVariableAddresses(int index);
     
-    // repeated uint32 objectAddresses = 2;
+    // repeated uint32 objectAddresses = 3;
     java.util.List<java.lang.Integer> getObjectAddressesList();
     int getObjectAddressesCount();
     int getObjectAddresses(int index);
     
-    // optional uint32 sourceAddress = 3;
+    // optional uint32 sourceAddress = 4;
     boolean hasSourceAddress();
     int getSourceAddress();
   }
   public static final class POperation extends
-      com.google.protobuf.GeneratedMessage.ExtendableMessage<
-        POperation> implements POperationOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements POperationOrBuilder {
     // Use POperation.newBuilder() to construct.
     private POperation(Builder builder) {
       super(builder);
@@ -3629,9 +3613,103 @@ public final class MryProtobuf {
       return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_POperation_fieldAccessorTable;
     }
     
+    public enum Type
+        implements com.google.protobuf.ProtocolMessageEnum {
+      Return(0, 1),
+      From(1, 2),
+      Get(2, 3),
+      Set(3, 4),
+      Delete(4, 5),
+      Limit(5, 6),
+      Projection(6, 7),
+      ;
+      
+      public static final int Return_VALUE = 1;
+      public static final int From_VALUE = 2;
+      public static final int Get_VALUE = 3;
+      public static final int Set_VALUE = 4;
+      public static final int Delete_VALUE = 5;
+      public static final int Limit_VALUE = 6;
+      public static final int Projection_VALUE = 7;
+      
+      
+      public final int getNumber() { return value; }
+      
+      public static Type valueOf(int value) {
+        switch (value) {
+          case 1: return Return;
+          case 2: return From;
+          case 3: return Get;
+          case 4: return Set;
+          case 5: return Delete;
+          case 6: return Limit;
+          case 7: return Projection;
+          default: return null;
+        }
+      }
+      
+      public static com.google.protobuf.Internal.EnumLiteMap<Type>
+          internalGetValueMap() {
+        return internalValueMap;
+      }
+      private static com.google.protobuf.Internal.EnumLiteMap<Type>
+          internalValueMap =
+            new com.google.protobuf.Internal.EnumLiteMap<Type>() {
+              public Type findValueByNumber(int number) {
+                return Type.valueOf(number);
+              }
+            };
+      
+      public final com.google.protobuf.Descriptors.EnumValueDescriptor
+          getValueDescriptor() {
+        return getDescriptor().getValues().get(index);
+      }
+      public final com.google.protobuf.Descriptors.EnumDescriptor
+          getDescriptorForType() {
+        return getDescriptor();
+      }
+      public static final com.google.protobuf.Descriptors.EnumDescriptor
+          getDescriptor() {
+        return com.wajam.mry.api.protobuf.MryProtobuf.POperation.getDescriptor().getEnumTypes().get(0);
+      }
+      
+      private static final Type[] VALUES = {
+        Return, From, Get, Set, Delete, Limit, Projection, 
+      };
+      
+      public static Type valueOf(
+          com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+        if (desc.getType() != getDescriptor()) {
+          throw new java.lang.IllegalArgumentException(
+            "EnumValueDescriptor is not for this type.");
+        }
+        return VALUES[desc.getIndex()];
+      }
+      
+      private final int index;
+      private final int value;
+      
+      private Type(int index, int value) {
+        this.index = index;
+        this.value = value;
+      }
+      
+      // @@protoc_insertion_point(enum_scope:com.wajam.mry.api.protobuf.POperation.Type)
+    }
+    
     private int bitField0_;
-    // repeated uint32 variableAddresses = 1;
-    public static final int VARIABLEADDRESSES_FIELD_NUMBER = 1;
+    // optional .com.wajam.mry.api.protobuf.POperation.Type type = 1;
+    public static final int TYPE_FIELD_NUMBER = 1;
+    private com.wajam.mry.api.protobuf.MryProtobuf.POperation.Type type_;
+    public boolean hasType() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.POperation.Type getType() {
+      return type_;
+    }
+    
+    // repeated uint32 variableAddresses = 2;
+    public static final int VARIABLEADDRESSES_FIELD_NUMBER = 2;
     private java.util.List<java.lang.Integer> variableAddresses_;
     public java.util.List<java.lang.Integer>
         getVariableAddressesList() {
@@ -3644,8 +3722,8 @@ public final class MryProtobuf {
       return variableAddresses_.get(index);
     }
     
-    // repeated uint32 objectAddresses = 2;
-    public static final int OBJECTADDRESSES_FIELD_NUMBER = 2;
+    // repeated uint32 objectAddresses = 3;
+    public static final int OBJECTADDRESSES_FIELD_NUMBER = 3;
     private java.util.List<java.lang.Integer> objectAddresses_;
     public java.util.List<java.lang.Integer>
         getObjectAddressesList() {
@@ -3658,17 +3736,18 @@ public final class MryProtobuf {
       return objectAddresses_.get(index);
     }
     
-    // optional uint32 sourceAddress = 3;
-    public static final int SOURCEADDRESS_FIELD_NUMBER = 3;
+    // optional uint32 sourceAddress = 4;
+    public static final int SOURCEADDRESS_FIELD_NUMBER = 4;
     private int sourceAddress_;
     public boolean hasSourceAddress() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
+      return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     public int getSourceAddress() {
       return sourceAddress_;
     }
     
     private void initFields() {
+      type_ = com.wajam.mry.api.protobuf.MryProtobuf.POperation.Type.Return;
       variableAddresses_ = java.util.Collections.emptyList();;
       objectAddresses_ = java.util.Collections.emptyList();;
       sourceAddress_ = 0;
@@ -3678,10 +3757,6 @@ public final class MryProtobuf {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized != -1) return isInitialized == 1;
       
-      if (!extensionsAreInitialized()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -3689,19 +3764,18 @@ public final class MryProtobuf {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      com.google.protobuf.GeneratedMessage
-        .ExtendableMessage<com.wajam.mry.api.protobuf.MryProtobuf.POperation>.ExtensionWriter extensionWriter =
-          newExtensionWriter();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeEnum(1, type_.getNumber());
+      }
       for (int i = 0; i < variableAddresses_.size(); i++) {
-        output.writeUInt32(1, variableAddresses_.get(i));
+        output.writeUInt32(2, variableAddresses_.get(i));
       }
       for (int i = 0; i < objectAddresses_.size(); i++) {
-        output.writeUInt32(2, objectAddresses_.get(i));
+        output.writeUInt32(3, objectAddresses_.get(i));
       }
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeUInt32(3, sourceAddress_);
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeUInt32(4, sourceAddress_);
       }
-      extensionWriter.writeUntil(201, output);
       getUnknownFields().writeTo(output);
     }
     
@@ -3711,6 +3785,10 @@ public final class MryProtobuf {
       if (size != -1) return size;
     
       size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(1, type_.getNumber());
+      }
       {
         int dataSize = 0;
         for (int i = 0; i < variableAddresses_.size(); i++) {
@@ -3729,11 +3807,10 @@ public final class MryProtobuf {
         size += dataSize;
         size += 1 * getObjectAddressesList().size();
       }
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(3, sourceAddress_);
+          .computeUInt32Size(4, sourceAddress_);
       }
-      size += extensionsSerializedSize();
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
@@ -3827,8 +3904,8 @@ public final class MryProtobuf {
       return builder;
     }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.ExtendableBuilder<
-          com.wajam.mry.api.protobuf.MryProtobuf.POperation, Builder> implements com.wajam.mry.api.protobuf.MryProtobuf.POperationOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements com.wajam.mry.api.protobuf.MryProtobuf.POperationOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_POperation_descriptor;
@@ -3858,12 +3935,14 @@ public final class MryProtobuf {
       
       public Builder clear() {
         super.clear();
-        variableAddresses_ = java.util.Collections.emptyList();;
+        type_ = com.wajam.mry.api.protobuf.MryProtobuf.POperation.Type.Return;
         bitField0_ = (bitField0_ & ~0x00000001);
-        objectAddresses_ = java.util.Collections.emptyList();;
+        variableAddresses_ = java.util.Collections.emptyList();;
         bitField0_ = (bitField0_ & ~0x00000002);
-        sourceAddress_ = 0;
+        objectAddresses_ = java.util.Collections.emptyList();;
         bitField0_ = (bitField0_ & ~0x00000004);
+        sourceAddress_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
       
@@ -3902,18 +3981,22 @@ public final class MryProtobuf {
         com.wajam.mry.api.protobuf.MryProtobuf.POperation result = new com.wajam.mry.api.protobuf.MryProtobuf.POperation(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
-        if (((bitField0_ & 0x00000001) == 0x00000001)) {
-          variableAddresses_ = java.util.Collections.unmodifiableList(variableAddresses_);
-          bitField0_ = (bitField0_ & ~0x00000001);
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        result.variableAddresses_ = variableAddresses_;
+        result.type_ = type_;
         if (((bitField0_ & 0x00000002) == 0x00000002)) {
-          objectAddresses_ = java.util.Collections.unmodifiableList(objectAddresses_);
+          variableAddresses_ = java.util.Collections.unmodifiableList(variableAddresses_);
           bitField0_ = (bitField0_ & ~0x00000002);
         }
+        result.variableAddresses_ = variableAddresses_;
+        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+          objectAddresses_ = java.util.Collections.unmodifiableList(objectAddresses_);
+          bitField0_ = (bitField0_ & ~0x00000004);
+        }
         result.objectAddresses_ = objectAddresses_;
-        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
-          to_bitField0_ |= 0x00000001;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000002;
         }
         result.sourceAddress_ = sourceAddress_;
         result.bitField0_ = to_bitField0_;
@@ -3932,10 +4015,13 @@ public final class MryProtobuf {
       
       public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.POperation other) {
         if (other == com.wajam.mry.api.protobuf.MryProtobuf.POperation.getDefaultInstance()) return this;
+        if (other.hasType()) {
+          setType(other.getType());
+        }
         if (!other.variableAddresses_.isEmpty()) {
           if (variableAddresses_.isEmpty()) {
             variableAddresses_ = other.variableAddresses_;
-            bitField0_ = (bitField0_ & ~0x00000001);
+            bitField0_ = (bitField0_ & ~0x00000002);
           } else {
             ensureVariableAddressesIsMutable();
             variableAddresses_.addAll(other.variableAddresses_);
@@ -3945,7 +4031,7 @@ public final class MryProtobuf {
         if (!other.objectAddresses_.isEmpty()) {
           if (objectAddresses_.isEmpty()) {
             objectAddresses_ = other.objectAddresses_;
-            bitField0_ = (bitField0_ & ~0x00000002);
+            bitField0_ = (bitField0_ & ~0x00000004);
           } else {
             ensureObjectAddressesIsMutable();
             objectAddresses_.addAll(other.objectAddresses_);
@@ -3955,16 +4041,11 @@ public final class MryProtobuf {
         if (other.hasSourceAddress()) {
           setSourceAddress(other.getSourceAddress());
         }
-        this.mergeExtensionFields(other);
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
       
       public final boolean isInitialized() {
-        if (!extensionsAreInitialized()) {
-          
-          return false;
-        }
         return true;
       }
       
@@ -3992,11 +4073,22 @@ public final class MryProtobuf {
               break;
             }
             case 8: {
+              int rawValue = input.readEnum();
+              com.wajam.mry.api.protobuf.MryProtobuf.POperation.Type value = com.wajam.mry.api.protobuf.MryProtobuf.POperation.Type.valueOf(rawValue);
+              if (value == null) {
+                unknownFields.mergeVarintField(1, rawValue);
+              } else {
+                bitField0_ |= 0x00000001;
+                type_ = value;
+              }
+              break;
+            }
+            case 16: {
               ensureVariableAddressesIsMutable();
               variableAddresses_.add(input.readUInt32());
               break;
             }
-            case 10: {
+            case 18: {
               int length = input.readRawVarint32();
               int limit = input.pushLimit(length);
               while (input.getBytesUntilLimit() > 0) {
@@ -4005,12 +4097,12 @@ public final class MryProtobuf {
               input.popLimit(limit);
               break;
             }
-            case 16: {
+            case 24: {
               ensureObjectAddressesIsMutable();
               objectAddresses_.add(input.readUInt32());
               break;
             }
-            case 18: {
+            case 26: {
               int length = input.readRawVarint32();
               int limit = input.pushLimit(length);
               while (input.getBytesUntilLimit() > 0) {
@@ -4019,8 +4111,8 @@ public final class MryProtobuf {
               input.popLimit(limit);
               break;
             }
-            case 24: {
-              bitField0_ |= 0x00000004;
+            case 32: {
+              bitField0_ |= 0x00000008;
               sourceAddress_ = input.readUInt32();
               break;
             }
@@ -4030,12 +4122,36 @@ public final class MryProtobuf {
       
       private int bitField0_;
       
-      // repeated uint32 variableAddresses = 1;
+      // optional .com.wajam.mry.api.protobuf.POperation.Type type = 1;
+      private com.wajam.mry.api.protobuf.MryProtobuf.POperation.Type type_ = com.wajam.mry.api.protobuf.MryProtobuf.POperation.Type.Return;
+      public boolean hasType() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.POperation.Type getType() {
+        return type_;
+      }
+      public Builder setType(com.wajam.mry.api.protobuf.MryProtobuf.POperation.Type value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        bitField0_ |= 0x00000001;
+        type_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearType() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        type_ = com.wajam.mry.api.protobuf.MryProtobuf.POperation.Type.Return;
+        onChanged();
+        return this;
+      }
+      
+      // repeated uint32 variableAddresses = 2;
       private java.util.List<java.lang.Integer> variableAddresses_ = java.util.Collections.emptyList();;
       private void ensureVariableAddressesIsMutable() {
-        if (!((bitField0_ & 0x00000001) == 0x00000001)) {
+        if (!((bitField0_ & 0x00000002) == 0x00000002)) {
           variableAddresses_ = new java.util.ArrayList<java.lang.Integer>(variableAddresses_);
-          bitField0_ |= 0x00000001;
+          bitField0_ |= 0x00000002;
          }
       }
       public java.util.List<java.lang.Integer>
@@ -4070,17 +4186,17 @@ public final class MryProtobuf {
       }
       public Builder clearVariableAddresses() {
         variableAddresses_ = java.util.Collections.emptyList();;
-        bitField0_ = (bitField0_ & ~0x00000001);
+        bitField0_ = (bitField0_ & ~0x00000002);
         onChanged();
         return this;
       }
       
-      // repeated uint32 objectAddresses = 2;
+      // repeated uint32 objectAddresses = 3;
       private java.util.List<java.lang.Integer> objectAddresses_ = java.util.Collections.emptyList();;
       private void ensureObjectAddressesIsMutable() {
-        if (!((bitField0_ & 0x00000002) == 0x00000002)) {
+        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
           objectAddresses_ = new java.util.ArrayList<java.lang.Integer>(objectAddresses_);
-          bitField0_ |= 0x00000002;
+          bitField0_ |= 0x00000004;
          }
       }
       public java.util.List<java.lang.Integer>
@@ -4115,27 +4231,27 @@ public final class MryProtobuf {
       }
       public Builder clearObjectAddresses() {
         objectAddresses_ = java.util.Collections.emptyList();;
-        bitField0_ = (bitField0_ & ~0x00000002);
+        bitField0_ = (bitField0_ & ~0x00000004);
         onChanged();
         return this;
       }
       
-      // optional uint32 sourceAddress = 3;
+      // optional uint32 sourceAddress = 4;
       private int sourceAddress_ ;
       public boolean hasSourceAddress() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       public int getSourceAddress() {
         return sourceAddress_;
       }
       public Builder setSourceAddress(int value) {
-        bitField0_ |= 0x00000004;
+        bitField0_ |= 0x00000008;
         sourceAddress_ = value;
         onChanged();
         return this;
       }
       public Builder clearSourceAddress() {
-        bitField0_ = (bitField0_ & ~0x00000004);
+        bitField0_ = (bitField0_ & ~0x00000008);
         sourceAddress_ = 0;
         onChanged();
         return this;
@@ -4150,2008 +4266,6 @@ public final class MryProtobuf {
     }
     
     // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.POperation)
-  }
-  
-  public interface PReturnOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
-  }
-  public static final class PReturn extends
-      com.google.protobuf.GeneratedMessage
-      implements PReturnOrBuilder {
-    // Use PReturn.newBuilder() to construct.
-    private PReturn(Builder builder) {
-      super(builder);
-    }
-    private PReturn(boolean noInit) {}
-    
-    private static final PReturn defaultInstance;
-    public static PReturn getDefaultInstance() {
-      return defaultInstance;
-    }
-    
-    public PReturn getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-    
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PReturn_descriptor;
-    }
-    
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PReturn_fieldAccessorTable;
-    }
-    
-    private void initFields() {
-    }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-      
-      memoizedIsInitialized = 1;
-      return true;
-    }
-    
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      getUnknownFields().writeTo(output);
-    }
-    
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-    
-      size = 0;
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-    
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
-    }
-    
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PReturn parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PReturn parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PReturn parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PReturn parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PReturn parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PReturn parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PReturn parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PReturn parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PReturn parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PReturn parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(com.wajam.mry.api.protobuf.MryProtobuf.PReturn prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-    
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements com.wajam.mry.api.protobuf.MryProtobuf.PReturnOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PReturn_descriptor;
-      }
-      
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PReturn_fieldAccessorTable;
-      }
-      
-      // Construct using com.wajam.mry.api.protobuf.MryProtobuf.PReturn.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-      
-      private Builder(BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-        }
-      }
-      private static Builder create() {
-        return new Builder();
-      }
-      
-      public Builder clear() {
-        super.clear();
-        return this;
-      }
-      
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
-      
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PReturn.getDescriptor();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PReturn getDefaultInstanceForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PReturn.getDefaultInstance();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PReturn build() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PReturn result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-      
-      private com.wajam.mry.api.protobuf.MryProtobuf.PReturn buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        com.wajam.mry.api.protobuf.MryProtobuf.PReturn result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return result;
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PReturn buildPartial() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PReturn result = new com.wajam.mry.api.protobuf.MryProtobuf.PReturn(this);
-        onBuilt();
-        return result;
-      }
-      
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof com.wajam.mry.api.protobuf.MryProtobuf.PReturn) {
-          return mergeFrom((com.wajam.mry.api.protobuf.MryProtobuf.PReturn)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-      
-      public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PReturn other) {
-        if (other == com.wajam.mry.api.protobuf.MryProtobuf.PReturn.getDefaultInstance()) return this;
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
-      
-      public final boolean isInitialized() {
-        return true;
-      }
-      
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              onChanged();
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                onChanged();
-                return this;
-              }
-              break;
-            }
-          }
-        }
-      }
-      
-      
-      // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PReturn)
-    }
-    
-    static {
-      defaultInstance = new PReturn(true);
-      defaultInstance.initFields();
-    }
-    
-    // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PReturn)
-    public static final int RET_FIELD_NUMBER = 100;
-    public static final
-      com.google.protobuf.GeneratedMessage.GeneratedExtension<
-        com.wajam.mry.api.protobuf.MryProtobuf.POperation,
-        com.wajam.mry.api.protobuf.MryProtobuf.PReturn> ret = com.google.protobuf.GeneratedMessage
-            .newMessageScopedGeneratedExtension(
-          com.wajam.mry.api.protobuf.MryProtobuf.PReturn.getDefaultInstance(),
-          0,
-          com.wajam.mry.api.protobuf.MryProtobuf.PReturn.class,
-          com.wajam.mry.api.protobuf.MryProtobuf.PReturn.getDefaultInstance());
-  }
-  
-  public interface PFromOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
-  }
-  public static final class PFrom extends
-      com.google.protobuf.GeneratedMessage
-      implements PFromOrBuilder {
-    // Use PFrom.newBuilder() to construct.
-    private PFrom(Builder builder) {
-      super(builder);
-    }
-    private PFrom(boolean noInit) {}
-    
-    private static final PFrom defaultInstance;
-    public static PFrom getDefaultInstance() {
-      return defaultInstance;
-    }
-    
-    public PFrom getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-    
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PFrom_descriptor;
-    }
-    
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PFrom_fieldAccessorTable;
-    }
-    
-    private void initFields() {
-    }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-      
-      memoizedIsInitialized = 1;
-      return true;
-    }
-    
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      getUnknownFields().writeTo(output);
-    }
-    
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-    
-      size = 0;
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-    
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
-    }
-    
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PFrom parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PFrom parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PFrom parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PFrom parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PFrom parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PFrom parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PFrom parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PFrom parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PFrom parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PFrom parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(com.wajam.mry.api.protobuf.MryProtobuf.PFrom prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-    
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements com.wajam.mry.api.protobuf.MryProtobuf.PFromOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PFrom_descriptor;
-      }
-      
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PFrom_fieldAccessorTable;
-      }
-      
-      // Construct using com.wajam.mry.api.protobuf.MryProtobuf.PFrom.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-      
-      private Builder(BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-        }
-      }
-      private static Builder create() {
-        return new Builder();
-      }
-      
-      public Builder clear() {
-        super.clear();
-        return this;
-      }
-      
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
-      
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PFrom.getDescriptor();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PFrom getDefaultInstanceForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PFrom.getDefaultInstance();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PFrom build() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PFrom result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-      
-      private com.wajam.mry.api.protobuf.MryProtobuf.PFrom buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        com.wajam.mry.api.protobuf.MryProtobuf.PFrom result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return result;
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PFrom buildPartial() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PFrom result = new com.wajam.mry.api.protobuf.MryProtobuf.PFrom(this);
-        onBuilt();
-        return result;
-      }
-      
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof com.wajam.mry.api.protobuf.MryProtobuf.PFrom) {
-          return mergeFrom((com.wajam.mry.api.protobuf.MryProtobuf.PFrom)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-      
-      public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PFrom other) {
-        if (other == com.wajam.mry.api.protobuf.MryProtobuf.PFrom.getDefaultInstance()) return this;
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
-      
-      public final boolean isInitialized() {
-        return true;
-      }
-      
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              onChanged();
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                onChanged();
-                return this;
-              }
-              break;
-            }
-          }
-        }
-      }
-      
-      
-      // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PFrom)
-    }
-    
-    static {
-      defaultInstance = new PFrom(true);
-      defaultInstance.initFields();
-    }
-    
-    // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PFrom)
-    public static final int FROM_FIELD_NUMBER = 101;
-    public static final
-      com.google.protobuf.GeneratedMessage.GeneratedExtension<
-        com.wajam.mry.api.protobuf.MryProtobuf.POperation,
-        com.wajam.mry.api.protobuf.MryProtobuf.PFrom> from = com.google.protobuf.GeneratedMessage
-            .newMessageScopedGeneratedExtension(
-          com.wajam.mry.api.protobuf.MryProtobuf.PFrom.getDefaultInstance(),
-          0,
-          com.wajam.mry.api.protobuf.MryProtobuf.PFrom.class,
-          com.wajam.mry.api.protobuf.MryProtobuf.PFrom.getDefaultInstance());
-  }
-  
-  public interface PGetOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
-  }
-  public static final class PGet extends
-      com.google.protobuf.GeneratedMessage
-      implements PGetOrBuilder {
-    // Use PGet.newBuilder() to construct.
-    private PGet(Builder builder) {
-      super(builder);
-    }
-    private PGet(boolean noInit) {}
-    
-    private static final PGet defaultInstance;
-    public static PGet getDefaultInstance() {
-      return defaultInstance;
-    }
-    
-    public PGet getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-    
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PGet_descriptor;
-    }
-    
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PGet_fieldAccessorTable;
-    }
-    
-    private void initFields() {
-    }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-      
-      memoizedIsInitialized = 1;
-      return true;
-    }
-    
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      getUnknownFields().writeTo(output);
-    }
-    
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-    
-      size = 0;
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-    
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
-    }
-    
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PGet parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PGet parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PGet parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PGet parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PGet parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PGet parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PGet parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PGet parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PGet parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PGet parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(com.wajam.mry.api.protobuf.MryProtobuf.PGet prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-    
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements com.wajam.mry.api.protobuf.MryProtobuf.PGetOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PGet_descriptor;
-      }
-      
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PGet_fieldAccessorTable;
-      }
-      
-      // Construct using com.wajam.mry.api.protobuf.MryProtobuf.PGet.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-      
-      private Builder(BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-        }
-      }
-      private static Builder create() {
-        return new Builder();
-      }
-      
-      public Builder clear() {
-        super.clear();
-        return this;
-      }
-      
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
-      
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PGet.getDescriptor();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PGet getDefaultInstanceForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PGet.getDefaultInstance();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PGet build() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PGet result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-      
-      private com.wajam.mry.api.protobuf.MryProtobuf.PGet buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        com.wajam.mry.api.protobuf.MryProtobuf.PGet result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return result;
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PGet buildPartial() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PGet result = new com.wajam.mry.api.protobuf.MryProtobuf.PGet(this);
-        onBuilt();
-        return result;
-      }
-      
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof com.wajam.mry.api.protobuf.MryProtobuf.PGet) {
-          return mergeFrom((com.wajam.mry.api.protobuf.MryProtobuf.PGet)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-      
-      public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PGet other) {
-        if (other == com.wajam.mry.api.protobuf.MryProtobuf.PGet.getDefaultInstance()) return this;
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
-      
-      public final boolean isInitialized() {
-        return true;
-      }
-      
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              onChanged();
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                onChanged();
-                return this;
-              }
-              break;
-            }
-          }
-        }
-      }
-      
-      
-      // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PGet)
-    }
-    
-    static {
-      defaultInstance = new PGet(true);
-      defaultInstance.initFields();
-    }
-    
-    // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PGet)
-    public static final int GET_FIELD_NUMBER = 102;
-    public static final
-      com.google.protobuf.GeneratedMessage.GeneratedExtension<
-        com.wajam.mry.api.protobuf.MryProtobuf.POperation,
-        com.wajam.mry.api.protobuf.MryProtobuf.PGet> get = com.google.protobuf.GeneratedMessage
-            .newMessageScopedGeneratedExtension(
-          com.wajam.mry.api.protobuf.MryProtobuf.PGet.getDefaultInstance(),
-          0,
-          com.wajam.mry.api.protobuf.MryProtobuf.PGet.class,
-          com.wajam.mry.api.protobuf.MryProtobuf.PGet.getDefaultInstance());
-  }
-  
-  public interface PSetOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
-  }
-  public static final class PSet extends
-      com.google.protobuf.GeneratedMessage
-      implements PSetOrBuilder {
-    // Use PSet.newBuilder() to construct.
-    private PSet(Builder builder) {
-      super(builder);
-    }
-    private PSet(boolean noInit) {}
-    
-    private static final PSet defaultInstance;
-    public static PSet getDefaultInstance() {
-      return defaultInstance;
-    }
-    
-    public PSet getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-    
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PSet_descriptor;
-    }
-    
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PSet_fieldAccessorTable;
-    }
-    
-    private void initFields() {
-    }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-      
-      memoizedIsInitialized = 1;
-      return true;
-    }
-    
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      getUnknownFields().writeTo(output);
-    }
-    
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-    
-      size = 0;
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-    
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
-    }
-    
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PSet parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PSet parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PSet parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PSet parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PSet parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PSet parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PSet parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PSet parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PSet parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PSet parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(com.wajam.mry.api.protobuf.MryProtobuf.PSet prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-    
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements com.wajam.mry.api.protobuf.MryProtobuf.PSetOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PSet_descriptor;
-      }
-      
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PSet_fieldAccessorTable;
-      }
-      
-      // Construct using com.wajam.mry.api.protobuf.MryProtobuf.PSet.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-      
-      private Builder(BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-        }
-      }
-      private static Builder create() {
-        return new Builder();
-      }
-      
-      public Builder clear() {
-        super.clear();
-        return this;
-      }
-      
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
-      
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PSet.getDescriptor();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PSet getDefaultInstanceForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PSet.getDefaultInstance();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PSet build() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PSet result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-      
-      private com.wajam.mry.api.protobuf.MryProtobuf.PSet buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        com.wajam.mry.api.protobuf.MryProtobuf.PSet result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return result;
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PSet buildPartial() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PSet result = new com.wajam.mry.api.protobuf.MryProtobuf.PSet(this);
-        onBuilt();
-        return result;
-      }
-      
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof com.wajam.mry.api.protobuf.MryProtobuf.PSet) {
-          return mergeFrom((com.wajam.mry.api.protobuf.MryProtobuf.PSet)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-      
-      public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PSet other) {
-        if (other == com.wajam.mry.api.protobuf.MryProtobuf.PSet.getDefaultInstance()) return this;
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
-      
-      public final boolean isInitialized() {
-        return true;
-      }
-      
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              onChanged();
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                onChanged();
-                return this;
-              }
-              break;
-            }
-          }
-        }
-      }
-      
-      
-      // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PSet)
-    }
-    
-    static {
-      defaultInstance = new PSet(true);
-      defaultInstance.initFields();
-    }
-    
-    // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PSet)
-    public static final int SET_FIELD_NUMBER = 103;
-    public static final
-      com.google.protobuf.GeneratedMessage.GeneratedExtension<
-        com.wajam.mry.api.protobuf.MryProtobuf.POperation,
-        com.wajam.mry.api.protobuf.MryProtobuf.PSet> set = com.google.protobuf.GeneratedMessage
-            .newMessageScopedGeneratedExtension(
-          com.wajam.mry.api.protobuf.MryProtobuf.PSet.getDefaultInstance(),
-          0,
-          com.wajam.mry.api.protobuf.MryProtobuf.PSet.class,
-          com.wajam.mry.api.protobuf.MryProtobuf.PSet.getDefaultInstance());
-  }
-  
-  public interface PDeleteOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
-  }
-  public static final class PDelete extends
-      com.google.protobuf.GeneratedMessage
-      implements PDeleteOrBuilder {
-    // Use PDelete.newBuilder() to construct.
-    private PDelete(Builder builder) {
-      super(builder);
-    }
-    private PDelete(boolean noInit) {}
-    
-    private static final PDelete defaultInstance;
-    public static PDelete getDefaultInstance() {
-      return defaultInstance;
-    }
-    
-    public PDelete getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-    
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PDelete_descriptor;
-    }
-    
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PDelete_fieldAccessorTable;
-    }
-    
-    private void initFields() {
-    }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-      
-      memoizedIsInitialized = 1;
-      return true;
-    }
-    
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      getUnknownFields().writeTo(output);
-    }
-    
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-    
-      size = 0;
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-    
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
-    }
-    
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PDelete parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PDelete parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PDelete parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PDelete parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PDelete parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PDelete parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PDelete parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PDelete parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PDelete parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PDelete parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(com.wajam.mry.api.protobuf.MryProtobuf.PDelete prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-    
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements com.wajam.mry.api.protobuf.MryProtobuf.PDeleteOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PDelete_descriptor;
-      }
-      
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PDelete_fieldAccessorTable;
-      }
-      
-      // Construct using com.wajam.mry.api.protobuf.MryProtobuf.PDelete.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-      
-      private Builder(BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-        }
-      }
-      private static Builder create() {
-        return new Builder();
-      }
-      
-      public Builder clear() {
-        super.clear();
-        return this;
-      }
-      
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
-      
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PDelete.getDescriptor();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PDelete getDefaultInstanceForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PDelete.getDefaultInstance();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PDelete build() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PDelete result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-      
-      private com.wajam.mry.api.protobuf.MryProtobuf.PDelete buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        com.wajam.mry.api.protobuf.MryProtobuf.PDelete result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return result;
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PDelete buildPartial() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PDelete result = new com.wajam.mry.api.protobuf.MryProtobuf.PDelete(this);
-        onBuilt();
-        return result;
-      }
-      
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof com.wajam.mry.api.protobuf.MryProtobuf.PDelete) {
-          return mergeFrom((com.wajam.mry.api.protobuf.MryProtobuf.PDelete)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-      
-      public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PDelete other) {
-        if (other == com.wajam.mry.api.protobuf.MryProtobuf.PDelete.getDefaultInstance()) return this;
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
-      
-      public final boolean isInitialized() {
-        return true;
-      }
-      
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              onChanged();
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                onChanged();
-                return this;
-              }
-              break;
-            }
-          }
-        }
-      }
-      
-      
-      // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PDelete)
-    }
-    
-    static {
-      defaultInstance = new PDelete(true);
-      defaultInstance.initFields();
-    }
-    
-    // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PDelete)
-    public static final int DELETE_FIELD_NUMBER = 104;
-    public static final
-      com.google.protobuf.GeneratedMessage.GeneratedExtension<
-        com.wajam.mry.api.protobuf.MryProtobuf.POperation,
-        com.wajam.mry.api.protobuf.MryProtobuf.PDelete> delete = com.google.protobuf.GeneratedMessage
-            .newMessageScopedGeneratedExtension(
-          com.wajam.mry.api.protobuf.MryProtobuf.PDelete.getDefaultInstance(),
-          0,
-          com.wajam.mry.api.protobuf.MryProtobuf.PDelete.class,
-          com.wajam.mry.api.protobuf.MryProtobuf.PDelete.getDefaultInstance());
-  }
-  
-  public interface PLimitOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
-  }
-  public static final class PLimit extends
-      com.google.protobuf.GeneratedMessage
-      implements PLimitOrBuilder {
-    // Use PLimit.newBuilder() to construct.
-    private PLimit(Builder builder) {
-      super(builder);
-    }
-    private PLimit(boolean noInit) {}
-    
-    private static final PLimit defaultInstance;
-    public static PLimit getDefaultInstance() {
-      return defaultInstance;
-    }
-    
-    public PLimit getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-    
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PLimit_descriptor;
-    }
-    
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PLimit_fieldAccessorTable;
-    }
-    
-    private void initFields() {
-    }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-      
-      memoizedIsInitialized = 1;
-      return true;
-    }
-    
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      getUnknownFields().writeTo(output);
-    }
-    
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-    
-      size = 0;
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-    
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
-    }
-    
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PLimit parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PLimit parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PLimit parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PLimit parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PLimit parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PLimit parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PLimit parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PLimit parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PLimit parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PLimit parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(com.wajam.mry.api.protobuf.MryProtobuf.PLimit prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-    
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements com.wajam.mry.api.protobuf.MryProtobuf.PLimitOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PLimit_descriptor;
-      }
-      
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PLimit_fieldAccessorTable;
-      }
-      
-      // Construct using com.wajam.mry.api.protobuf.MryProtobuf.PLimit.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-      
-      private Builder(BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-        }
-      }
-      private static Builder create() {
-        return new Builder();
-      }
-      
-      public Builder clear() {
-        super.clear();
-        return this;
-      }
-      
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
-      
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PLimit.getDescriptor();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PLimit getDefaultInstanceForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PLimit.getDefaultInstance();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PLimit build() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PLimit result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-      
-      private com.wajam.mry.api.protobuf.MryProtobuf.PLimit buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        com.wajam.mry.api.protobuf.MryProtobuf.PLimit result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return result;
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PLimit buildPartial() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PLimit result = new com.wajam.mry.api.protobuf.MryProtobuf.PLimit(this);
-        onBuilt();
-        return result;
-      }
-      
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof com.wajam.mry.api.protobuf.MryProtobuf.PLimit) {
-          return mergeFrom((com.wajam.mry.api.protobuf.MryProtobuf.PLimit)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-      
-      public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PLimit other) {
-        if (other == com.wajam.mry.api.protobuf.MryProtobuf.PLimit.getDefaultInstance()) return this;
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
-      
-      public final boolean isInitialized() {
-        return true;
-      }
-      
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              onChanged();
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                onChanged();
-                return this;
-              }
-              break;
-            }
-          }
-        }
-      }
-      
-      
-      // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PLimit)
-    }
-    
-    static {
-      defaultInstance = new PLimit(true);
-      defaultInstance.initFields();
-    }
-    
-    // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PLimit)
-    public static final int LIMIT_FIELD_NUMBER = 105;
-    public static final
-      com.google.protobuf.GeneratedMessage.GeneratedExtension<
-        com.wajam.mry.api.protobuf.MryProtobuf.POperation,
-        com.wajam.mry.api.protobuf.MryProtobuf.PLimit> limit = com.google.protobuf.GeneratedMessage
-            .newMessageScopedGeneratedExtension(
-          com.wajam.mry.api.protobuf.MryProtobuf.PLimit.getDefaultInstance(),
-          0,
-          com.wajam.mry.api.protobuf.MryProtobuf.PLimit.class,
-          com.wajam.mry.api.protobuf.MryProtobuf.PLimit.getDefaultInstance());
-  }
-  
-  public interface PProjectionOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
-  }
-  public static final class PProjection extends
-      com.google.protobuf.GeneratedMessage
-      implements PProjectionOrBuilder {
-    // Use PProjection.newBuilder() to construct.
-    private PProjection(Builder builder) {
-      super(builder);
-    }
-    private PProjection(boolean noInit) {}
-    
-    private static final PProjection defaultInstance;
-    public static PProjection getDefaultInstance() {
-      return defaultInstance;
-    }
-    
-    public PProjection getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-    
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PProjection_descriptor;
-    }
-    
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PProjection_fieldAccessorTable;
-    }
-    
-    private void initFields() {
-    }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-      
-      memoizedIsInitialized = 1;
-      return true;
-    }
-    
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      getUnknownFields().writeTo(output);
-    }
-    
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-    
-      size = 0;
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-    
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
-    }
-    
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PProjection parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PProjection parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PProjection parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PProjection parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PProjection parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PProjection parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PProjection parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PProjection parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PProjection parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static com.wajam.mry.api.protobuf.MryProtobuf.PProjection parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(com.wajam.mry.api.protobuf.MryProtobuf.PProjection prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-    
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements com.wajam.mry.api.protobuf.MryProtobuf.PProjectionOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PProjection_descriptor;
-      }
-      
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.internal_static_com_wajam_mry_api_protobuf_PProjection_fieldAccessorTable;
-      }
-      
-      // Construct using com.wajam.mry.api.protobuf.MryProtobuf.PProjection.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-      
-      private Builder(BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-        }
-      }
-      private static Builder create() {
-        return new Builder();
-      }
-      
-      public Builder clear() {
-        super.clear();
-        return this;
-      }
-      
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
-      
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PProjection.getDescriptor();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PProjection getDefaultInstanceForType() {
-        return com.wajam.mry.api.protobuf.MryProtobuf.PProjection.getDefaultInstance();
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PProjection build() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PProjection result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-      
-      private com.wajam.mry.api.protobuf.MryProtobuf.PProjection buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        com.wajam.mry.api.protobuf.MryProtobuf.PProjection result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return result;
-      }
-      
-      public com.wajam.mry.api.protobuf.MryProtobuf.PProjection buildPartial() {
-        com.wajam.mry.api.protobuf.MryProtobuf.PProjection result = new com.wajam.mry.api.protobuf.MryProtobuf.PProjection(this);
-        onBuilt();
-        return result;
-      }
-      
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof com.wajam.mry.api.protobuf.MryProtobuf.PProjection) {
-          return mergeFrom((com.wajam.mry.api.protobuf.MryProtobuf.PProjection)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-      
-      public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PProjection other) {
-        if (other == com.wajam.mry.api.protobuf.MryProtobuf.PProjection.getDefaultInstance()) return this;
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
-      
-      public final boolean isInitialized() {
-        return true;
-      }
-      
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              onChanged();
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                onChanged();
-                return this;
-              }
-              break;
-            }
-          }
-        }
-      }
-      
-      
-      // @@protoc_insertion_point(builder_scope:com.wajam.mry.api.protobuf.PProjection)
-    }
-    
-    static {
-      defaultInstance = new PProjection(true);
-      defaultInstance.initFields();
-    }
-    
-    // @@protoc_insertion_point(class_scope:com.wajam.mry.api.protobuf.PProjection)
-    public static final int PROJECTION_FIELD_NUMBER = 106;
-    public static final
-      com.google.protobuf.GeneratedMessage.GeneratedExtension<
-        com.wajam.mry.api.protobuf.MryProtobuf.POperation,
-        com.wajam.mry.api.protobuf.MryProtobuf.PProjection> projection = com.google.protobuf.GeneratedMessage
-            .newMessageScopedGeneratedExtension(
-          com.wajam.mry.api.protobuf.MryProtobuf.PProjection.getDefaultInstance(),
-          0,
-          com.wajam.mry.api.protobuf.MryProtobuf.PProjection.class,
-          com.wajam.mry.api.protobuf.MryProtobuf.PProjection.getDefaultInstance());
   }
   
   public interface PTransactionValueOrBuilder
@@ -8356,41 +6470,6 @@ public final class MryProtobuf {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_com_wajam_mry_api_protobuf_POperation_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_wajam_mry_api_protobuf_PReturn_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_com_wajam_mry_api_protobuf_PReturn_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_wajam_mry_api_protobuf_PFrom_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_com_wajam_mry_api_protobuf_PFrom_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_wajam_mry_api_protobuf_PGet_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_com_wajam_mry_api_protobuf_PGet_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_wajam_mry_api_protobuf_PSet_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_com_wajam_mry_api_protobuf_PSet_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_wajam_mry_api_protobuf_PDelete_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_com_wajam_mry_api_protobuf_PDelete_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_wajam_mry_api_protobuf_PLimit_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_com_wajam_mry_api_protobuf_PLimit_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_wajam_mry_api_protobuf_PProjection_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_com_wajam_mry_api_protobuf_PProjection_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_com_wajam_mry_api_protobuf_PTransactionValue_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -8431,43 +6510,29 @@ public final class MryProtobuf {
       "\014blockAddress\030\002 \001(\r\"O\n\006PBlock\022\016\n\006varSeq\030" +
       "\001 \002(\r\022\032\n\022operationAddresses\030\002 \003(\r\022\031\n\021var" +
       "iableAddresses\030\003 \003(\r\"-\n\tPVariable\022\n\n\002id\030" +
-      "\001 \002(\r\022\024\n\014valueAddress\030\002 \001(\r\"^\n\nPOperatio" +
-      "n\022\031\n\021variableAddresses\030\001 \003(\r\022\027\n\017objectAd" +
-      "dresses\030\002 \003(\r\022\025\n\rsourceAddress\030\003 \001(\r*\005\010d",
-      "\020\311\001\"c\n\007PReturn2X\n\003ret\022&.com.wajam.mry.ap" +
-      "i.protobuf.POperation\030d \001(\0132#.com.wajam." +
-      "mry.api.protobuf.PReturn\"`\n\005PFrom2W\n\004fro" +
-      "m\022&.com.wajam.mry.api.protobuf.POperatio" +
-      "n\030e \001(\0132!.com.wajam.mry.api.protobuf.PFr" +
-      "om\"]\n\004PGet2U\n\003get\022&.com.wajam.mry.api.pr" +
-      "otobuf.POperation\030f \001(\0132 .com.wajam.mry." +
-      "api.protobuf.PGet\"]\n\004PSet2U\n\003set\022&.com.w" +
-      "ajam.mry.api.protobuf.POperation\030g \001(\0132 " +
-      ".com.wajam.mry.api.protobuf.PSet\"f\n\007PDel",
-      "ete2[\n\006delete\022&.com.wajam.mry.api.protob" +
-      "uf.POperation\030h \001(\0132#.com.wajam.mry.api." +
-      "protobuf.PDelete\"c\n\006PLimit2Y\n\005limit\022&.co" +
-      "m.wajam.mry.api.protobuf.POperation\030i \001(" +
-      "\0132\".com.wajam.mry.api.protobuf.PLimit\"r\n" +
-      "\013PProjection2c\n\nprojection\022&.com.wajam.m" +
-      "ry.api.protobuf.POperation\030j \001(\0132\'.com.w" +
-      "ajam.mry.api.protobuf.PProjection\"\235\003\n\021PT" +
-      "ransactionValue\022@\n\004type\030\001 \001(\01622.com.waja" +
-      "m.mry.api.protobuf.PTransactionValue.Typ",
-      "e\022\021\n\tint_value\030\002 \001(\003\022\022\n\nbool_value\030\003 \001(\010" +
-      "\022\024\n\014double_value\030\004 \001(\001\022\024\n\014string_value\030\005" +
-      " \001(\t\022\023\n\013bytes_value\030\006 \001(\014\022A\n\005array\030\007 \001(\013" +
-      "22.com.wajam.mry.api.protobuf.PTransacti" +
-      "onCollection\022?\n\003map\030\010 \001(\01322.com.wajam.mr" +
-      "y.api.protobuf.PTransactionCollection\"Z\n" +
-      "\004Type\022\010\n\004NULL\020\001\022\007\n\003INT\020\002\022\010\n\004BOOL\020\003\022\n\n\006DO" +
-      "UBLE\020\004\022\n\n\006STRING\020\005\022\t\n\005BYTES\020\006\022\t\n\005ARRAY\020\007" +
-      "\022\007\n\003MAP\020\010\"a\n\026PTransactionCollection\022G\n\006v" +
-      "alues\030\001 \003(\01327.com.wajam.mry.api.protobuf",
-      ".PTransactionCollectionValue\"h\n\033PTransac" +
-      "tionCollectionValue\022<\n\005value\030\001 \002(\0132-.com" +
-      ".wajam.mry.api.protobuf.PTransactionValu" +
-      "e\022\013\n\003key\030\002 \001(\tB\002H\001"
+      "\001 \002(\r\022\024\n\014valueAddress\030\002 \001(\r\"\351\001\n\nPOperati" +
+      "on\0229\n\004type\030\001 \001(\0162+.com.wajam.mry.api.pro" +
+      "tobuf.POperation.Type\022\031\n\021variableAddress",
+      "es\030\002 \003(\r\022\027\n\017objectAddresses\030\003 \003(\r\022\025\n\rsou" +
+      "rceAddress\030\004 \001(\r\"U\n\004Type\022\n\n\006Return\020\001\022\010\n\004" +
+      "From\020\002\022\007\n\003Get\020\003\022\007\n\003Set\020\004\022\n\n\006Delete\020\005\022\t\n\005" +
+      "Limit\020\006\022\016\n\nProjection\020\007\"\235\003\n\021PTransaction" +
+      "Value\022@\n\004type\030\001 \001(\01622.com.wajam.mry.api." +
+      "protobuf.PTransactionValue.Type\022\021\n\tint_v" +
+      "alue\030\002 \001(\003\022\022\n\nbool_value\030\003 \001(\010\022\024\n\014double" +
+      "_value\030\004 \001(\001\022\024\n\014string_value\030\005 \001(\t\022\023\n\013by" +
+      "tes_value\030\006 \001(\014\022A\n\005array\030\007 \001(\01322.com.waj" +
+      "am.mry.api.protobuf.PTransactionCollecti",
+      "on\022?\n\003map\030\010 \001(\01322.com.wajam.mry.api.prot" +
+      "obuf.PTransactionCollection\"Z\n\004Type\022\010\n\004N" +
+      "ULL\020\001\022\007\n\003INT\020\002\022\010\n\004BOOL\020\003\022\n\n\006DOUBLE\020\004\022\n\n\006" +
+      "STRING\020\005\022\t\n\005BYTES\020\006\022\t\n\005ARRAY\020\007\022\007\n\003MAP\020\010\"" +
+      "a\n\026PTransactionCollection\022G\n\006values\030\001 \003(" +
+      "\01327.com.wajam.mry.api.protobuf.PTransact" +
+      "ionCollectionValue\"h\n\033PTransactionCollec" +
+      "tionValue\022<\n\005value\030\001 \002(\0132-.com.wajam.mry" +
+      ".api.protobuf.PTransactionValue\022\013\n\003key\030\002" +
+      " \001(\tB\002H\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -8527,67 +6592,11 @@ public final class MryProtobuf {
           internal_static_com_wajam_mry_api_protobuf_POperation_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_POperation_descriptor,
-              new java.lang.String[] { "VariableAddresses", "ObjectAddresses", "SourceAddress", },
+              new java.lang.String[] { "Type", "VariableAddresses", "ObjectAddresses", "SourceAddress", },
               com.wajam.mry.api.protobuf.MryProtobuf.POperation.class,
               com.wajam.mry.api.protobuf.MryProtobuf.POperation.Builder.class);
-          internal_static_com_wajam_mry_api_protobuf_PReturn_descriptor =
-            getDescriptor().getMessageTypes().get(7);
-          internal_static_com_wajam_mry_api_protobuf_PReturn_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_com_wajam_mry_api_protobuf_PReturn_descriptor,
-              new java.lang.String[] { },
-              com.wajam.mry.api.protobuf.MryProtobuf.PReturn.class,
-              com.wajam.mry.api.protobuf.MryProtobuf.PReturn.Builder.class);
-          internal_static_com_wajam_mry_api_protobuf_PFrom_descriptor =
-            getDescriptor().getMessageTypes().get(8);
-          internal_static_com_wajam_mry_api_protobuf_PFrom_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_com_wajam_mry_api_protobuf_PFrom_descriptor,
-              new java.lang.String[] { },
-              com.wajam.mry.api.protobuf.MryProtobuf.PFrom.class,
-              com.wajam.mry.api.protobuf.MryProtobuf.PFrom.Builder.class);
-          internal_static_com_wajam_mry_api_protobuf_PGet_descriptor =
-            getDescriptor().getMessageTypes().get(9);
-          internal_static_com_wajam_mry_api_protobuf_PGet_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_com_wajam_mry_api_protobuf_PGet_descriptor,
-              new java.lang.String[] { },
-              com.wajam.mry.api.protobuf.MryProtobuf.PGet.class,
-              com.wajam.mry.api.protobuf.MryProtobuf.PGet.Builder.class);
-          internal_static_com_wajam_mry_api_protobuf_PSet_descriptor =
-            getDescriptor().getMessageTypes().get(10);
-          internal_static_com_wajam_mry_api_protobuf_PSet_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_com_wajam_mry_api_protobuf_PSet_descriptor,
-              new java.lang.String[] { },
-              com.wajam.mry.api.protobuf.MryProtobuf.PSet.class,
-              com.wajam.mry.api.protobuf.MryProtobuf.PSet.Builder.class);
-          internal_static_com_wajam_mry_api_protobuf_PDelete_descriptor =
-            getDescriptor().getMessageTypes().get(11);
-          internal_static_com_wajam_mry_api_protobuf_PDelete_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_com_wajam_mry_api_protobuf_PDelete_descriptor,
-              new java.lang.String[] { },
-              com.wajam.mry.api.protobuf.MryProtobuf.PDelete.class,
-              com.wajam.mry.api.protobuf.MryProtobuf.PDelete.Builder.class);
-          internal_static_com_wajam_mry_api_protobuf_PLimit_descriptor =
-            getDescriptor().getMessageTypes().get(12);
-          internal_static_com_wajam_mry_api_protobuf_PLimit_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_com_wajam_mry_api_protobuf_PLimit_descriptor,
-              new java.lang.String[] { },
-              com.wajam.mry.api.protobuf.MryProtobuf.PLimit.class,
-              com.wajam.mry.api.protobuf.MryProtobuf.PLimit.Builder.class);
-          internal_static_com_wajam_mry_api_protobuf_PProjection_descriptor =
-            getDescriptor().getMessageTypes().get(13);
-          internal_static_com_wajam_mry_api_protobuf_PProjection_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_com_wajam_mry_api_protobuf_PProjection_descriptor,
-              new java.lang.String[] { },
-              com.wajam.mry.api.protobuf.MryProtobuf.PProjection.class,
-              com.wajam.mry.api.protobuf.MryProtobuf.PProjection.Builder.class);
           internal_static_com_wajam_mry_api_protobuf_PTransactionValue_descriptor =
-            getDescriptor().getMessageTypes().get(14);
+            getDescriptor().getMessageTypes().get(7);
           internal_static_com_wajam_mry_api_protobuf_PTransactionValue_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_PTransactionValue_descriptor,
@@ -8595,7 +6604,7 @@ public final class MryProtobuf {
               com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.class,
               com.wajam.mry.api.protobuf.MryProtobuf.PTransactionValue.Builder.class);
           internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_descriptor =
-            getDescriptor().getMessageTypes().get(15);
+            getDescriptor().getMessageTypes().get(8);
           internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_PTransactionCollection_descriptor,
@@ -8603,7 +6612,7 @@ public final class MryProtobuf {
               com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.class,
               com.wajam.mry.api.protobuf.MryProtobuf.PTransactionCollection.Builder.class);
           internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_descriptor =
-            getDescriptor().getMessageTypes().get(16);
+            getDescriptor().getMessageTypes().get(9);
           internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_com_wajam_mry_api_protobuf_PTransactionCollectionValue_descriptor,
