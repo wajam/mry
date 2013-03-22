@@ -64,15 +64,24 @@ private class InternalProtobufTranslator {
   val pHeap = PHeap.newBuilder()
   var currentAddress = 0 // I don't think will have more than 2^31 object
 
-  val pb2obj = new HashMap[Int, AnyRef] // Encoded address to decoded instance mapping
-  val obj2pb = new HashMap[AnyRef, Int] // Live instance to encoded address mapping
+  val pb2obj = new collection.mutable.HashMap[Int, AnyRef] // Encoded address to decoded instance mapping
+  val obj2pb = new collection.mutable.HashMap[AnyRef, Int] // Live instance to encoded address mapping
 
   private def registerEncodedData(pbAddress: Int, instance: AnyRef) = {
-    obj2pb += (instance => pbAddress)
+    obj2pb += instance -> pbAddress
   }
 
-  private def registerDecodeData(pbAddress: Int, instance: AnyRef) = {
+  private def registerDecodedData(pbAddress: Int, instance: AnyRef) = {
+    pb2obj += pbAddress -> instance
+  }
 
+  private def getEncodedId(instance: AnyRef): Int = {
+    // Compare by memory address
+    obj2pb.find(instance eq _._1).get._2
+  }
+
+  private def getDecodedData[T](pbAddress: Int): T = {
+    pb2obj(pbAddress).asInstanceOf[T]
   }
 
   private def addToHeap(mryData: AnyRef): java.lang.Integer = {
