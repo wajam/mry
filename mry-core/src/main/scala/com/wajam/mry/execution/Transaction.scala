@@ -1,6 +1,7 @@
 package com.wajam.mry.execution
 
 import com.wajam.nrv.utils.ContentEquals
+import com.wajam.mry.execution.Operation._
 
 /**
  * MysqlTransaction (block of operations) executed on storage
@@ -48,4 +49,64 @@ class Transaction(blockCreator: (Block with OperationApi) => Unit = null) extend
     }
   }
 
+  def printTree(name: String): String = {
+    val builder = new StringBuilder()
+
+    builder append "--%s--\n".format(name)
+
+    builder append "Id: %s, Addr: %s \n".format(this.id, System.identityHashCode(this))
+
+    builder append "Variables: " + "\n"
+
+    for (v <- variables)
+      builder append "\tId: %s, Block: %s, Value: %s\n".format(v.id, System.identityHashCode(v.block), v.value)
+
+    builder append "Operations: " + "\n"
+
+    for (o <- operations)  {
+      builder append "\tSource: %s, Type: %s\n".format(System.identityHashCode(o.source), o.getClass)
+
+      o match {
+        case _: Return =>
+
+          val op = o.asInstanceOf[WithFrom]
+
+          builder append "\tFrom: \n"
+
+          op.from.foreach { (v) =>
+            builder append "\t\tId: %s, Block: %s, Value: %s\n".format(v.id, System.identityHashCode(v.block), v.value)
+          }
+
+        case _: From  |
+             _: Get |
+             _: Projection |
+             _: Limit =>
+
+          val op = o.asInstanceOf[WithIntoAndKeys]
+          val v = op.into
+
+          builder append "\tInto: "
+          builder append "Id: %s, Block: %s, Value: %s\n".format(v.id, System.identityHashCode(v.block), v.value)
+
+          builder append "\tKeys: \n"
+
+          op.keys.foreach { (v) => builder append "\t\t %s\n".format(v) }
+
+        case _: Set |
+             _: Delete =>
+
+          val op = o.asInstanceOf[WithIntoAndData]
+          val v = op.into
+
+          builder append "\tInto: "
+          builder append "Id: %s, Block: %s, Value: %s\n".format(v.id, System.identityHashCode(v.block), v.value)
+
+          builder append "\tData: \n"
+
+          op.data.foreach { (v) => builder append "\t\t%s\n".format(v) }
+      }
+    }
+
+    builder.toString()
+  }
 }
