@@ -8,12 +8,14 @@ import com.wajam.mry.execution._
 import com.wajam.mry.execution.MapValue
 import com.wajam.mry.execution.ListValue
 import org.scalatest.matchers.ShouldMatchers
+import com.wajam.mry.api.Transport
 
 @RunWith(classOf[JUnitRunner])
 class TestProtobufTranslator extends FunSuite with ShouldMatchers {
   val translator = new ProtobufTranslator
 
   test("value encode/decode") {
+
     var bytes = translator.encodeValue("testvalue")
     var value = translator.decodeValue(bytes)
     assert(value.equalsValue("testvalue"))
@@ -90,6 +92,13 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
 
   }
 
+  test("transaction equals content is working")
+  {
+    val t = buildTransaction
+
+    t.equalsContent(t)
+  }
+
   test("transaction encode") {
 
     val t = buildTransaction
@@ -102,15 +111,28 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     bytes should not be(new Array[Byte](0))
   }
 
+  test("transaction more complex stuff") {
+
+    val composite = (b: Block with OperationApi) => {
+      val context = b.from("context")
+      b.returns(b.from("memory").get("key"), context.get("tokens"), context.get("local_node"))
+    }
+
+    val t = new Transaction(composite)
+
+
+    val bytes = translator.encodeTransaction(t)
+    val t2 = translator.decodeTransaction(bytes)
+
+    t equalsContent t2 should be(true)
+  }
+
   test("transaction encode/decode") {
 
     val t = buildTransaction
 
     // Validate the validate function
     validateLink(t)
-
-    // Check transaction equals is working first!
-    t.equalsContent(t)
 
     val bytes = translator.encodeTransaction(t)
     val t2 = translator.decodeTransaction(bytes)
@@ -120,6 +142,55 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     // Validate the decoded transaction
     validateLink(t2)
   }
+
+  test("transport encode/decode: transaction") {
+
+    val t = buildTransaction
+
+    val transport = new Transport(Some(t), Seq())
+
+    val bytes = translator.encodeAll(transport)
+    val transport2 = translator.decodeAll(bytes)
+
+    transport2.request.isDefined should be(true)
+    transport2.response should be(Seq())
+
+    transport.request.get equalsContent transport2.request.get should be(true)
+
+    // Validate the decoded transaction
+    validateLink(transport.request.get)
+    validateLink(transport2.request.get)
+  }
+
+  test("transport encode/decode: results") {
+
+    val results = Seq(
+      new NullValue(),
+      new MapValue(Map("A"-> "1")),
+      new ListValue(Seq("2", "3")),
+      new StringValue("4"),
+      new IntValue(5),
+      new BoolValue(true),
+      new BoolValue(false),
+      new DoubleValue(7.35))
+
+    val transport = new Transport(None, results)
+
+    val bytes = translator.encodeAll(transport)
+    val transport2 = translator.decodeAll(bytes)
+
+    val results2 = transport2.response
+
+    transport2.request.isDefined should be(false)
+
+    val merged = results.zip(results2)
+
+    merged.map { (zip) =>
+      zip._1 equalsValue zip._2 should be(true)
+    }
+
+  }
+
 
   private def validateLink(t: Transaction) {
     assert(t.operations(0).source === t)
