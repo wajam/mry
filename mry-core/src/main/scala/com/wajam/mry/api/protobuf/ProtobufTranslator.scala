@@ -136,7 +136,7 @@ private class InternalProtobufTranslator {
     tempDecodingHeap(address).asInstanceOf[T]
   }
 
-  def decodeHeap(pDecodingHeap: PHeap) = {
+  def loadHeap(pDecodingHeap: PHeap) = {
 
       var addr = 1
 
@@ -205,7 +205,7 @@ private class InternalProtobufTranslator {
 
   def decodePTransport(transport: PTransport): Transport = {
 
-    decodeHeap(transport.getHeap)
+    loadHeap(transport.getHeap)
 
     val request: Option[Transaction] =
       if (transport.hasRequestAddress)
@@ -223,11 +223,13 @@ private class InternalProtobufTranslator {
     Transport(request, response)
   }
 
-  def encodePObject(obj: Object): java.lang.Integer = {
+  def encodePObject(obj: Object): Int = {
 
     obj match {
       case variable: Variable => {
-        encodePVariable(variable)
+
+        // Variable are already listed in the parent block, so don't duplicate
+        getEncodedId(variable)
       }
       case value: Value => {
         addToHeap(encodePValue(value))
@@ -239,8 +241,8 @@ private class InternalProtobufTranslator {
     val pObj = getFromHeap[AnyRef](objAddress)
 
     pObj match {
-      case pVar: PVariable => decodePVariable(block, pVar)
-      case pValue: PTransactionValue => decodePValue(pValue)
+      case pVar: PVariable => getDecodedData[Variable](objAddress)
+      case pValue: PTransactionValue => getDecodedData[Value](objAddress)
     }
   }
 
@@ -322,8 +324,9 @@ private class InternalProtobufTranslator {
   }
 
   def decodePVariable(parentBlock: Block, pVariable: PVariable): Variable =  {
-
+    System.out.println("Called!")
     new Variable(parentBlock, pVariable.getId, getDecodedData[Value](pVariable.getValueAddress))
+
   }
 
   def encodePOperation(operation: Operation): POperation.Builder =  {
@@ -339,15 +342,17 @@ private class InternalProtobufTranslator {
     val withFrom = (op: WithFrom) =>
       pOperation.addAllVariableAddresses(op.from.map(encodePVariable(_)).map(_.asInstanceOf[java.lang.Integer]))
 
-    val WithIntoAndKeys = (op: WithIntoAndKeys) =>
+
+    val WithIntoAndSeqObject = (into: Variable, objects: Seq[Object]) =>
       pOperation
-        .addVariableAddresses(encodePVariable(op.into))
-        .addAllObjectAddresses(op.keys.map(encodePObject(_)))
+        .addVariableAddresses(getEncodedId(into)) // Variable are already listed in the parent block, so don't duplicate
+        .addAllObjectAddresses(objects.map(encodePObject(_)).map(_.asInstanceOf[java.lang.Integer]))
+
+    val WithIntoAndKeys = (op: WithIntoAndKeys) =>
+        WithIntoAndSeqObject(op.into, op.keys)
 
     val WithIntoAndData = (op: WithIntoAndData) =>
-      pOperation
-        .addVariableAddresses(encodePVariable(op.into))
-        .addAllObjectAddresses(op.data.map(encodePObject(_)))
+        WithIntoAndSeqObject(op.into, op.data)
 
     operation match {
       case op: Return with WithFrom => withFrom(op); pOperation.setType(Type.Return)
