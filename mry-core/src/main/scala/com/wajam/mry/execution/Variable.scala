@@ -18,7 +18,8 @@ class Variable (private[mry] val block: Block, private[mry] val id: Int, var val
   override def equalsContent(obj: Any): Boolean = {
     obj match {
       case v: Variable =>
-        value.equalsValue(v.value)
+        value.equalsValue(v.value) &&
+        this.id == v.id
 
       case None => false
     }

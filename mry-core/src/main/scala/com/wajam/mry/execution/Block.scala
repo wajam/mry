@@ -13,7 +13,7 @@ trait Block extends ContentEquals  {
   var variables = ArrayBuffer[Variable]()
   var operations = ArrayBuffer[Operation]()
   var varSeq = 0
-  //var parent: Option[Block] = None
+  var parent: Option[Block] = None
 
   def defineVariable(count: Int): Seq[Variable] = {
     val newVars = for (i <- 0 until count) yield new Variable(this, this.varSeq + i)
@@ -57,8 +57,7 @@ trait Block extends ContentEquals  {
       case b: Block =>
         variables.forall((v) => b.variables.exists(v.equalsContent(_))) &&
         operations.forall((o) => b.operations.exists(o.equalsContent(_))) &&
-        varSeq == b.varSeq //&&
-        //parent.forall((p) => b.parent.forall(p.equalsContent(_)))
+        varSeq == b.varSeq
       case None => false
     }
   }

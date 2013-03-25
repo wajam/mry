@@ -77,8 +77,6 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
 
     val op: Operation = new Operation.From(null, new Variable(null, 0), Seq())
 
-    //val operationWithIntoIntoKeys = [{def into: Variable}]
-
     assert(op.isInstanceOf[Operation.WithIntoAndKeys])
 
     val blob = op.asInstanceOf[Operation.WithIntoAndKeys]
@@ -108,6 +106,9 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
 
     val t = buildTransaction
 
+    // Validate the validate function
+    validateLink(t)
+
     // Check transaction equals is working first!
     t.equalsContent(t)
 
@@ -115,5 +116,18 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     val t2 = translator.decodeTransaction(bytes)
 
     t equalsContent t2 should be(true)
+
+    // Validate the decoded transaction
+    validateLink(t2)
+  }
+
+  private def validateLink(t: Transaction) {
+    assert(t.operations(0).source === t)
+    assert(t.operations(1).source === t.variables(0))
+    assert(t.operations(2).source === t.variables(1))
+    assert(t.operations(3).source === t.variables(2))
+    assert(t.operations(4).source === t.variables(3))
+    assert(t.operations(5).source === t.variables(4))
+    assert(t.operations(6).source === t)
   }
 }
