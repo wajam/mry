@@ -95,8 +95,14 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
   test("transaction equals content is working")
   {
     val t = buildTransaction
+    val t2 = buildTransaction
 
-    t.equalsContent(t)
+    assert(t.equalsContent(t))
+    assert(t.equalsContent(t2))
+
+    t.variables(0).value = new StringValue("Difference")
+
+    assert(!t.equalsContent(t2))
   }
 
   test("transaction encode") {
@@ -119,7 +125,6 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     }
 
     val t = new Transaction(composite)
-
 
     val bytes = translator.encodeTransaction(t)
     val t2 = translator.decodeTransaction(bytes)
@@ -190,7 +195,6 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     }
 
   }
-
 
   private def validateLink(t: Transaction) {
     assert(t.operations(0).source === t)

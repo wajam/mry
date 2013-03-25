@@ -305,8 +305,8 @@ private class InternalProtobufTranslator {
 
     block.varSeq = pBlock.getVarSeq
 
-    block.operations = pBlock.getOperationAddressesList().map(getDecodedData[Operation](_)).toList
-    block.variables = pBlock.getVariableAddressesList().map(getDecodedData[Variable](_)).toList
+    block.operations ++= pBlock.getOperationAddressesList().map(getDecodedData[Operation](_))
+    block.variables ++= pBlock.getVariableAddressesList().map(getDecodedData[Variable](_))
   }
 
   def encodePVariable(variable: Variable): Int =  {
