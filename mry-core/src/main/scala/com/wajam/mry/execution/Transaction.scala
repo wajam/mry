@@ -38,6 +38,7 @@ class Transaction(blockCreator: (Block with OperationApi) => Unit = null) extend
 
   override def execReturn(context: ExecutionContext, from: Seq[Variable]) {
     context.returnValues = for (variable <- from) yield variable.value.serializableValue
+    val i=0
   }
 
   override def equalsContent(obj: Any): Boolean = {
@@ -56,15 +57,16 @@ class Transaction(blockCreator: (Block with OperationApi) => Unit = null) extend
 
     builder append "Id: %s, Addr: %s \n".format(this.id, System.identityHashCode(this))
 
+    builder append "VarSeq: %d\n".format(this.varSeq)
     builder append "Variables: " + "\n"
 
     for (v <- variables)
-      builder append "\tId: %s, Block: %s, Value: %s\n".format(v.id, System.identityHashCode(v.block), v.value)
+      builder append "\tId: %s, Block: %s, Value: %s, Addr: %s\n".format(v.id, System.identityHashCode(v.block), v.value, System.identityHashCode(v))
 
     builder append "Operations: " + "\n"
 
     for (o <- operations)  {
-      builder append "\tSource: %s, Type: %s\n".format(System.identityHashCode(o.source), o.getClass)
+      builder append "\tSource: %s, Type: %s, Addr: %s\n".format(System.identityHashCode(o.source), o.getClass, System.identityHashCode(o))
 
       o match {
         case _: Return =>

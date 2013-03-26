@@ -47,14 +47,24 @@ class ProtobufTranslator extends ProtocolTranslator {
 
     val tra = new InternalProtobufTranslator()
 
-     tra.encodePTransport(transport).build().toByteArray
+    for (trx <- transport.request) {
+      System.out.println(trx.printTree("Encoding"))
+    }
+
+    tra.encodePTransport(transport).build().toByteArray
   }
 
   def decodeAll(data: Array[Byte]): Transport = {
 
     val tra = new InternalProtobufTranslator()
 
-    tra.decodePTransport(PTransport.parseFrom(data))
+    val transport = tra.decodePTransport(PTransport.parseFrom(data))
+
+    for (trx <- transport.request) {
+      System.out.println(trx.printTree("Decoded"))
+    }
+
+    transport
   }
 }
 

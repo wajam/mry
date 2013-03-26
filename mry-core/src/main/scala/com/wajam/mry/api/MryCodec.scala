@@ -10,6 +10,8 @@ class MryCodec extends Codec {
 
   def encode(entity: Any, context: Any = null): Array[Byte] = {
 
+    System.out.println("Encode")
+
     val transport = entity match {
       case request: Transaction => Transport(Some(request), Seq())
       case response: Seq[Value] => Transport(None, response)

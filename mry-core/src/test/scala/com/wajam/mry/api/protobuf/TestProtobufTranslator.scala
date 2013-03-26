@@ -130,6 +130,7 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     val t2 = translator.decodeTransaction(bytes)
 
     t equalsContent t2 should be(true)
+    validateSources(t, t2)
   }
 
   test("transaction encode/decode") {
@@ -137,7 +138,7 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     val t = buildTransaction
 
     // Validate the validate function
-    validateLink(t)
+    validateSources(t, t)
 
     val bytes = translator.encodeTransaction(t)
     val t2 = translator.decodeTransaction(bytes)
@@ -148,7 +149,7 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     System.out.println(t2.printTree("T2"))
 
     // Validate the decoded transaction
-    validateLink(t2)
+    validateSources(t, t2)
   }
 
   test("transport encode/decode: transaction") {
@@ -166,14 +167,13 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     transport.request.get equalsContent transport2.request.get should be(true)
 
     // Validate the decoded transaction
-    validateLink(transport.request.get)
-    validateLink(transport2.request.get)
+    validateSources(transport.request.get, transport2.request.get)
   }
 
   test("transport encode/decode: results") {
 
     val results = Seq(
-      new NullValue(),
+      NullValue,
       new MapValue(Map("A"-> "1")),
       new ListValue(Seq("2", "3")),
       new StringValue("4"),
@@ -199,13 +199,20 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
 
   }
 
-  private def validateLink(t: Transaction) {
-    assert(t.operations(0).source === t)
-    assert(t.operations(1).source === t.variables(0))
-    assert(t.operations(2).source === t.variables(1))
-    assert(t.operations(3).source === t.variables(2))
-    assert(t.operations(4).source === t.variables(3))
-    assert(t.operations(5).source === t.variables(4))
-    assert(t.operations(6).source === t)
+  private def validateSources(t1: Transaction, t2: Transaction) {
+
+    val operations = t1.operations.zip(t2.operations)
+    val variables = t1.variables.zip(t2.variables)
+
+    for (op <- operations)
+      if (op._1.source eq t1)
+      {
+        assert(op._2.source eq t2)
+      }
+      else
+      {
+        val vs = variables.find((v) => op._1.source eq v._1).get
+        assert(op._2.source eq vs._2)
+      }
   }
 }
