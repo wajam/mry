@@ -47,9 +47,9 @@ class ProtobufTranslator extends ProtocolTranslator {
 
     val tra = new InternalProtobufTranslator()
 
-    for (trx <- transport.request) {
+/*    for (trx <- transport.request) {
       System.out.println(trx.printTree("Encoding"))
-    }
+    }*/
 
     tra.encodePTransport(transport).build().toByteArray
   }
@@ -60,9 +60,9 @@ class ProtobufTranslator extends ProtocolTranslator {
 
     val transport = tra.decodePTransport(PTransport.parseFrom(data))
 
-    for (trx <- transport.request) {
+  /*  for (trx <- transport.request) {
       System.out.println(trx.printTree("Decoded"))
-    }
+    }*/
 
     transport
   }
@@ -106,7 +106,6 @@ private class InternalProtobufTranslator {
 
   private def reserveAddress() = {
     val instanceAddress = currentAddress
-    System.out.println("Id: " + instanceAddress)
     currentAddress += 1
     instanceAddress
   }
@@ -334,7 +333,6 @@ private class InternalProtobufTranslator {
   }
 
   def decodePVariable(parentBlock: Block, pVariable: PVariable): Variable =  {
-    System.out.println("Called!")
     new Variable(parentBlock, pVariable.getId, getDecodedData[Value](pVariable.getValueAddress))
 
   }

@@ -71,7 +71,7 @@ class Database[T <: Storage](serviceName: String = "database")
         remoteReadExecuteToken
       }
 
-      //System.out.println(transaction.printTree("Before call"))
+      System.out.println(transaction.printTree("Before call"))
 
       remoteAction.call(Map(Database.TOKEN_KEY -> context.tokens(0)),
         data = transaction,
@@ -104,12 +104,12 @@ class Database[T <: Storage](serviceName: String = "database")
   protected val remoteWriteExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
     execute(req)
   }, ActionMethod.POST))
-  remoteWriteExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
+  remoteWriteExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER), responseTimeout=Some(120000))
 
   protected val remoteReadExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
     execute(req)
   }, ActionMethod.GET))
-  remoteReadExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
+  remoteReadExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER), responseTimeout=Some(120000))
 
   private def transactionTimeout = math.max(responseTimeout * 0.75, responseTimeout - 500)
 
@@ -121,7 +121,7 @@ class Database[T <: Storage](serviceName: String = "database")
     try {
       val transaction = req.getData[Transaction]
 
-      //System.out.println(transaction.printTree("Before execute"))
+      System.out.println(transaction.printTree("Before execute"))
 
       val startTime = currentTime
       transaction.execute(context)
