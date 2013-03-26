@@ -9,6 +9,7 @@ import com.wajam.mry.execution.MapValue
 import com.wajam.mry.execution.ListValue
 import org.scalatest.matchers.ShouldMatchers
 import com.wajam.mry.api.{TransactionPrinter, Transport}
+import com.wajam.mry.execution.Operation._
 
 @RunWith(classOf[JUnitRunner])
 class TestProtobufTranslator extends FunSuite with ShouldMatchers {
@@ -75,6 +76,14 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     t
   }
 
+  test("test validation function") {
+    val t = buildTransaction
+
+    // Validate the validate function
+    validateOperationsSources(t, t)
+    validateOperationVariablesAreBoundsToBlock(t)
+  }
+
   test("transaction equals content is working")
   {
     val t = buildTransaction
@@ -100,11 +109,8 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     val bytes = translator.encodeTransaction(t)
     val t2 = translator.decodeTransaction(bytes)
 
-    System.out.println(TransactionPrinter.printTree(t, "T1"))
-    System.out.println(TransactionPrinter.printTree(t2, "T2"))
-
     t equalsContent t2 should be(true)
-    validateSources(t, t2)
+    validateOperationsSources(t, t2)
   }
 
   test("transaction encode/decode") {
@@ -112,7 +118,7 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     val t = buildTransaction
 
     // Validate the validate function
-    validateSources(t, t)
+    validateOperationsSources(t, t)
 
     val bytes = translator.encodeTransaction(t)
     val t2 = translator.decodeTransaction(bytes)
@@ -120,7 +126,8 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     t equalsContent t2 should be(true)
 
     // Validate the decoded transaction
-    validateSources(t, t2)
+    validateOperationsSources(t, t2)
+    validateOperationVariablesAreBoundsToBlock(t2)
   }
 
   test("transport encode/decode: transaction") {
@@ -138,7 +145,8 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     transport.request.get equalsContent transport2.request.get should be(true)
 
     // Validate the decoded transaction
-    validateSources(transport.request.get, transport2.request.get)
+    validateOperationsSources(transport.request.get, transport2.request.get)
+    validateOperationVariablesAreBoundsToBlock(transport2.request.get)
   }
 
   test("transport encode/decode: results") {
@@ -170,7 +178,11 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
 
   }
 
-  private def validateSources(t1: Transaction, t2: Transaction) {
+  /**
+   * Check that all operation.source from t1
+   * match the equivalent source from t2
+   */
+  def validateOperationsSources(t1: Transaction, t2: Transaction) {
 
     val operations = t1.operations.zip(t2.operations)
     val variables = t1.variables.zip(t2.variables)
@@ -185,5 +197,37 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
         val vs = variables.find((v) => op._1.source eq v._1).get
         assert(op._2.source eq vs._2)
       }
+  }
+
+  /**
+   * Check that all operation variables are bounds to the a variable
+   * from block and not a copy
+   */
+  def validateOperationVariablesAreBoundsToBlock(t: Transaction) {
+
+    for (o <- t.operations) {
+      o match {
+        case _: Return =>
+
+          val op = o.asInstanceOf[WithFrom]
+          assert(op.from.forall((v) => t.variables.exists(v eq _)))
+
+        case _: From  |
+             _: Get |
+             _: Projection |
+             _: Limit =>
+
+          val op = o.asInstanceOf[WithIntoAndKeys]
+          assert(Some(op.into).forall((v) => t.variables.exists(v eq _)))
+          assert(op.keys.filter(_.isInstanceOf[Variable]).forall((v) => t.variables.exists(v eq _)))
+
+        case _: Set |
+             _: Delete =>
+
+          val op = o.asInstanceOf[WithIntoAndData]
+          assert(Some(op.into).forall((v) => t.variables.exists(v eq _)))
+          assert(op.data.filter(_.isInstanceOf[Variable]).forall((v) => t.variables.exists(v eq _)))
+      }
+    }
   }
 }
