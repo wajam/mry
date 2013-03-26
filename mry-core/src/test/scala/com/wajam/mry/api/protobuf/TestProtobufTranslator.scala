@@ -8,7 +8,7 @@ import com.wajam.mry.execution._
 import com.wajam.mry.execution.MapValue
 import com.wajam.mry.execution.ListValue
 import org.scalatest.matchers.ShouldMatchers
-import com.wajam.mry.api.Transport
+import com.wajam.mry.api.{TransactionPrinter, Transport}
 
 @RunWith(classOf[JUnitRunner])
 class TestProtobufTranslator extends FunSuite with ShouldMatchers {
@@ -128,6 +128,9 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
 
     val bytes = translator.encodeTransaction(t)
     val t2 = translator.decodeTransaction(bytes)
+
+    System.out.println(TransactionPrinter.printTree(t, "T1"))
+    System.out.println(TransactionPrinter.printTree(t2, "T2"))
 
     t equalsContent t2 should be(true)
     validateSources(t, t2)
