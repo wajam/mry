@@ -75,23 +75,6 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     t
   }
 
-  test("stuff") {
-
-    val op: Operation = new Operation.From(null, new Variable(null, 0), Seq())
-
-    assert(op.isInstanceOf[Operation.WithIntoAndKeys])
-
-    val blob = op.asInstanceOf[Operation.WithIntoAndKeys]
-
-    val i = blob.into
-    val j = blob.keys
-
-    assert(i != null)
-    assert(j != null)
-    assert(true)
-
-  }
-
   test("transaction equals content is working")
   {
     val t = buildTransaction
@@ -105,19 +88,7 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     assert(!t.equalsContent(t2))
   }
 
-  test("transaction encode") {
-
-    val t = buildTransaction
-
-    // Check transaction equals is working first!
-    t.equalsContent(t)
-
-    val bytes = translator.encodeTransaction(t)
-
-    bytes should not be(new Array[Byte](0))
-  }
-
-  test("transaction more complex stuff") {
+  test("transaction encode/decode embedded transaction") {
 
     val composite = (b: Block with OperationApi) => {
       val context = b.from("context")
