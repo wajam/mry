@@ -26,7 +26,7 @@ class ProtobufTranslator extends ProtocolTranslator {
     transport.request.get
   }
 
-  /* EncodeValue and DecodeValue doesn't use PHead, it's for legacy reason (all data in db use that format)
+  /* EncodeValue and DecodeValue doesn't use PHeap, it's for legacy reason (all data in db use that format)
      and because they don't need it*/
 
   def encodeValue(value: Value): Array[Byte] = {
@@ -47,10 +47,6 @@ class ProtobufTranslator extends ProtocolTranslator {
 
     val tra = new InternalProtobufTranslator()
 
-/*    for (trx <- transport.request) {
-      System.out.println(trx.printTree("Encoding"))
-    }*/
-
     tra.encodePTransport(transport).build().toByteArray
   }
 
@@ -58,13 +54,7 @@ class ProtobufTranslator extends ProtocolTranslator {
 
     val tra = new InternalProtobufTranslator()
 
-    val transport = tra.decodePTransport(PTransport.parseFrom(data))
-
-  /*  for (trx <- transport.request) {
-      System.out.println(trx.printTree("Decoded"))
-    }*/
-
-    transport
+    tra.decodePTransport(PTransport.parseFrom(data))
   }
 }
 

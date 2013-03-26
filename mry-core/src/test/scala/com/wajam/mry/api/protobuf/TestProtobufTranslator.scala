@@ -145,9 +145,6 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
 
     t equalsContent t2 should be(true)
 
-    System.out.println(t.printTree("T1"))
-    System.out.println(t2.printTree("T2"))
-
     // Validate the decoded transaction
     validateSources(t, t2)
   }

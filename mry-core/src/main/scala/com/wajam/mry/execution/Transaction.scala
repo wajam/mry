@@ -18,19 +18,7 @@ class Transaction(blockCreator: (Block with OperationApi) => Unit = null) extend
 
   override def execFrom(context: ExecutionContext, into: Variable, keys: Object*) {
 
-    System.out.println("--From--")
-    val v = into
-    System.out.print("\tInto: ")
-    System.out.print("Id: %s, Block: %s, Value: %s\n".format(v.id, System.identityHashCode(v.block), v.value))
-
-    System.out.print("\tKeys: \n")
-
-    keys.foreach { (v) =>
-      System.out.print("\t\t %s\n".format(v))
-    }
-
     val storageName = param[StringValue](keys, 0).strValue
-
 
     into.value = storageName match {
       case "context" =>
@@ -50,16 +38,7 @@ class Transaction(blockCreator: (Block with OperationApi) => Unit = null) extend
 
   override def execReturn(context: ExecutionContext, from: Seq[Variable]) {
 
-
-    System.out.println("--Return--")
-    System.out.print("\tFrom: \n")
-
-    from.foreach { (v) =>
-      System.out.print("\t\tId: %s, Block: %s, Value: %s\n".format(v.id, System.identityHashCode(v.block), v.value))
-    }
-
     context.returnValues = for (variable <- from) yield variable.value.serializableValue
-    val i=0
   }
 
   override def equalsContent(obj: Any): Boolean = {

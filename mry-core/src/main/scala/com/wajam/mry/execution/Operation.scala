@@ -25,7 +25,6 @@ object Operation {
     override def equalsContent(obj: Any): Boolean = {
       obj match {
         case o: Return =>
-          //source.equalsContent(o.source) &&
           from.forall((v) => o.from.exists(v.equalsContent(_)))
 
         case _ => false
@@ -44,7 +43,6 @@ object Operation {
     override def equalsContent(obj: Any): Boolean = {
       obj match {
         case o: From =>
-          //source.equalsContent(o.source) &&
           into.equalsContent(o.into) &&
           keys.forall((k) => o.keys.exists(k.equalsContent(_)))
 
@@ -61,7 +59,6 @@ object Operation {
     override def equalsContent(obj: Any): Boolean = {
       obj match {
         case o: Get =>
-          //source.equalsContent(o.source) &&
           into.equalsContent(o.into) &&
           keys.forall((k) => o.keys.exists(k.equalsContent(_)))
 
@@ -82,7 +79,6 @@ object Operation {
     override def equalsContent(obj: Any): Boolean = {
       obj match {
         case o: Set =>
-          //source.equalsContent(o.source) &&
           into.equalsContent(o.into) &&
           data.forall((k) => o.data.exists(k.equalsContent(_)))
 
@@ -101,7 +97,6 @@ object Operation {
     override def equalsContent(obj: Any): Boolean = {
       obj match {
         case o: Delete =>
-          //source.equalsContent(o.source) &&
           into.equalsContent(o.into) &&
           data.forall((k) => o.data.exists(k.equalsContent(_)))
 
@@ -120,7 +115,6 @@ object Operation {
     override def equalsContent(obj: Any): Boolean = {
       obj match {
         case o: Limit =>
-          //source.equalsContent(o.source) &&
           into.equalsContent(o.into) &&
           keys.forall((k) => o.keys.exists(k.equalsContent(_)))
 
@@ -139,7 +133,6 @@ object Operation {
     override def equalsContent(obj: Any): Boolean = {
       obj match {
         case o: Projection =>
-          //source.equalsContent(o.source) &&
           into.equalsContent(o.into) &&
           keys.forall((k) => o.keys.exists(k.equalsContent(_)))
 

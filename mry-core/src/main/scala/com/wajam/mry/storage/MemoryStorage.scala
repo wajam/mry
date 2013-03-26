@@ -38,17 +38,6 @@ class MemoryStorage(val name: String) extends Storage {
   class StorageValue extends Value {
     override def execGet(context: ExecutionContext, into: Variable, keys: Object*) {
 
-      System.out.println("--Get--")
-      val v = into
-      System.out.print("\tInto: ")
-      System.out.print("Id: %s, Block: %s, Value: %s\n".format(v.id, System.identityHashCode(v.block), v.value))
-
-      System.out.print("\tKeys: \n")
-
-      keys.foreach { (v) =>
-        System.out.print("\t\t %s\n".format(v))
-      }
-
       val key = param[StringValue](keys, 0).strValue
       context.useToken(key)
 
@@ -64,17 +53,6 @@ class MemoryStorage(val name: String) extends Storage {
 
     override def execSet(context: ExecutionContext, into: Variable, data: Object*) {
 
-      System.out.println("--Set--")
-      val v = into
-      System.out.print("\tInto: ")
-      System.out.print("Id: %s, Block: %s, Value: %s\n".format(v.id, System.identityHashCode(v.block), v.value))
-
-      System.out.print("\tKeys: \n")
-
-      data.foreach { (v) =>
-        System.out.print("\t\t %s\n".format(v))
-      }
-
       val key = param[StringValue](data, 0).strValue
       val value = param[Value](data, 1)
 
@@ -89,17 +67,6 @@ class MemoryStorage(val name: String) extends Storage {
 
     override def execDelete(context: ExecutionContext, into: Variable, data: Object*) {
 
-      System.out.println("--Delete--")
-      val v = into
-      System.out.print("\tInto: ")
-      System.out.print("Id: %s, Block: %s, Value: %s\n".format(v.id, System.identityHashCode(v.block), v.value))
-
-      System.out.print("\tKeys: \n")
-
-      data.foreach { (v) =>
-        System.out.print("\t\t %s\n".format(v))
-      }
-
       val key = param[StringValue](data, 0).strValue
 
       context.useToken(key)
@@ -111,5 +78,4 @@ class MemoryStorage(val name: String) extends Storage {
       }
     }
   }
-
 }

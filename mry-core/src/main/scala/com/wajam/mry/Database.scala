@@ -71,8 +71,6 @@ class Database[T <: Storage](serviceName: String = "database")
         remoteReadExecuteToken
       }
 
-      System.out.println(transaction.printTree("Before call"))
-
       remoteAction.call(Map(Database.TOKEN_KEY -> context.tokens(0)),
         data = transaction,
         onReply = (resp, optException) => {
@@ -120,8 +118,6 @@ class Database[T <: Storage](serviceName: String = "database")
 
     try {
       val transaction = req.getData[Transaction]
-
-      System.out.println(transaction.printTree("Before execute"))
 
       val startTime = currentTime
       transaction.execute(context)
