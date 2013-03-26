@@ -348,8 +348,8 @@ private class InternalProtobufTranslator {
     pOperation.setSourceAddress(getEncodedId(operation.source))
 
     val withFrom = (op: WithFrom) =>
-      pOperation.addAllVariableAddresses(op.from.map(encodePVariable(_)).map(_.asInstanceOf[java.lang.Integer]))
-
+      // Variable are already listed in the parent block, so don't duplicate
+      pOperation.addAllVariableAddresses(op.from.map(getEncodedId(_)).map(_.asInstanceOf[java.lang.Integer]))
 
     val WithIntoAndSeqObject = (into: Variable, objects: Seq[Object]) =>
       pOperation
