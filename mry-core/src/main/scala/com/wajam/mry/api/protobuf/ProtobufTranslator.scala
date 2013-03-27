@@ -70,7 +70,7 @@ private class InternalProtobufTranslator {
   private val pb2obj = new collection.mutable.HashMap[Int, AnyRef] // Encoded address to decoded instance mapping
   private val obj2pb = new collection.mutable.HashMap[AnyRef, Int] // Live instance to encoded address mapping
 
-  private var tempEncodingHeap = new collection.immutable.TreeMap[Int, PMryData.Builder]
+  private var tempEncodingHeap = new collection.immutable.TreeMap[Int, AnyRef]
   private var tempDecodingHeap = new collection.immutable.TreeMap[Int, AnyRef]
 
   private def registerEncodedData(pbAddress: Int, instance: AnyRef) = {
@@ -99,14 +99,7 @@ private class InternalProtobufTranslator {
       throw new IndexOutOfBoundsException("Invalid address, it's unassigned")
   }
 
-  private def reserveAddress() = {
-    val instanceAddress = currentAddress
-    currentAddress += 1
-    instanceAddress
-  }
-
-  private def addToHeap(address: Int, mryData: AnyRef): Int = {
-
+  private def buildMryData(mryData: AnyRef): PMryData.Builder = {
     val pMryData = PMryData.newBuilder()
 
     mryData match {
@@ -117,20 +110,24 @@ private class InternalProtobufTranslator {
       case value: PTransactionValue.Builder => pMryData.setValue(value)
     }
 
-    tempEncodingHeap += (address -> pMryData)
-    address
+    pMryData
+  }
+
+  private def addToHeap(mryData: AnyRef): Int = {
+
+    val instanceAddress = currentAddress
+
+    tempEncodingHeap += (instanceAddress -> mryData)
+
+    currentAddress += 1
+    instanceAddress
   }
 
   private def encodeHeap(): PHeap.Builder = {
 
     val pEncodingHeap = PHeap.newBuilder()
-    tempEncodingHeap.foreach((kv) => pEncodingHeap.addValues(kv._2))
+    tempEncodingHeap.foreach((kv) => pEncodingHeap.addValues(buildMryData(kv._2)))
     pEncodingHeap
-  }
-
-  private def addToHeap(mryData: AnyRef): java.lang.Integer = {
-
-    addToHeap(reserveAddress(), mryData)
   }
 
   private def getFromHeap[T](address: Int): T = {
@@ -253,7 +250,7 @@ private class InternalProtobufTranslator {
   private def encodePTransaction(transaction: Transaction): Int =  {
 
     val pTransaction = PTransaction.newBuilder()
-    val address = reserveAddress()
+    val address = addToHeap(pTransaction)
     registerEncodedData(address, transaction)
 
     pTransaction.setId(transaction.id)
@@ -261,8 +258,6 @@ private class InternalProtobufTranslator {
     val pBlock = addToHeap(encodePBlock(transaction))
 
     pTransaction.setBlockAddress(pBlock)
-
-    addToHeap(address, pTransaction)
 
     address
   }
@@ -299,7 +294,7 @@ private class InternalProtobufTranslator {
     varId.zipWithIndex.foreach((v) => registerEncodedData(v._1, block.variables(v._2)))
     pBlock.addAllVariableAddresses(varId.map(_.asInstanceOf[java.lang.Integer]))
 
-    pBlock.addAllOperationAddresses(block.operations.map(encodePOperation(_)).map(addToHeap(_)))
+    pBlock.addAllOperationAddresses(block.operations.map(encodePOperation(_)).map(addToHeap(_)).map(_.asInstanceOf[java.lang.Integer]))
     pBlock.setVarSeq(block.varSeq)
 
     pBlock
