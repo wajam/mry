@@ -70,8 +70,8 @@ private class InternalProtobufTranslator {
   private val pb2obj = new collection.mutable.HashMap[Int, AnyRef] // Encoded address to decoded instance mapping
   private val obj2pb = new collection.mutable.HashMap[AnyRef, Int] // Live instance to encoded address mapping
 
-  private var tempEncodingHeap = new collection.immutable.TreeMap[Int, AnyRef]
-  private var tempDecodingHeap = new collection.immutable.TreeMap[Int, AnyRef]
+  private var tempEncodingHeap = Seq[AnyRef]()
+  private var tempDecodingHeap = Seq[AnyRef]()
 
   private def registerEncodedData(pbAddress: Int, instance: AnyRef) = {
     obj2pb += instance -> pbAddress
@@ -117,7 +117,7 @@ private class InternalProtobufTranslator {
 
     val instanceAddress = currentAddress
 
-    tempEncodingHeap += (instanceAddress -> mryData)
+    tempEncodingHeap = tempEncodingHeap :+ mryData
 
     currentAddress += 1
     instanceAddress
@@ -126,7 +126,7 @@ private class InternalProtobufTranslator {
   private def encodeHeap(): PHeap.Builder = {
 
     val pEncodingHeap = PHeap.newBuilder()
-    tempEncodingHeap.foreach((kv) => pEncodingHeap.addValues(buildMryData(kv._2)))
+    tempEncodingHeap.foreach((v) => pEncodingHeap.addValues(buildMryData(v)))
     pEncodingHeap
   }
 
@@ -134,7 +134,7 @@ private class InternalProtobufTranslator {
 
     checkAddress(address)
 
-    tempDecodingHeap(address).asInstanceOf[T]
+    tempDecodingHeap(address - 1).asInstanceOf[T]
   }
 
   private def loadHeap(pDecodingHeap: PHeap) = {
@@ -151,7 +151,7 @@ private class InternalProtobufTranslator {
           case pMryData if pMryData.hasValue => pMryData.getValue
         }
 
-        tempDecodingHeap += (addr -> value)
+        tempDecodingHeap = tempDecodingHeap :+ value
         addr += 1
     }
   }
@@ -160,7 +160,7 @@ private class InternalProtobufTranslator {
 
     // Yield map with address
 
-    val mappedData = tempDecodingHeap
+    val mappedData = Range(1, tempDecodingHeap.size + 1).zip(tempDecodingHeap)
 
     // Decode values and register them to pool
     val values = mappedData
