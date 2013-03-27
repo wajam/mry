@@ -1,12 +1,18 @@
 package com.wajam.mry.api.protobuf;
 option optimize_for = SPEED;
 
-// Polymorphism derived from:
-// http://www.indelible.org/ink/protobuf-polymorphism/
-// But with implicit type
+// This schema use a generic container that will truly contains all the data
+// No object contains another one, but instead reference to it, using a uint32 address,
+// 0 is unassigned. In fact, this schema can be compared to an heap based memory model (Think C++), where all object are
+// stored in heap and object are referenced by pointers.
 
-// Generic container that will truly contains all the data
-// No object contains another one, but reference it
+// This schema while wasting space on ids, is very flexible, allow reference (which Protobuf doesn't support
+// out of the box) and allows proper and simple inherintence by linking a "parent" class with an id
+// (the opposive of my parent contains it's child model popular as a suggestion
+// Protobuf on the internet, @see http://www.indelible.org/ink/protobuf-polymorphism/, and which doesn't make fit OO
+// mindset)
+
+// NOTE: the space used for ids is assumed to be small since Protobuf use a very compact way of storing int
 
 /* Generic */
 
