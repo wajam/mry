@@ -58,6 +58,11 @@ class ProtobufTranslator extends ProtocolTranslator {
   }
 }
 
+/**
+ * Allow stateful and threadsafe operation for ProtobufTranslator by instancing this class at every call.
+ * It also keep ProtobufTranslator class more readable and more relevant to it's parent interface.
+ *
+ */
 private class InternalProtobufTranslator {
 
   private var currentAddress = 1 // I don't think will have more than 2^31 object, skip 0, since 0==unassigned
@@ -135,7 +140,7 @@ private class InternalProtobufTranslator {
     tempDecodingHeap(address).asInstanceOf[T]
   }
 
-  def loadHeap(pDecodingHeap: PHeap) = {
+  private def loadHeap(pDecodingHeap: PHeap) = {
 
       var addr = 1
 
@@ -154,7 +159,7 @@ private class InternalProtobufTranslator {
     }
   }
 
-  def decodeBlockFromHeapToPool(block: Block) = {
+  private def decodeBlockFromHeapToPool(block: Block) = {
 
     // Yield map with address
 
@@ -222,7 +227,7 @@ private class InternalProtobufTranslator {
     Transport(request, response)
   }
 
-  def encodePObject(obj: Object): Int = {
+  private def encodePObject(obj: Object): Int = {
 
     obj match {
       case variable: Variable => {
@@ -236,7 +241,7 @@ private class InternalProtobufTranslator {
     }
   }
 
-  def decodePObject(block: Block, objAddress: Int): Object = {
+  private def decodePObject(block: Block, objAddress: Int): Object = {
     val pObj = getFromHeap[AnyRef](objAddress)
 
     pObj match {
@@ -245,7 +250,7 @@ private class InternalProtobufTranslator {
     }
   }
 
-  def encodePTransaction(transaction: Transaction): Int =  {
+  private def encodePTransaction(transaction: Transaction): Int =  {
 
     val pTransaction = PTransaction.newBuilder()
     val address = reserveAddress()
@@ -262,7 +267,7 @@ private class InternalProtobufTranslator {
     address
   }
 
-  def decodePTransaction(transport: PTransport): Transaction =  {
+  private def decodePTransaction(transport: PTransport): Transaction =  {
 
     // Create an transaction instance, and register it in the pool
     val trx = new Transaction()
@@ -277,7 +282,7 @@ private class InternalProtobufTranslator {
     trx
   }
 
-  def fillPTransaction(transaction: Transaction, pTransaction: PTransaction) {
+  private def fillPTransaction(transaction: Transaction, pTransaction: PTransaction) {
 
     transaction.id = pTransaction.getId
 
@@ -286,7 +291,7 @@ private class InternalProtobufTranslator {
     decodePBlock(transaction, pBlock)
   }
 
-  def encodePBlock(block: Block): PBlock.Builder =  {
+  private def encodePBlock(block: Block): PBlock.Builder =  {
     val pBlock = PBlock.newBuilder()
 
     val varId = block.variables.map(encodePVariable(_))
@@ -300,7 +305,7 @@ private class InternalProtobufTranslator {
     pBlock
   }
 
-  def decodePBlock(block: Block, pBlock: PBlock) {
+  private def decodePBlock(block: Block, pBlock: PBlock) {
 
     block.varSeq = pBlock.getVarSeq
 
@@ -308,7 +313,7 @@ private class InternalProtobufTranslator {
     block.variables ++= pBlock.getVariableAddressesList().map(getDecodedData[Variable](_))
   }
 
-  def encodePVariable(variable: Variable): Int =  {
+  private def encodePVariable(variable: Variable): Int =  {
     val pVariable = PVariable.newBuilder()
 
     // DO NOT serialize sourceBlock, it will be available at reconstruction
@@ -322,12 +327,12 @@ private class InternalProtobufTranslator {
     addr
   }
 
-  def decodePVariable(parentBlock: Block, pVariable: PVariable): Variable =  {
+  private def decodePVariable(parentBlock: Block, pVariable: PVariable): Variable =  {
     new Variable(parentBlock, pVariable.getId, getDecodedData[Value](pVariable.getValueAddress))
 
   }
 
-  def encodePOperation(operation: Operation): POperation.Builder =  {
+  private def encodePOperation(operation: Operation): POperation.Builder =  {
 
     import POperation.Type
 
@@ -365,7 +370,7 @@ private class InternalProtobufTranslator {
     pOperation
   }
 
-  def decodePOperation(block: Block, pOperation: POperation): Operation = {
+  private def decodePOperation(block: Block, pOperation: POperation): Operation = {
 
     import POperation.Type
 
@@ -476,6 +481,5 @@ private class InternalProtobufTranslator {
         throw new TranslationException("Unsupported protobuf value type '%s'".format(protoVal.getType))
     }
   }
-
 }
 
