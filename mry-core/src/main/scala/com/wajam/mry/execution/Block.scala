@@ -7,7 +7,6 @@ import com.wajam.nrv.utils.ContentEquals
 /**
  * Programmatic block of operations and variables that is executed against storage
  */
-trait Block {
 trait Block extends ContentEquals  {
 
   private[mry] val variables = ArrayBuffer[Variable]()

@@ -1,5 +1,5 @@
 package com.wajam.mry.api.protobuf;
-option optimize_for = SPEED;
+option optimize_for = LITE_RUNTIME;
 
 // This schema use a generic container that will truly contains all the data
 // No object contains another one, but instead reference to it, using a uint32 address,

@@ -1,0 +1,54 @@
+pick 5929c8c Correct typo
+pick c8bcafd Test to assert transaction translation is working or not Fix bug in equals and fix recursive loop (Variable is not entirely checked for equality now...)
+pick ad62af1 Operations are mapped and encoded
+pick f897f9c New test two show progress of encoding
+reword 42bb0cc Core works
+f 05bf83f After a lot of experiments it's compiles again, GIT COMMIT
+f 14214d8 More encoding completed
+f df1ef82 More encoding completed (bis)
+f dc81517 It encodes!
+pick 8986cff More complete test
+pick 169382b More complete contentEquals
+reword be10930 Core works #2
+pick 07c5691 First pass with references
+r cb5a286 Heap based encoding/decoding
+f fdbf2db Back to the future, encoding recompleted after a stupid crash that deleted my previous work. Commiting before it crash again.
+f a8e6cda MOAR decoding
+f 69c7ff4 Decoding has arrived (With protoss carrier pilot voice)
+f 9e5dbe2 Partial commit before re-re-re-re-shuffling the architecture
+pick b128312 Allow registering of objects
+pick 8e5af27 Heap decoding function, and operationSource decoding support
+pick 666f21d Bootstrapping decoding
+f 6f07982 Closer and closer!
+f f10ac50 Closer, closer, closer, WORKING!
+pick 98970db Fixed registration for trx, var, op
+r eb9816ee Fixed tests
+pick e77429c More tests, still no sign of this nasty bug in Database
+pick 155a534 Fix in regards to changes from master Better (More concise) compare function for equalsContents Better test for  "transaction equals content is working"
+f 512267a Crc32 in transport to detect at what point there is binary breakage
+f a1d98e4 Revert "Crc32 in transport to detect at what point there is binary breakage"
+pick a9800ba PrintTree for debug
+pick 2bf20b1 Validate Operation.source in tests
+pick 7aace15 Commiting the debug tracing used to track my bug!
+pick 86029b8 Last problem found: Variable for Return were not pulled...
+pick 7cace81 Removed debug statement and cleanup
+pick b2fdbe6 Extracted pretty printer from Transaction
+pick bb9fad3 Test cleanups
+pick 850a838 Test cleanups Validation to detect the copy instead of reference bug
+pick 3f30b1e Renamed test
+pick f327fdb Fixed accessibility for some function in InternalProtobufTranslator.
+pick e04df99 Added more details on how the schema works and how it is intended to be used
+
+# Rebase 3e46890..e04df99 onto 3e46890
+#
+# Commands:
+# p, pick = use commit
+# r, reword = use commit, but edit the commit message
+# e, edit = use commit, but stop for amending
+# s, squash = use commit, but meld into previous commit
+# f, fixup = like "squash", but discard this commit's log message
+# x, exec = run command (the rest of the line) using shell
+#
+# If you remove a line here THAT COMMIT WILL BE LOST.
+# However, if you remove everything, the rebase will be aborted.
+#
