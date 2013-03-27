@@ -43,7 +43,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
   def testDatabaseInstance(instance: TestingClusterInstance) {
     val db = instance.data.asInstanceOf[Database[_]]
 
-    for (i <- 0 to 1) {
+    for (i <- 0 to 100) {
       val key = UUID.randomUUID().toString
 
       val p = Promise[Seq[Value]]
@@ -75,13 +75,6 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
       }, 30000)
     }
   }
-
-  test("database with static cluster2") {
-    val driver = new TestingClusterDriver((size, i, manager) => createClusterInstance(size, i, manager))
-    driver.execute((driver, instance) => testDatabaseInstance(instance), 1, 1)
-    driver.destroy()
-  }
-
 
   test("database with static cluster") {
     val driver = new TestingClusterDriver((size, i, manager) => createClusterInstance(size, i, manager))

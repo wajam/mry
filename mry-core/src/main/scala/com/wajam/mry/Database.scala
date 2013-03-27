@@ -102,12 +102,12 @@ class Database[T <: Storage](serviceName: String = "database")
   protected val remoteWriteExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
     execute(req)
   }, ActionMethod.POST))
-  remoteWriteExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER), responseTimeout=Some(120000))
+  remoteWriteExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
 
   protected val remoteReadExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
     execute(req)
   }, ActionMethod.GET))
-  remoteReadExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER), responseTimeout=Some(120000))
+  remoteReadExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
 
   private def transactionTimeout = math.max(responseTimeout * 0.75, responseTimeout - 500)
 
