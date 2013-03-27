@@ -154,7 +154,7 @@ private class InternalProtobufTranslator {
     }
   }
 
-  def decodeBlockBoundsFromHeapToPool(block: Block) = {
+  def decodeBlockFromHeapToPool(block: Block) = {
 
     // Yield map with address
 
@@ -269,7 +269,7 @@ private class InternalProtobufTranslator {
     registerDecodedData(transport.getRequestAddress, trx)
 
     // Decode and create object into pool (to get them by reference later)
-    decodeBlockBoundsFromHeapToPool(trx)
+    decodeBlockFromHeapToPool(trx)
 
     // Finish decoding the transaction since now, all dependant objects are live in memory
     val pTransaction = getFromHeap[PTransaction](transport.getRequestAddress)
