@@ -2,10 +2,14 @@ package com.wajam.mry.api
 
 import com.wajam.nrv.protocol.codec.GenericJavaSerializeCodec
 import com.wajam.nrv.protocol.codec.Codec
+import com.wajam.nrv.Logging
+import java.nio.ByteBuffer
 
-class HybridCodec(mode: HybridCodec.TranslationMode.Value) extends Codec {
+class HybridCodec(mode: HybridCodec.TranslationMode.Value) extends Codec with Logging {
 
   import HybridCodec._
+
+  log.info("HybridCodec mode: {}", mode.toString())
 
   def encode(entity: Any, context: Any = null): Array[Byte] = {
 
@@ -27,9 +31,9 @@ class HybridCodec(mode: HybridCodec.TranslationMode.Value) extends Codec {
 
       // If java serialized, decode with java, else decode with mryCodec.
 
-      val magicShort: Int = ((data(1) << 8) + data(0)) & 0xFFFF
+      val magicShort: Int = ByteBuffer.wrap(data, 0, 2).getShort
 
-      if (magicShort == (JavaSerializeMagicShort & 0xFFFF))
+      if (magicShort == JavaSerializeMagicShort)
         genericCodec
       else
         mryCodec
