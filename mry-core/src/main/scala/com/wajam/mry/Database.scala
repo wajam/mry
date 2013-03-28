@@ -1,6 +1,7 @@
 package com.wajam.mry
 
-import api.MryCodec
+import api.HybridCodec.TranslationMode
+import api.{HybridCodec}
 import execution._
 import storage.Storage
 import com.wajam.nrv.{TimeoutException, Logging}
@@ -20,7 +21,7 @@ class Database[T <: Storage](serviceName: String = "database")
   var storages = Map[String, T]()
 
   // Set specific messageData codec for nrv
-  applySupport(nrvCodec = Some(new MryCodec))
+  applySupport(nrvCodec = Some(new HybridCodec(TranslationMode.BothThenMry)))
 
   def analyseTransaction(transaction: Transaction): ExecutionContext = {
     val context = new ExecutionContext(storages)

@@ -6,8 +6,6 @@ import com.wajam.mry.execution.{Value, Transaction}
 
 class MryCodec extends Codec {
 
-  private val protobufTranslator = new ProtobufTranslator
-
   def encode(entity: Any, context: Any = null): Array[Byte] = {
 
     val transport = entity match {
@@ -16,12 +14,12 @@ class MryCodec extends Codec {
       case _ => throw new RuntimeException("Unsupported type for this codec.")
     }
 
-    protobufTranslator.encodeAll(transport)
+    MryCodec.protobufTranslator.encodeAll(transport)
   }
 
   def decode(data: Array[Byte], context: Any = null): Any = {
 
-    val entity = protobufTranslator.decodeAll(data)
+    val entity = MryCodec.protobufTranslator.decodeAll(data)
 
     entity match {
       case Transport(Some(request), _) => request
@@ -29,5 +27,8 @@ class MryCodec extends Codec {
       case _ => throw new RuntimeException("Invalid data from transport.")
     }
   }
+}
 
+object MryCodec {
+  private val protobufTranslator = new ProtobufTranslator
 }
