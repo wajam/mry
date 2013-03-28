@@ -11,9 +11,9 @@ abstract class Operation(var source: OperationSource) extends Executable with Co
 object Operation {
 
   // TODO: To be replaced by proper hierachy when Java serialization in no longer used.
-  type WithIntoAndData = { def into: Variable; def data: Seq[Object]}
-  type WithIntoAndKeys = { def into: Variable; def keys: Seq[Object]}
-  type WithFrom = { def from: Seq[Variable]}
+  type WithIntoAndData = {def into: Variable; def data: Seq[Object]}
+  type WithIntoAndKeys = {def into: Variable; def keys: Seq[Object]}
+  type WithFrom = {def from: Seq[Variable]}
 
   class Return(source: OperationSource, val from: Seq[Variable]) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
@@ -44,7 +44,7 @@ object Operation {
       obj match {
         case o: From =>
           into.equalsContent(o.into) &&
-          keys.forall((k) => o.keys.exists(k.equalsContent(_)))
+            keys.forall((k) => o.keys.exists(k.equalsContent(_)))
 
         case _ => false
       }
@@ -60,7 +60,7 @@ object Operation {
       obj match {
         case o: Get =>
           into.equalsContent(o.into) &&
-          keys.forall((k) => o.keys.exists(k.equalsContent(_)))
+            keys.forall((k) => o.keys.exists(k.equalsContent(_)))
 
         case _ => false
       }
@@ -80,7 +80,7 @@ object Operation {
       obj match {
         case o: Set =>
           into.equalsContent(o.into) &&
-          data.forall((k) => o.data.exists(k.equalsContent(_)))
+            data.forall((k) => o.data.exists(k.equalsContent(_)))
 
         case _ => false
       }
@@ -98,7 +98,7 @@ object Operation {
       obj match {
         case o: Delete =>
           into.equalsContent(o.into) &&
-          data.forall((k) => o.data.exists(k.equalsContent(_)))
+            data.forall((k) => o.data.exists(k.equalsContent(_)))
 
         case _ => false
       }
@@ -116,7 +116,7 @@ object Operation {
       obj match {
         case o: Limit =>
           into.equalsContent(o.into) &&
-          keys.forall((k) => o.keys.exists(k.equalsContent(_)))
+            keys.forall((k) => o.keys.exists(k.equalsContent(_)))
 
         case _ => false
       }
@@ -134,11 +134,12 @@ object Operation {
       obj match {
         case o: Projection =>
           into.equalsContent(o.into) &&
-          keys.forall((k) => o.keys.exists(k.equalsContent(_)))
+            keys.forall((k) => o.keys.exists(k.equalsContent(_)))
 
         case _ => false
       }
     }
   }
+
 }
 
