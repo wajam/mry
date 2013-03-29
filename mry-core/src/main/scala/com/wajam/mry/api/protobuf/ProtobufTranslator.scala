@@ -14,7 +14,7 @@ class ProtobufTranslator extends ProtocolTranslator {
 
   def encodeTransaction(transaction: Transaction): Array[Byte] = {
 
-    val transport = new Transport(Some(transaction), None)
+    val transport = new Transport(Some(transaction), Seq())
 
     encodeAll(transport)
   }
@@ -187,7 +187,7 @@ private class InternalProtobufTranslator {
       pTransport.setRequestHeapId(pTrans)
     }
 
-    for (list <- response; v <- list) {
+    for (v <- response) {
       val value = encodePValue(v)
       pTransport.addResponseHeapIds(addToHeap(value))
     }
@@ -211,7 +211,7 @@ private class InternalProtobufTranslator {
       transport.getResponseHeapIdsList
         .map(value => (getFromHeap[PTransactionValue] _ andThen decodePValue _)(value)).toSeq
 
-    Transport(request, Some(response))
+    Transport(request, response)
   }
 
   private def encodePObject(obj: Object): Int = {
