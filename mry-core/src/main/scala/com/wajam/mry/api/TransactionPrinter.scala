@@ -26,14 +26,15 @@ object TransactionPrinter {
 
     builder append "Operations: " + "\n"
 
-    for (o <- transaction.operations)  {
+    for (o <- transaction.operations) {
       builder append "\tSource: %s, Type: %s, Addr: %s\n".format(System.identityHashCode(o.source), o.getClass, System.identityHashCode(o))
 
       val printWithFrom = (from: Seq[Variable]) => {
         builder append "\tFrom: \n"
 
-        from.foreach { (v) =>
-          builder append "\t\tId: %s, Block: %s, Value: %s, Addr: %s\n".format(v.id, System.identityHashCode(v.block), v.value, System.identityHashCode(v))
+        from.foreach {
+          (v) =>
+            builder append "\t\tId: %s, Block: %s, Value: %s, Addr: %s\n".format(v.id, System.identityHashCode(v.block), v.value, System.identityHashCode(v))
         }
       }
 
@@ -45,7 +46,9 @@ object TransactionPrinter {
 
         builder append "\tKeys\\Data: \n"
 
-        objects.foreach { (v) => builder append "\t\t%s, Addr: %s\n".format(v, System.identityHashCode(v)) }
+        objects.foreach {
+          (v) => builder append "\t\t%s, Addr: %s\n".format(v, System.identityHashCode(v))
+        }
       }
 
       o match {
@@ -61,5 +64,4 @@ object TransactionPrinter {
 
     builder.toString()
   }
-
 }
