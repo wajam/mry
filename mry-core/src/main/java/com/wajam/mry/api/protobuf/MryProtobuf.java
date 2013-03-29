@@ -1074,14 +1074,14 @@ public final class MryProtobuf {
     boolean hasHeap();
     com.wajam.mry.api.protobuf.MryProtobuf.PHeap getHeap();
     
-    // optional uint32 requestAddress = 1;
-    boolean hasRequestAddress();
-    int getRequestAddress();
+    // optional uint32 requestHeapId = 1;
+    boolean hasRequestHeapId();
+    int getRequestHeapId();
     
-    // repeated uint32 responseAddresses = 2;
-    java.util.List<java.lang.Integer> getResponseAddressesList();
-    int getResponseAddressesCount();
-    int getResponseAddresses(int index);
+    // repeated uint32 responseHeapIds = 2;
+    java.util.List<java.lang.Integer> getResponseHeapIdsList();
+    int getResponseHeapIdsCount();
+    int getResponseHeapIds(int index);
   }
   public static final class PTransport extends
       com.google.protobuf.GeneratedMessageLite
@@ -1112,34 +1112,34 @@ public final class MryProtobuf {
       return heap_;
     }
     
-    // optional uint32 requestAddress = 1;
-    public static final int REQUESTADDRESS_FIELD_NUMBER = 1;
-    private int requestAddress_;
-    public boolean hasRequestAddress() {
+    // optional uint32 requestHeapId = 1;
+    public static final int REQUESTHEAPID_FIELD_NUMBER = 1;
+    private int requestHeapId_;
+    public boolean hasRequestHeapId() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
-    public int getRequestAddress() {
-      return requestAddress_;
+    public int getRequestHeapId() {
+      return requestHeapId_;
     }
     
-    // repeated uint32 responseAddresses = 2;
-    public static final int RESPONSEADDRESSES_FIELD_NUMBER = 2;
-    private java.util.List<java.lang.Integer> responseAddresses_;
+    // repeated uint32 responseHeapIds = 2;
+    public static final int RESPONSEHEAPIDS_FIELD_NUMBER = 2;
+    private java.util.List<java.lang.Integer> responseHeapIds_;
     public java.util.List<java.lang.Integer>
-        getResponseAddressesList() {
-      return responseAddresses_;
+        getResponseHeapIdsList() {
+      return responseHeapIds_;
     }
-    public int getResponseAddressesCount() {
-      return responseAddresses_.size();
+    public int getResponseHeapIdsCount() {
+      return responseHeapIds_.size();
     }
-    public int getResponseAddresses(int index) {
-      return responseAddresses_.get(index);
+    public int getResponseHeapIds(int index) {
+      return responseHeapIds_.get(index);
     }
     
     private void initFields() {
       heap_ = com.wajam.mry.api.protobuf.MryProtobuf.PHeap.getDefaultInstance();
-      requestAddress_ = 0;
-      responseAddresses_ = java.util.Collections.emptyList();;
+      requestHeapId_ = 0;
+      responseHeapIds_ = java.util.Collections.emptyList();;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -1160,10 +1160,10 @@ public final class MryProtobuf {
                         throws java.io.IOException {
       getSerializedSize();
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeUInt32(1, requestAddress_);
+        output.writeUInt32(1, requestHeapId_);
       }
-      for (int i = 0; i < responseAddresses_.size(); i++) {
-        output.writeUInt32(2, responseAddresses_.get(i));
+      for (int i = 0; i < responseHeapIds_.size(); i++) {
+        output.writeUInt32(2, responseHeapIds_.get(i));
       }
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         output.writeMessage(3, heap_);
@@ -1178,16 +1178,16 @@ public final class MryProtobuf {
       size = 0;
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(1, requestAddress_);
+          .computeUInt32Size(1, requestHeapId_);
       }
       {
         int dataSize = 0;
-        for (int i = 0; i < responseAddresses_.size(); i++) {
+        for (int i = 0; i < responseHeapIds_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeUInt32SizeNoTag(responseAddresses_.get(i));
+            .computeUInt32SizeNoTag(responseHeapIds_.get(i));
         }
         size += dataSize;
-        size += 1 * getResponseAddressesList().size();
+        size += 1 * getResponseHeapIdsList().size();
       }
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
@@ -1297,9 +1297,9 @@ public final class MryProtobuf {
         super.clear();
         heap_ = com.wajam.mry.api.protobuf.MryProtobuf.PHeap.getDefaultInstance();
         bitField0_ = (bitField0_ & ~0x00000001);
-        requestAddress_ = 0;
+        requestHeapId_ = 0;
         bitField0_ = (bitField0_ & ~0x00000002);
-        responseAddresses_ = java.util.Collections.emptyList();;
+        responseHeapIds_ = java.util.Collections.emptyList();;
         bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
@@ -1341,12 +1341,12 @@ public final class MryProtobuf {
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
-        result.requestAddress_ = requestAddress_;
+        result.requestHeapId_ = requestHeapId_;
         if (((bitField0_ & 0x00000004) == 0x00000004)) {
-          responseAddresses_ = java.util.Collections.unmodifiableList(responseAddresses_);
+          responseHeapIds_ = java.util.Collections.unmodifiableList(responseHeapIds_);
           bitField0_ = (bitField0_ & ~0x00000004);
         }
-        result.responseAddresses_ = responseAddresses_;
+        result.responseHeapIds_ = responseHeapIds_;
         result.bitField0_ = to_bitField0_;
         return result;
       }
@@ -1356,16 +1356,16 @@ public final class MryProtobuf {
         if (other.hasHeap()) {
           mergeHeap(other.getHeap());
         }
-        if (other.hasRequestAddress()) {
-          setRequestAddress(other.getRequestAddress());
+        if (other.hasRequestHeapId()) {
+          setRequestHeapId(other.getRequestHeapId());
         }
-        if (!other.responseAddresses_.isEmpty()) {
-          if (responseAddresses_.isEmpty()) {
-            responseAddresses_ = other.responseAddresses_;
+        if (!other.responseHeapIds_.isEmpty()) {
+          if (responseHeapIds_.isEmpty()) {
+            responseHeapIds_ = other.responseHeapIds_;
             bitField0_ = (bitField0_ & ~0x00000004);
           } else {
-            ensureResponseAddressesIsMutable();
-            responseAddresses_.addAll(other.responseAddresses_);
+            ensureResponseHeapIdsIsMutable();
+            responseHeapIds_.addAll(other.responseHeapIds_);
           }
           
         }
@@ -1401,19 +1401,19 @@ public final class MryProtobuf {
             }
             case 8: {
               bitField0_ |= 0x00000002;
-              requestAddress_ = input.readUInt32();
+              requestHeapId_ = input.readUInt32();
               break;
             }
             case 16: {
-              ensureResponseAddressesIsMutable();
-              responseAddresses_.add(input.readUInt32());
+              ensureResponseHeapIdsIsMutable();
+              responseHeapIds_.add(input.readUInt32());
               break;
             }
             case 18: {
               int length = input.readRawVarint32();
               int limit = input.pushLimit(length);
               while (input.getBytesUntilLimit() > 0) {
-                addResponseAddresses(input.readUInt32());
+                addResponseHeapIds(input.readUInt32());
               }
               input.popLimit(limit);
               break;
@@ -1476,67 +1476,67 @@ public final class MryProtobuf {
         return this;
       }
       
-      // optional uint32 requestAddress = 1;
-      private int requestAddress_ ;
-      public boolean hasRequestAddress() {
+      // optional uint32 requestHeapId = 1;
+      private int requestHeapId_ ;
+      public boolean hasRequestHeapId() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public int getRequestAddress() {
-        return requestAddress_;
+      public int getRequestHeapId() {
+        return requestHeapId_;
       }
-      public Builder setRequestAddress(int value) {
+      public Builder setRequestHeapId(int value) {
         bitField0_ |= 0x00000002;
-        requestAddress_ = value;
+        requestHeapId_ = value;
         
         return this;
       }
-      public Builder clearRequestAddress() {
+      public Builder clearRequestHeapId() {
         bitField0_ = (bitField0_ & ~0x00000002);
-        requestAddress_ = 0;
+        requestHeapId_ = 0;
         
         return this;
       }
       
-      // repeated uint32 responseAddresses = 2;
-      private java.util.List<java.lang.Integer> responseAddresses_ = java.util.Collections.emptyList();;
-      private void ensureResponseAddressesIsMutable() {
+      // repeated uint32 responseHeapIds = 2;
+      private java.util.List<java.lang.Integer> responseHeapIds_ = java.util.Collections.emptyList();;
+      private void ensureResponseHeapIdsIsMutable() {
         if (!((bitField0_ & 0x00000004) == 0x00000004)) {
-          responseAddresses_ = new java.util.ArrayList<java.lang.Integer>(responseAddresses_);
+          responseHeapIds_ = new java.util.ArrayList<java.lang.Integer>(responseHeapIds_);
           bitField0_ |= 0x00000004;
          }
       }
       public java.util.List<java.lang.Integer>
-          getResponseAddressesList() {
-        return java.util.Collections.unmodifiableList(responseAddresses_);
+          getResponseHeapIdsList() {
+        return java.util.Collections.unmodifiableList(responseHeapIds_);
       }
-      public int getResponseAddressesCount() {
-        return responseAddresses_.size();
+      public int getResponseHeapIdsCount() {
+        return responseHeapIds_.size();
       }
-      public int getResponseAddresses(int index) {
-        return responseAddresses_.get(index);
+      public int getResponseHeapIds(int index) {
+        return responseHeapIds_.get(index);
       }
-      public Builder setResponseAddresses(
+      public Builder setResponseHeapIds(
           int index, int value) {
-        ensureResponseAddressesIsMutable();
-        responseAddresses_.set(index, value);
+        ensureResponseHeapIdsIsMutable();
+        responseHeapIds_.set(index, value);
         
         return this;
       }
-      public Builder addResponseAddresses(int value) {
-        ensureResponseAddressesIsMutable();
-        responseAddresses_.add(value);
+      public Builder addResponseHeapIds(int value) {
+        ensureResponseHeapIdsIsMutable();
+        responseHeapIds_.add(value);
         
         return this;
       }
-      public Builder addAllResponseAddresses(
+      public Builder addAllResponseHeapIds(
           java.lang.Iterable<? extends java.lang.Integer> values) {
-        ensureResponseAddressesIsMutable();
-        super.addAll(values, responseAddresses_);
+        ensureResponseHeapIdsIsMutable();
+        super.addAll(values, responseHeapIds_);
         
         return this;
       }
-      public Builder clearResponseAddresses() {
-        responseAddresses_ = java.util.Collections.emptyList();;
+      public Builder clearResponseHeapIds() {
+        responseHeapIds_ = java.util.Collections.emptyList();;
         bitField0_ = (bitField0_ & ~0x00000004);
         
         return this;
@@ -1560,9 +1560,9 @@ public final class MryProtobuf {
     boolean hasId();
     int getId();
     
-    // optional uint32 blockAddress = 2;
-    boolean hasBlockAddress();
-    int getBlockAddress();
+    // optional uint32 blockHeapId = 2;
+    boolean hasBlockHeapId();
+    int getBlockHeapId();
   }
   public static final class PTransaction extends
       com.google.protobuf.GeneratedMessageLite
@@ -1593,19 +1593,19 @@ public final class MryProtobuf {
       return id_;
     }
     
-    // optional uint32 blockAddress = 2;
-    public static final int BLOCKADDRESS_FIELD_NUMBER = 2;
-    private int blockAddress_;
-    public boolean hasBlockAddress() {
+    // optional uint32 blockHeapId = 2;
+    public static final int BLOCKHEAPID_FIELD_NUMBER = 2;
+    private int blockHeapId_;
+    public boolean hasBlockHeapId() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
-    public int getBlockAddress() {
-      return blockAddress_;
+    public int getBlockHeapId() {
+      return blockHeapId_;
     }
     
     private void initFields() {
       id_ = 0;
-      blockAddress_ = 0;
+      blockHeapId_ = 0;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -1623,7 +1623,7 @@ public final class MryProtobuf {
         output.writeUInt32(1, id_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeUInt32(2, blockAddress_);
+        output.writeUInt32(2, blockHeapId_);
       }
     }
     
@@ -1639,7 +1639,7 @@ public final class MryProtobuf {
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(2, blockAddress_);
+          .computeUInt32Size(2, blockHeapId_);
       }
       memoizedSerializedSize = size;
       return size;
@@ -1745,7 +1745,7 @@ public final class MryProtobuf {
         super.clear();
         id_ = 0;
         bitField0_ = (bitField0_ & ~0x00000001);
-        blockAddress_ = 0;
+        blockHeapId_ = 0;
         bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
@@ -1787,7 +1787,7 @@ public final class MryProtobuf {
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
-        result.blockAddress_ = blockAddress_;
+        result.blockHeapId_ = blockHeapId_;
         result.bitField0_ = to_bitField0_;
         return result;
       }
@@ -1797,8 +1797,8 @@ public final class MryProtobuf {
         if (other.hasId()) {
           setId(other.getId());
         }
-        if (other.hasBlockAddress()) {
-          setBlockAddress(other.getBlockAddress());
+        if (other.hasBlockHeapId()) {
+          setBlockHeapId(other.getBlockHeapId());
         }
         return this;
       }
@@ -1831,7 +1831,7 @@ public final class MryProtobuf {
             }
             case 16: {
               bitField0_ |= 0x00000002;
-              blockAddress_ = input.readUInt32();
+              blockHeapId_ = input.readUInt32();
               break;
             }
           }
@@ -1861,23 +1861,23 @@ public final class MryProtobuf {
         return this;
       }
       
-      // optional uint32 blockAddress = 2;
-      private int blockAddress_ ;
-      public boolean hasBlockAddress() {
+      // optional uint32 blockHeapId = 2;
+      private int blockHeapId_ ;
+      public boolean hasBlockHeapId() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public int getBlockAddress() {
-        return blockAddress_;
+      public int getBlockHeapId() {
+        return blockHeapId_;
       }
-      public Builder setBlockAddress(int value) {
+      public Builder setBlockHeapId(int value) {
         bitField0_ |= 0x00000002;
-        blockAddress_ = value;
+        blockHeapId_ = value;
         
         return this;
       }
-      public Builder clearBlockAddress() {
+      public Builder clearBlockHeapId() {
         bitField0_ = (bitField0_ & ~0x00000002);
-        blockAddress_ = 0;
+        blockHeapId_ = 0;
         
         return this;
       }
@@ -1900,15 +1900,15 @@ public final class MryProtobuf {
     boolean hasVarSeq();
     int getVarSeq();
     
-    // repeated uint32 operationAddresses = 2;
-    java.util.List<java.lang.Integer> getOperationAddressesList();
-    int getOperationAddressesCount();
-    int getOperationAddresses(int index);
+    // repeated uint32 operationHeapIds = 2;
+    java.util.List<java.lang.Integer> getOperationHeapIdsList();
+    int getOperationHeapIdsCount();
+    int getOperationHeapIds(int index);
     
-    // repeated uint32 variableAddresses = 3;
-    java.util.List<java.lang.Integer> getVariableAddressesList();
-    int getVariableAddressesCount();
-    int getVariableAddresses(int index);
+    // repeated uint32 variableHeapIds = 3;
+    java.util.List<java.lang.Integer> getVariableHeapIdsList();
+    int getVariableHeapIdsCount();
+    int getVariableHeapIds(int index);
   }
   public static final class PBlock extends
       com.google.protobuf.GeneratedMessageLite
@@ -1939,38 +1939,38 @@ public final class MryProtobuf {
       return varSeq_;
     }
     
-    // repeated uint32 operationAddresses = 2;
-    public static final int OPERATIONADDRESSES_FIELD_NUMBER = 2;
-    private java.util.List<java.lang.Integer> operationAddresses_;
+    // repeated uint32 operationHeapIds = 2;
+    public static final int OPERATIONHEAPIDS_FIELD_NUMBER = 2;
+    private java.util.List<java.lang.Integer> operationHeapIds_;
     public java.util.List<java.lang.Integer>
-        getOperationAddressesList() {
-      return operationAddresses_;
+        getOperationHeapIdsList() {
+      return operationHeapIds_;
     }
-    public int getOperationAddressesCount() {
-      return operationAddresses_.size();
+    public int getOperationHeapIdsCount() {
+      return operationHeapIds_.size();
     }
-    public int getOperationAddresses(int index) {
-      return operationAddresses_.get(index);
+    public int getOperationHeapIds(int index) {
+      return operationHeapIds_.get(index);
     }
     
-    // repeated uint32 variableAddresses = 3;
-    public static final int VARIABLEADDRESSES_FIELD_NUMBER = 3;
-    private java.util.List<java.lang.Integer> variableAddresses_;
+    // repeated uint32 variableHeapIds = 3;
+    public static final int VARIABLEHEAPIDS_FIELD_NUMBER = 3;
+    private java.util.List<java.lang.Integer> variableHeapIds_;
     public java.util.List<java.lang.Integer>
-        getVariableAddressesList() {
-      return variableAddresses_;
+        getVariableHeapIdsList() {
+      return variableHeapIds_;
     }
-    public int getVariableAddressesCount() {
-      return variableAddresses_.size();
+    public int getVariableHeapIdsCount() {
+      return variableHeapIds_.size();
     }
-    public int getVariableAddresses(int index) {
-      return variableAddresses_.get(index);
+    public int getVariableHeapIds(int index) {
+      return variableHeapIds_.get(index);
     }
     
     private void initFields() {
       varSeq_ = 0;
-      operationAddresses_ = java.util.Collections.emptyList();;
-      variableAddresses_ = java.util.Collections.emptyList();;
+      operationHeapIds_ = java.util.Collections.emptyList();;
+      variableHeapIds_ = java.util.Collections.emptyList();;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -1991,11 +1991,11 @@ public final class MryProtobuf {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         output.writeUInt32(1, varSeq_);
       }
-      for (int i = 0; i < operationAddresses_.size(); i++) {
-        output.writeUInt32(2, operationAddresses_.get(i));
+      for (int i = 0; i < operationHeapIds_.size(); i++) {
+        output.writeUInt32(2, operationHeapIds_.get(i));
       }
-      for (int i = 0; i < variableAddresses_.size(); i++) {
-        output.writeUInt32(3, variableAddresses_.get(i));
+      for (int i = 0; i < variableHeapIds_.size(); i++) {
+        output.writeUInt32(3, variableHeapIds_.get(i));
       }
     }
     
@@ -2011,21 +2011,21 @@ public final class MryProtobuf {
       }
       {
         int dataSize = 0;
-        for (int i = 0; i < operationAddresses_.size(); i++) {
+        for (int i = 0; i < operationHeapIds_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeUInt32SizeNoTag(operationAddresses_.get(i));
+            .computeUInt32SizeNoTag(operationHeapIds_.get(i));
         }
         size += dataSize;
-        size += 1 * getOperationAddressesList().size();
+        size += 1 * getOperationHeapIdsList().size();
       }
       {
         int dataSize = 0;
-        for (int i = 0; i < variableAddresses_.size(); i++) {
+        for (int i = 0; i < variableHeapIds_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeUInt32SizeNoTag(variableAddresses_.get(i));
+            .computeUInt32SizeNoTag(variableHeapIds_.get(i));
         }
         size += dataSize;
-        size += 1 * getVariableAddressesList().size();
+        size += 1 * getVariableHeapIdsList().size();
       }
       memoizedSerializedSize = size;
       return size;
@@ -2131,9 +2131,9 @@ public final class MryProtobuf {
         super.clear();
         varSeq_ = 0;
         bitField0_ = (bitField0_ & ~0x00000001);
-        operationAddresses_ = java.util.Collections.emptyList();;
+        operationHeapIds_ = java.util.Collections.emptyList();;
         bitField0_ = (bitField0_ & ~0x00000002);
-        variableAddresses_ = java.util.Collections.emptyList();;
+        variableHeapIds_ = java.util.Collections.emptyList();;
         bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
@@ -2173,15 +2173,15 @@ public final class MryProtobuf {
         }
         result.varSeq_ = varSeq_;
         if (((bitField0_ & 0x00000002) == 0x00000002)) {
-          operationAddresses_ = java.util.Collections.unmodifiableList(operationAddresses_);
+          operationHeapIds_ = java.util.Collections.unmodifiableList(operationHeapIds_);
           bitField0_ = (bitField0_ & ~0x00000002);
         }
-        result.operationAddresses_ = operationAddresses_;
+        result.operationHeapIds_ = operationHeapIds_;
         if (((bitField0_ & 0x00000004) == 0x00000004)) {
-          variableAddresses_ = java.util.Collections.unmodifiableList(variableAddresses_);
+          variableHeapIds_ = java.util.Collections.unmodifiableList(variableHeapIds_);
           bitField0_ = (bitField0_ & ~0x00000004);
         }
-        result.variableAddresses_ = variableAddresses_;
+        result.variableHeapIds_ = variableHeapIds_;
         result.bitField0_ = to_bitField0_;
         return result;
       }
@@ -2191,23 +2191,23 @@ public final class MryProtobuf {
         if (other.hasVarSeq()) {
           setVarSeq(other.getVarSeq());
         }
-        if (!other.operationAddresses_.isEmpty()) {
-          if (operationAddresses_.isEmpty()) {
-            operationAddresses_ = other.operationAddresses_;
+        if (!other.operationHeapIds_.isEmpty()) {
+          if (operationHeapIds_.isEmpty()) {
+            operationHeapIds_ = other.operationHeapIds_;
             bitField0_ = (bitField0_ & ~0x00000002);
           } else {
-            ensureOperationAddressesIsMutable();
-            operationAddresses_.addAll(other.operationAddresses_);
+            ensureOperationHeapIdsIsMutable();
+            operationHeapIds_.addAll(other.operationHeapIds_);
           }
           
         }
-        if (!other.variableAddresses_.isEmpty()) {
-          if (variableAddresses_.isEmpty()) {
-            variableAddresses_ = other.variableAddresses_;
+        if (!other.variableHeapIds_.isEmpty()) {
+          if (variableHeapIds_.isEmpty()) {
+            variableHeapIds_ = other.variableHeapIds_;
             bitField0_ = (bitField0_ & ~0x00000004);
           } else {
-            ensureVariableAddressesIsMutable();
-            variableAddresses_.addAll(other.variableAddresses_);
+            ensureVariableHeapIdsIsMutable();
+            variableHeapIds_.addAll(other.variableHeapIds_);
           }
           
         }
@@ -2245,29 +2245,29 @@ public final class MryProtobuf {
               break;
             }
             case 16: {
-              ensureOperationAddressesIsMutable();
-              operationAddresses_.add(input.readUInt32());
+              ensureOperationHeapIdsIsMutable();
+              operationHeapIds_.add(input.readUInt32());
               break;
             }
             case 18: {
               int length = input.readRawVarint32();
               int limit = input.pushLimit(length);
               while (input.getBytesUntilLimit() > 0) {
-                addOperationAddresses(input.readUInt32());
+                addOperationHeapIds(input.readUInt32());
               }
               input.popLimit(limit);
               break;
             }
             case 24: {
-              ensureVariableAddressesIsMutable();
-              variableAddresses_.add(input.readUInt32());
+              ensureVariableHeapIdsIsMutable();
+              variableHeapIds_.add(input.readUInt32());
               break;
             }
             case 26: {
               int length = input.readRawVarint32();
               int limit = input.pushLimit(length);
               while (input.getBytesUntilLimit() > 0) {
-                addVariableAddresses(input.readUInt32());
+                addVariableHeapIds(input.readUInt32());
               }
               input.popLimit(limit);
               break;
@@ -2299,91 +2299,91 @@ public final class MryProtobuf {
         return this;
       }
       
-      // repeated uint32 operationAddresses = 2;
-      private java.util.List<java.lang.Integer> operationAddresses_ = java.util.Collections.emptyList();;
-      private void ensureOperationAddressesIsMutable() {
+      // repeated uint32 operationHeapIds = 2;
+      private java.util.List<java.lang.Integer> operationHeapIds_ = java.util.Collections.emptyList();;
+      private void ensureOperationHeapIdsIsMutable() {
         if (!((bitField0_ & 0x00000002) == 0x00000002)) {
-          operationAddresses_ = new java.util.ArrayList<java.lang.Integer>(operationAddresses_);
+          operationHeapIds_ = new java.util.ArrayList<java.lang.Integer>(operationHeapIds_);
           bitField0_ |= 0x00000002;
          }
       }
       public java.util.List<java.lang.Integer>
-          getOperationAddressesList() {
-        return java.util.Collections.unmodifiableList(operationAddresses_);
+          getOperationHeapIdsList() {
+        return java.util.Collections.unmodifiableList(operationHeapIds_);
       }
-      public int getOperationAddressesCount() {
-        return operationAddresses_.size();
+      public int getOperationHeapIdsCount() {
+        return operationHeapIds_.size();
       }
-      public int getOperationAddresses(int index) {
-        return operationAddresses_.get(index);
+      public int getOperationHeapIds(int index) {
+        return operationHeapIds_.get(index);
       }
-      public Builder setOperationAddresses(
+      public Builder setOperationHeapIds(
           int index, int value) {
-        ensureOperationAddressesIsMutable();
-        operationAddresses_.set(index, value);
+        ensureOperationHeapIdsIsMutable();
+        operationHeapIds_.set(index, value);
         
         return this;
       }
-      public Builder addOperationAddresses(int value) {
-        ensureOperationAddressesIsMutable();
-        operationAddresses_.add(value);
+      public Builder addOperationHeapIds(int value) {
+        ensureOperationHeapIdsIsMutable();
+        operationHeapIds_.add(value);
         
         return this;
       }
-      public Builder addAllOperationAddresses(
+      public Builder addAllOperationHeapIds(
           java.lang.Iterable<? extends java.lang.Integer> values) {
-        ensureOperationAddressesIsMutable();
-        super.addAll(values, operationAddresses_);
+        ensureOperationHeapIdsIsMutable();
+        super.addAll(values, operationHeapIds_);
         
         return this;
       }
-      public Builder clearOperationAddresses() {
-        operationAddresses_ = java.util.Collections.emptyList();;
+      public Builder clearOperationHeapIds() {
+        operationHeapIds_ = java.util.Collections.emptyList();;
         bitField0_ = (bitField0_ & ~0x00000002);
         
         return this;
       }
       
-      // repeated uint32 variableAddresses = 3;
-      private java.util.List<java.lang.Integer> variableAddresses_ = java.util.Collections.emptyList();;
-      private void ensureVariableAddressesIsMutable() {
+      // repeated uint32 variableHeapIds = 3;
+      private java.util.List<java.lang.Integer> variableHeapIds_ = java.util.Collections.emptyList();;
+      private void ensureVariableHeapIdsIsMutable() {
         if (!((bitField0_ & 0x00000004) == 0x00000004)) {
-          variableAddresses_ = new java.util.ArrayList<java.lang.Integer>(variableAddresses_);
+          variableHeapIds_ = new java.util.ArrayList<java.lang.Integer>(variableHeapIds_);
           bitField0_ |= 0x00000004;
          }
       }
       public java.util.List<java.lang.Integer>
-          getVariableAddressesList() {
-        return java.util.Collections.unmodifiableList(variableAddresses_);
+          getVariableHeapIdsList() {
+        return java.util.Collections.unmodifiableList(variableHeapIds_);
       }
-      public int getVariableAddressesCount() {
-        return variableAddresses_.size();
+      public int getVariableHeapIdsCount() {
+        return variableHeapIds_.size();
       }
-      public int getVariableAddresses(int index) {
-        return variableAddresses_.get(index);
+      public int getVariableHeapIds(int index) {
+        return variableHeapIds_.get(index);
       }
-      public Builder setVariableAddresses(
+      public Builder setVariableHeapIds(
           int index, int value) {
-        ensureVariableAddressesIsMutable();
-        variableAddresses_.set(index, value);
+        ensureVariableHeapIdsIsMutable();
+        variableHeapIds_.set(index, value);
         
         return this;
       }
-      public Builder addVariableAddresses(int value) {
-        ensureVariableAddressesIsMutable();
-        variableAddresses_.add(value);
+      public Builder addVariableHeapIds(int value) {
+        ensureVariableHeapIdsIsMutable();
+        variableHeapIds_.add(value);
         
         return this;
       }
-      public Builder addAllVariableAddresses(
+      public Builder addAllVariableHeapIds(
           java.lang.Iterable<? extends java.lang.Integer> values) {
-        ensureVariableAddressesIsMutable();
-        super.addAll(values, variableAddresses_);
+        ensureVariableHeapIdsIsMutable();
+        super.addAll(values, variableHeapIds_);
         
         return this;
       }
-      public Builder clearVariableAddresses() {
-        variableAddresses_ = java.util.Collections.emptyList();;
+      public Builder clearVariableHeapIds() {
+        variableHeapIds_ = java.util.Collections.emptyList();;
         bitField0_ = (bitField0_ & ~0x00000004);
         
         return this;
@@ -2407,9 +2407,9 @@ public final class MryProtobuf {
     boolean hasId();
     int getId();
     
-    // optional uint32 valueAddress = 2;
-    boolean hasValueAddress();
-    int getValueAddress();
+    // optional uint32 valueHeapId = 2;
+    boolean hasValueHeapId();
+    int getValueHeapId();
   }
   public static final class PVariable extends
       com.google.protobuf.GeneratedMessageLite
@@ -2440,19 +2440,19 @@ public final class MryProtobuf {
       return id_;
     }
     
-    // optional uint32 valueAddress = 2;
-    public static final int VALUEADDRESS_FIELD_NUMBER = 2;
-    private int valueAddress_;
-    public boolean hasValueAddress() {
+    // optional uint32 valueHeapId = 2;
+    public static final int VALUEHEAPID_FIELD_NUMBER = 2;
+    private int valueHeapId_;
+    public boolean hasValueHeapId() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
-    public int getValueAddress() {
-      return valueAddress_;
+    public int getValueHeapId() {
+      return valueHeapId_;
     }
     
     private void initFields() {
       id_ = 0;
-      valueAddress_ = 0;
+      valueHeapId_ = 0;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -2474,7 +2474,7 @@ public final class MryProtobuf {
         output.writeUInt32(1, id_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeUInt32(2, valueAddress_);
+        output.writeUInt32(2, valueHeapId_);
       }
     }
     
@@ -2490,7 +2490,7 @@ public final class MryProtobuf {
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(2, valueAddress_);
+          .computeUInt32Size(2, valueHeapId_);
       }
       memoizedSerializedSize = size;
       return size;
@@ -2596,7 +2596,7 @@ public final class MryProtobuf {
         super.clear();
         id_ = 0;
         bitField0_ = (bitField0_ & ~0x00000001);
-        valueAddress_ = 0;
+        valueHeapId_ = 0;
         bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
@@ -2638,7 +2638,7 @@ public final class MryProtobuf {
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
-        result.valueAddress_ = valueAddress_;
+        result.valueHeapId_ = valueHeapId_;
         result.bitField0_ = to_bitField0_;
         return result;
       }
@@ -2648,8 +2648,8 @@ public final class MryProtobuf {
         if (other.hasId()) {
           setId(other.getId());
         }
-        if (other.hasValueAddress()) {
-          setValueAddress(other.getValueAddress());
+        if (other.hasValueHeapId()) {
+          setValueHeapId(other.getValueHeapId());
         }
         return this;
       }
@@ -2686,7 +2686,7 @@ public final class MryProtobuf {
             }
             case 16: {
               bitField0_ |= 0x00000002;
-              valueAddress_ = input.readUInt32();
+              valueHeapId_ = input.readUInt32();
               break;
             }
           }
@@ -2716,23 +2716,23 @@ public final class MryProtobuf {
         return this;
       }
       
-      // optional uint32 valueAddress = 2;
-      private int valueAddress_ ;
-      public boolean hasValueAddress() {
+      // optional uint32 valueHeapId = 2;
+      private int valueHeapId_ ;
+      public boolean hasValueHeapId() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public int getValueAddress() {
-        return valueAddress_;
+      public int getValueHeapId() {
+        return valueHeapId_;
       }
-      public Builder setValueAddress(int value) {
+      public Builder setValueHeapId(int value) {
         bitField0_ |= 0x00000002;
-        valueAddress_ = value;
+        valueHeapId_ = value;
         
         return this;
       }
-      public Builder clearValueAddress() {
+      public Builder clearValueHeapId() {
         bitField0_ = (bitField0_ & ~0x00000002);
-        valueAddress_ = 0;
+        valueHeapId_ = 0;
         
         return this;
       }
@@ -2755,19 +2755,19 @@ public final class MryProtobuf {
     boolean hasType();
     com.wajam.mry.api.protobuf.MryProtobuf.POperation.Type getType();
     
-    // repeated uint32 variableAddresses = 2;
-    java.util.List<java.lang.Integer> getVariableAddressesList();
-    int getVariableAddressesCount();
-    int getVariableAddresses(int index);
+    // repeated uint32 variableHeapIds = 2;
+    java.util.List<java.lang.Integer> getVariableHeapIdsList();
+    int getVariableHeapIdsCount();
+    int getVariableHeapIds(int index);
     
-    // repeated uint32 objectAddresses = 3;
-    java.util.List<java.lang.Integer> getObjectAddressesList();
-    int getObjectAddressesCount();
-    int getObjectAddresses(int index);
+    // repeated uint32 objectHeapIds = 3;
+    java.util.List<java.lang.Integer> getObjectHeapIdsList();
+    int getObjectHeapIdsCount();
+    int getObjectHeapIds(int index);
     
-    // optional uint32 sourceAddress = 4;
-    boolean hasSourceAddress();
-    int getSourceAddress();
+    // optional uint32 sourceHeapId = 4;
+    boolean hasSourceHeapId();
+    int getSourceHeapId();
   }
   public static final class POperation extends
       com.google.protobuf.GeneratedMessageLite
@@ -2854,49 +2854,49 @@ public final class MryProtobuf {
       return type_;
     }
     
-    // repeated uint32 variableAddresses = 2;
-    public static final int VARIABLEADDRESSES_FIELD_NUMBER = 2;
-    private java.util.List<java.lang.Integer> variableAddresses_;
+    // repeated uint32 variableHeapIds = 2;
+    public static final int VARIABLEHEAPIDS_FIELD_NUMBER = 2;
+    private java.util.List<java.lang.Integer> variableHeapIds_;
     public java.util.List<java.lang.Integer>
-        getVariableAddressesList() {
-      return variableAddresses_;
+        getVariableHeapIdsList() {
+      return variableHeapIds_;
     }
-    public int getVariableAddressesCount() {
-      return variableAddresses_.size();
+    public int getVariableHeapIdsCount() {
+      return variableHeapIds_.size();
     }
-    public int getVariableAddresses(int index) {
-      return variableAddresses_.get(index);
+    public int getVariableHeapIds(int index) {
+      return variableHeapIds_.get(index);
     }
     
-    // repeated uint32 objectAddresses = 3;
-    public static final int OBJECTADDRESSES_FIELD_NUMBER = 3;
-    private java.util.List<java.lang.Integer> objectAddresses_;
+    // repeated uint32 objectHeapIds = 3;
+    public static final int OBJECTHEAPIDS_FIELD_NUMBER = 3;
+    private java.util.List<java.lang.Integer> objectHeapIds_;
     public java.util.List<java.lang.Integer>
-        getObjectAddressesList() {
-      return objectAddresses_;
+        getObjectHeapIdsList() {
+      return objectHeapIds_;
     }
-    public int getObjectAddressesCount() {
-      return objectAddresses_.size();
+    public int getObjectHeapIdsCount() {
+      return objectHeapIds_.size();
     }
-    public int getObjectAddresses(int index) {
-      return objectAddresses_.get(index);
+    public int getObjectHeapIds(int index) {
+      return objectHeapIds_.get(index);
     }
     
-    // optional uint32 sourceAddress = 4;
-    public static final int SOURCEADDRESS_FIELD_NUMBER = 4;
-    private int sourceAddress_;
-    public boolean hasSourceAddress() {
+    // optional uint32 sourceHeapId = 4;
+    public static final int SOURCEHEAPID_FIELD_NUMBER = 4;
+    private int sourceHeapId_;
+    public boolean hasSourceHeapId() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
-    public int getSourceAddress() {
-      return sourceAddress_;
+    public int getSourceHeapId() {
+      return sourceHeapId_;
     }
     
     private void initFields() {
       type_ = com.wajam.mry.api.protobuf.MryProtobuf.POperation.Type.Return;
-      variableAddresses_ = java.util.Collections.emptyList();;
-      objectAddresses_ = java.util.Collections.emptyList();;
-      sourceAddress_ = 0;
+      variableHeapIds_ = java.util.Collections.emptyList();;
+      objectHeapIds_ = java.util.Collections.emptyList();;
+      sourceHeapId_ = 0;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -2913,14 +2913,14 @@ public final class MryProtobuf {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         output.writeEnum(1, type_.getNumber());
       }
-      for (int i = 0; i < variableAddresses_.size(); i++) {
-        output.writeUInt32(2, variableAddresses_.get(i));
+      for (int i = 0; i < variableHeapIds_.size(); i++) {
+        output.writeUInt32(2, variableHeapIds_.get(i));
       }
-      for (int i = 0; i < objectAddresses_.size(); i++) {
-        output.writeUInt32(3, objectAddresses_.get(i));
+      for (int i = 0; i < objectHeapIds_.size(); i++) {
+        output.writeUInt32(3, objectHeapIds_.get(i));
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeUInt32(4, sourceAddress_);
+        output.writeUInt32(4, sourceHeapId_);
       }
     }
     
@@ -2936,25 +2936,25 @@ public final class MryProtobuf {
       }
       {
         int dataSize = 0;
-        for (int i = 0; i < variableAddresses_.size(); i++) {
+        for (int i = 0; i < variableHeapIds_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeUInt32SizeNoTag(variableAddresses_.get(i));
+            .computeUInt32SizeNoTag(variableHeapIds_.get(i));
         }
         size += dataSize;
-        size += 1 * getVariableAddressesList().size();
+        size += 1 * getVariableHeapIdsList().size();
       }
       {
         int dataSize = 0;
-        for (int i = 0; i < objectAddresses_.size(); i++) {
+        for (int i = 0; i < objectHeapIds_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeUInt32SizeNoTag(objectAddresses_.get(i));
+            .computeUInt32SizeNoTag(objectHeapIds_.get(i));
         }
         size += dataSize;
-        size += 1 * getObjectAddressesList().size();
+        size += 1 * getObjectHeapIdsList().size();
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(4, sourceAddress_);
+          .computeUInt32Size(4, sourceHeapId_);
       }
       memoizedSerializedSize = size;
       return size;
@@ -3060,11 +3060,11 @@ public final class MryProtobuf {
         super.clear();
         type_ = com.wajam.mry.api.protobuf.MryProtobuf.POperation.Type.Return;
         bitField0_ = (bitField0_ & ~0x00000001);
-        variableAddresses_ = java.util.Collections.emptyList();;
+        variableHeapIds_ = java.util.Collections.emptyList();;
         bitField0_ = (bitField0_ & ~0x00000002);
-        objectAddresses_ = java.util.Collections.emptyList();;
+        objectHeapIds_ = java.util.Collections.emptyList();;
         bitField0_ = (bitField0_ & ~0x00000004);
-        sourceAddress_ = 0;
+        sourceHeapId_ = 0;
         bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
@@ -3104,19 +3104,19 @@ public final class MryProtobuf {
         }
         result.type_ = type_;
         if (((bitField0_ & 0x00000002) == 0x00000002)) {
-          variableAddresses_ = java.util.Collections.unmodifiableList(variableAddresses_);
+          variableHeapIds_ = java.util.Collections.unmodifiableList(variableHeapIds_);
           bitField0_ = (bitField0_ & ~0x00000002);
         }
-        result.variableAddresses_ = variableAddresses_;
+        result.variableHeapIds_ = variableHeapIds_;
         if (((bitField0_ & 0x00000004) == 0x00000004)) {
-          objectAddresses_ = java.util.Collections.unmodifiableList(objectAddresses_);
+          objectHeapIds_ = java.util.Collections.unmodifiableList(objectHeapIds_);
           bitField0_ = (bitField0_ & ~0x00000004);
         }
-        result.objectAddresses_ = objectAddresses_;
+        result.objectHeapIds_ = objectHeapIds_;
         if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
           to_bitField0_ |= 0x00000002;
         }
-        result.sourceAddress_ = sourceAddress_;
+        result.sourceHeapId_ = sourceHeapId_;
         result.bitField0_ = to_bitField0_;
         return result;
       }
@@ -3126,28 +3126,28 @@ public final class MryProtobuf {
         if (other.hasType()) {
           setType(other.getType());
         }
-        if (!other.variableAddresses_.isEmpty()) {
-          if (variableAddresses_.isEmpty()) {
-            variableAddresses_ = other.variableAddresses_;
+        if (!other.variableHeapIds_.isEmpty()) {
+          if (variableHeapIds_.isEmpty()) {
+            variableHeapIds_ = other.variableHeapIds_;
             bitField0_ = (bitField0_ & ~0x00000002);
           } else {
-            ensureVariableAddressesIsMutable();
-            variableAddresses_.addAll(other.variableAddresses_);
+            ensureVariableHeapIdsIsMutable();
+            variableHeapIds_.addAll(other.variableHeapIds_);
           }
           
         }
-        if (!other.objectAddresses_.isEmpty()) {
-          if (objectAddresses_.isEmpty()) {
-            objectAddresses_ = other.objectAddresses_;
+        if (!other.objectHeapIds_.isEmpty()) {
+          if (objectHeapIds_.isEmpty()) {
+            objectHeapIds_ = other.objectHeapIds_;
             bitField0_ = (bitField0_ & ~0x00000004);
           } else {
-            ensureObjectAddressesIsMutable();
-            objectAddresses_.addAll(other.objectAddresses_);
+            ensureObjectHeapIdsIsMutable();
+            objectHeapIds_.addAll(other.objectHeapIds_);
           }
           
         }
-        if (other.hasSourceAddress()) {
-          setSourceAddress(other.getSourceAddress());
+        if (other.hasSourceHeapId()) {
+          setSourceHeapId(other.getSourceHeapId());
         }
         return this;
       }
@@ -3183,36 +3183,36 @@ public final class MryProtobuf {
               break;
             }
             case 16: {
-              ensureVariableAddressesIsMutable();
-              variableAddresses_.add(input.readUInt32());
+              ensureVariableHeapIdsIsMutable();
+              variableHeapIds_.add(input.readUInt32());
               break;
             }
             case 18: {
               int length = input.readRawVarint32();
               int limit = input.pushLimit(length);
               while (input.getBytesUntilLimit() > 0) {
-                addVariableAddresses(input.readUInt32());
+                addVariableHeapIds(input.readUInt32());
               }
               input.popLimit(limit);
               break;
             }
             case 24: {
-              ensureObjectAddressesIsMutable();
-              objectAddresses_.add(input.readUInt32());
+              ensureObjectHeapIdsIsMutable();
+              objectHeapIds_.add(input.readUInt32());
               break;
             }
             case 26: {
               int length = input.readRawVarint32();
               int limit = input.pushLimit(length);
               while (input.getBytesUntilLimit() > 0) {
-                addObjectAddresses(input.readUInt32());
+                addObjectHeapIds(input.readUInt32());
               }
               input.popLimit(limit);
               break;
             }
             case 32: {
               bitField0_ |= 0x00000008;
-              sourceAddress_ = input.readUInt32();
+              sourceHeapId_ = input.readUInt32();
               break;
             }
           }
@@ -3245,113 +3245,113 @@ public final class MryProtobuf {
         return this;
       }
       
-      // repeated uint32 variableAddresses = 2;
-      private java.util.List<java.lang.Integer> variableAddresses_ = java.util.Collections.emptyList();;
-      private void ensureVariableAddressesIsMutable() {
+      // repeated uint32 variableHeapIds = 2;
+      private java.util.List<java.lang.Integer> variableHeapIds_ = java.util.Collections.emptyList();;
+      private void ensureVariableHeapIdsIsMutable() {
         if (!((bitField0_ & 0x00000002) == 0x00000002)) {
-          variableAddresses_ = new java.util.ArrayList<java.lang.Integer>(variableAddresses_);
+          variableHeapIds_ = new java.util.ArrayList<java.lang.Integer>(variableHeapIds_);
           bitField0_ |= 0x00000002;
          }
       }
       public java.util.List<java.lang.Integer>
-          getVariableAddressesList() {
-        return java.util.Collections.unmodifiableList(variableAddresses_);
+          getVariableHeapIdsList() {
+        return java.util.Collections.unmodifiableList(variableHeapIds_);
       }
-      public int getVariableAddressesCount() {
-        return variableAddresses_.size();
+      public int getVariableHeapIdsCount() {
+        return variableHeapIds_.size();
       }
-      public int getVariableAddresses(int index) {
-        return variableAddresses_.get(index);
+      public int getVariableHeapIds(int index) {
+        return variableHeapIds_.get(index);
       }
-      public Builder setVariableAddresses(
+      public Builder setVariableHeapIds(
           int index, int value) {
-        ensureVariableAddressesIsMutable();
-        variableAddresses_.set(index, value);
+        ensureVariableHeapIdsIsMutable();
+        variableHeapIds_.set(index, value);
         
         return this;
       }
-      public Builder addVariableAddresses(int value) {
-        ensureVariableAddressesIsMutable();
-        variableAddresses_.add(value);
+      public Builder addVariableHeapIds(int value) {
+        ensureVariableHeapIdsIsMutable();
+        variableHeapIds_.add(value);
         
         return this;
       }
-      public Builder addAllVariableAddresses(
+      public Builder addAllVariableHeapIds(
           java.lang.Iterable<? extends java.lang.Integer> values) {
-        ensureVariableAddressesIsMutable();
-        super.addAll(values, variableAddresses_);
+        ensureVariableHeapIdsIsMutable();
+        super.addAll(values, variableHeapIds_);
         
         return this;
       }
-      public Builder clearVariableAddresses() {
-        variableAddresses_ = java.util.Collections.emptyList();;
+      public Builder clearVariableHeapIds() {
+        variableHeapIds_ = java.util.Collections.emptyList();;
         bitField0_ = (bitField0_ & ~0x00000002);
         
         return this;
       }
       
-      // repeated uint32 objectAddresses = 3;
-      private java.util.List<java.lang.Integer> objectAddresses_ = java.util.Collections.emptyList();;
-      private void ensureObjectAddressesIsMutable() {
+      // repeated uint32 objectHeapIds = 3;
+      private java.util.List<java.lang.Integer> objectHeapIds_ = java.util.Collections.emptyList();;
+      private void ensureObjectHeapIdsIsMutable() {
         if (!((bitField0_ & 0x00000004) == 0x00000004)) {
-          objectAddresses_ = new java.util.ArrayList<java.lang.Integer>(objectAddresses_);
+          objectHeapIds_ = new java.util.ArrayList<java.lang.Integer>(objectHeapIds_);
           bitField0_ |= 0x00000004;
          }
       }
       public java.util.List<java.lang.Integer>
-          getObjectAddressesList() {
-        return java.util.Collections.unmodifiableList(objectAddresses_);
+          getObjectHeapIdsList() {
+        return java.util.Collections.unmodifiableList(objectHeapIds_);
       }
-      public int getObjectAddressesCount() {
-        return objectAddresses_.size();
+      public int getObjectHeapIdsCount() {
+        return objectHeapIds_.size();
       }
-      public int getObjectAddresses(int index) {
-        return objectAddresses_.get(index);
+      public int getObjectHeapIds(int index) {
+        return objectHeapIds_.get(index);
       }
-      public Builder setObjectAddresses(
+      public Builder setObjectHeapIds(
           int index, int value) {
-        ensureObjectAddressesIsMutable();
-        objectAddresses_.set(index, value);
+        ensureObjectHeapIdsIsMutable();
+        objectHeapIds_.set(index, value);
         
         return this;
       }
-      public Builder addObjectAddresses(int value) {
-        ensureObjectAddressesIsMutable();
-        objectAddresses_.add(value);
+      public Builder addObjectHeapIds(int value) {
+        ensureObjectHeapIdsIsMutable();
+        objectHeapIds_.add(value);
         
         return this;
       }
-      public Builder addAllObjectAddresses(
+      public Builder addAllObjectHeapIds(
           java.lang.Iterable<? extends java.lang.Integer> values) {
-        ensureObjectAddressesIsMutable();
-        super.addAll(values, objectAddresses_);
+        ensureObjectHeapIdsIsMutable();
+        super.addAll(values, objectHeapIds_);
         
         return this;
       }
-      public Builder clearObjectAddresses() {
-        objectAddresses_ = java.util.Collections.emptyList();;
+      public Builder clearObjectHeapIds() {
+        objectHeapIds_ = java.util.Collections.emptyList();;
         bitField0_ = (bitField0_ & ~0x00000004);
         
         return this;
       }
       
-      // optional uint32 sourceAddress = 4;
-      private int sourceAddress_ ;
-      public boolean hasSourceAddress() {
+      // optional uint32 sourceHeapId = 4;
+      private int sourceHeapId_ ;
+      public boolean hasSourceHeapId() {
         return ((bitField0_ & 0x00000008) == 0x00000008);
       }
-      public int getSourceAddress() {
-        return sourceAddress_;
+      public int getSourceHeapId() {
+        return sourceHeapId_;
       }
-      public Builder setSourceAddress(int value) {
+      public Builder setSourceHeapId(int value) {
         bitField0_ |= 0x00000008;
-        sourceAddress_ = value;
+        sourceHeapId_ = value;
         
         return this;
       }
-      public Builder clearSourceAddress() {
+      public Builder clearSourceHeapId() {
         bitField0_ = (bitField0_ & ~0x00000008);
-        sourceAddress_ = 0;
+        sourceHeapId_ = 0;
         
         return this;
       }

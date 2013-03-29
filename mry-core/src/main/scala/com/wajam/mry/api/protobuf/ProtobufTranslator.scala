@@ -6,7 +6,6 @@ import com.wajam.mry.execution._
 import com.wajam.mry.execution.Transaction
 import com.wajam.mry.api.protobuf.MryProtobuf._
 import com.wajam.mry.api.Transport
-import scala.collection.JavaConverters._
 
 /**
  * Protocol buffers translator
@@ -65,38 +64,37 @@ class ProtobufTranslator extends ProtocolTranslator {
  */
 private class InternalProtobufTranslator {
 
-  private var currentAddress = 1 // I don't think will have more than 2^31 object, skip 0, since 0==unassigned
+  private var currentHeapId = 1 // I don't think will have more than 2^31 object, skip 0, since 0==unassigned
 
-  private val pb2obj = new collection.mutable.HashMap[Int, AnyRef] // Encoded address to decoded instance mapping
-  private val obj2pb = new collection.mutable.HashMap[AnyRef, Int] // Live instance to encoded address mapping
+  private val pb2obj = new collection.mutable.HashMap[Int, AnyRef] // Encoded HeapId to decoded instance mapping
+  private val obj2pb = new collection.mutable.HashMap[AnyRef, Int] // Live instance to encoded HeapId mapping
 
-  private var tempEncodingHeap = Seq[AnyRef]()
-  private var tempDecodingHeap = Seq[AnyRef]()
+  private var tempHeap = Seq[AnyRef]()
 
-  private def registerEncodedData(pbAddress: Int, instance: AnyRef) = {
-    obj2pb += instance -> pbAddress
+  private def registerEncodedData(pbHeapId: Int, instance: AnyRef) = {
+    obj2pb += instance -> pbHeapId
   }
 
-  private def registerDecodedData(pbAddress: Int, instance: AnyRef) = {
-    pb2obj += pbAddress -> instance
+  private def registerDecodedData(pbHeapId: Int, instance: AnyRef) = {
+    pb2obj += pbHeapId -> instance
   }
 
-  private def getEncodedId(instance: AnyRef): Int = {
+  private def getHeapIpForEncodedData(instance: AnyRef): Int = {
 
-    // Compare by memory address
+    // Compare by memory HeapId
     obj2pb.find(instance eq _._1).get._2
   }
 
-  private def getDecodedData[T](address: Int): T = {
+  private def getEntityFromDecodedData[T](HeapId: Int): T = {
 
-    checkAddress(address)
+    checkHeapId(HeapId)
 
-    pb2obj(address).asInstanceOf[T]
+    pb2obj(HeapId).asInstanceOf[T]
   }
 
-  private def checkAddress(address: Int) {
-    if (address == 0)
-      throw new IndexOutOfBoundsException("Invalid address, it's unassigned")
+  private def checkHeapId(HeapId: Int) {
+    if (HeapId == 0)
+      throw new IndexOutOfBoundsException("Invalid HeapId, it's unassigned")
   }
 
   private def buildMryData(mryData: AnyRef): PMryData.Builder = {
@@ -115,26 +113,26 @@ private class InternalProtobufTranslator {
 
   private def addToHeap(mryData: AnyRef): Int = {
 
-    val instanceAddress = currentAddress
+    val instanceHeapId = currentHeapId
 
-    tempEncodingHeap = tempEncodingHeap :+ mryData
+    tempHeap = tempHeap :+ mryData
 
-    currentAddress += 1
-    instanceAddress
+    currentHeapId += 1
+    instanceHeapId
   }
 
   private def encodeHeap(): PHeap.Builder = {
 
     val pEncodingHeap = PHeap.newBuilder()
-    tempEncodingHeap.foreach((v) => pEncodingHeap.addValues(buildMryData(v)))
+    tempHeap.foreach((v) => pEncodingHeap.addValues(buildMryData(v)))
     pEncodingHeap
   }
 
-  private def getFromHeap[T](address: Int): T = {
+  private def getFromHeap[T](HeapId: Int): T = {
 
-    checkAddress(address)
+    checkHeapId(HeapId)
 
-    tempDecodingHeap(address - 1).asInstanceOf[T]
+    tempHeap(HeapId - 1).asInstanceOf[T]
   }
 
   private def loadHeap(pDecodingHeap: PHeap) = {
@@ -151,16 +149,16 @@ private class InternalProtobufTranslator {
           case pMryData if pMryData.hasValue => pMryData.getValue
         }
 
-        tempDecodingHeap = tempDecodingHeap :+ value
+        tempHeap = tempHeap :+ value
         addr += 1
     }
   }
 
   private def decodeBlockFromHeapToPool(block: Block) = {
 
-    // Yield map with address
+    // Yield map with HeapId
 
-    val mappedData = Range(1, tempDecodingHeap.size + 1).zip(tempDecodingHeap)
+    val mappedData = Range(1, tempHeap.size + 1).zip(tempHeap)
 
     // Decode values and register them to pool
     val values = mappedData
@@ -191,12 +189,12 @@ private class InternalProtobufTranslator {
 
     for (r <- request) {
       val pTrans = encodePTransaction(r)
-      pTransport.setRequestAddress(pTrans)
+      pTransport.setRequestHeapId(pTrans)
     }
 
     for (r <- response) {
       val value = encodePValue(r)
-      pTransport.addResponseAddresses(addToHeap(value))
+      pTransport.addResponseHeapIds(addToHeap(value))
     }
 
     pTransport.setHeap(encodeHeap())
@@ -209,7 +207,7 @@ private class InternalProtobufTranslator {
     loadHeap(transport.getHeap)
 
     val request: Option[Transaction] =
-      if (transport.hasRequestAddress)
+      if (transport.hasRequestHeapId)
       {
         Some(decodePTransaction(transport))
       }
@@ -217,7 +215,7 @@ private class InternalProtobufTranslator {
         None
 
     val response: Seq[Value] =
-      transport.getResponseAddressesList
+      transport.getResponseHeapIdsList
         .map(getFromHeap[PTransactionValue](_))
         .map(decodePValue(_)).toSeq
 
@@ -230,7 +228,7 @@ private class InternalProtobufTranslator {
       case variable: Variable => {
 
         // Variable are already listed in the parent block, so don't duplicate
-        getEncodedId(variable)
+        getHeapIpForEncodedData(variable)
       }
       case value: Value => {
         addToHeap(encodePValue(value))
@@ -238,41 +236,32 @@ private class InternalProtobufTranslator {
     }
   }
 
-  private def decodePObject(block: Block, objAddress: Int): Object = {
-    val pObj = getFromHeap[AnyRef](objAddress)
-
-    pObj match {
-      case pVar: PVariable => getDecodedData[Variable](objAddress)
-      case pValue: PTransactionValue => getDecodedData[Value](objAddress)
-    }
-  }
-
   private def encodePTransaction(transaction: Transaction): Int =  {
 
     val pTransaction = PTransaction.newBuilder()
-    val address = addToHeap(pTransaction)
-    registerEncodedData(address, transaction)
+    val HeapId = addToHeap(pTransaction)
+    registerEncodedData(HeapId, transaction)
 
     pTransaction.setId(transaction.id)
 
     val pBlock = addToHeap(encodePBlock(transaction))
 
-    pTransaction.setBlockAddress(pBlock)
+    pTransaction.setBlockHeapId(pBlock)
 
-    address
+    HeapId
   }
 
   private def decodePTransaction(transport: PTransport): Transaction =  {
 
     // Create an transaction instance, and register it in the pool
     val trx = new Transaction()
-    registerDecodedData(transport.getRequestAddress, trx)
+    registerDecodedData(transport.getRequestHeapId, trx)
 
     // Decode and create object into pool (to get them by reference later)
     decodeBlockFromHeapToPool(trx)
 
     // Finish decoding the transaction since now, all dependant objects are live in memory
-    val pTransaction = getFromHeap[PTransaction](transport.getRequestAddress)
+    val pTransaction = getFromHeap[PTransaction](transport.getRequestHeapId)
     fillPTransaction(trx, pTransaction)
     trx
   }
@@ -281,7 +270,7 @@ private class InternalProtobufTranslator {
 
     transaction.id = pTransaction.getId
 
-    val pBlock = getFromHeap[PBlock](pTransaction.getBlockAddress)
+    val pBlock = getFromHeap[PBlock](pTransaction.getBlockHeapId)
 
     decodePBlock(transaction, pBlock)
   }
@@ -292,9 +281,9 @@ private class InternalProtobufTranslator {
     val varId = block.variables.map(encodePVariable(_))
 
     varId.zipWithIndex.foreach((v) => registerEncodedData(v._1, block.variables(v._2)))
-    pBlock.addAllVariableAddresses(varId.map(_.asInstanceOf[java.lang.Integer]))
+    pBlock.addAllVariableHeapIds(varId.map(_.asInstanceOf[java.lang.Integer]))
 
-    pBlock.addAllOperationAddresses(block.operations.map(encodePOperation(_)).map(addToHeap(_)).map(_.asInstanceOf[java.lang.Integer]))
+    pBlock.addAllOperationHeapIds(block.operations.map(encodePOperation(_)).map(addToHeap(_)).map(_.asInstanceOf[java.lang.Integer]))
     pBlock.setVarSeq(block.varSeq)
 
     pBlock
@@ -304,8 +293,8 @@ private class InternalProtobufTranslator {
 
     block.varSeq = pBlock.getVarSeq
 
-    block.operations ++= pBlock.getOperationAddressesList().map(getDecodedData[Operation](_))
-    block.variables ++= pBlock.getVariableAddressesList().map(getDecodedData[Variable](_))
+    block.operations ++= pBlock.getOperationHeapIdsList().map(getEntityFromDecodedData[Operation](_))
+    block.variables ++= pBlock.getVariableHeapIdsList().map(getEntityFromDecodedData[Variable](_))
   }
 
   private def encodePVariable(variable: Variable): Int =  {
@@ -315,7 +304,7 @@ private class InternalProtobufTranslator {
     // has parent of this variable
 
     pVariable.setId(variable.id)
-    pVariable.setValueAddress(addToHeap(encodePValue(variable.value)))
+    pVariable.setValueHeapId(addToHeap(encodePValue(variable.value)))
 
     val addr = addToHeap(pVariable)
     registerEncodedData(addr, variable)
@@ -323,7 +312,7 @@ private class InternalProtobufTranslator {
   }
 
   private def decodePVariable(parentBlock: Block, pVariable: PVariable): Variable =  {
-    new Variable(parentBlock, pVariable.getId, getDecodedData[Value](pVariable.getValueAddress))
+    new Variable(parentBlock, pVariable.getId, getEntityFromDecodedData[Value](pVariable.getValueHeapId))
 
   }
 
@@ -335,16 +324,16 @@ private class InternalProtobufTranslator {
 
     val pOperation = POperation.newBuilder()
 
-    pOperation.setSourceAddress(getEncodedId(operation.source))
+    pOperation.setSourceHeapId(getHeapIpForEncodedData(operation.source))
 
     val withFrom = (op: WithFrom) =>
       // Variable are already listed in the parent block, so don't duplicate
-      pOperation.addAllVariableAddresses(op.from.map(getEncodedId(_)).map(_.asInstanceOf[java.lang.Integer]))
+      pOperation.addAllVariableHeapIds(op.from.map(getHeapIpForEncodedData(_)).map(_.asInstanceOf[java.lang.Integer]))
 
     val WithIntoAndSeqObject = (into: Variable, objects: Seq[Object]) =>
       pOperation
-        .addVariableAddresses(getEncodedId(into)) // Variable are already listed in the parent block, so don't duplicate
-        .addAllObjectAddresses(objects.map(encodePObject(_)).map(_.asInstanceOf[java.lang.Integer]))
+        .addVariableHeapIds(getHeapIpForEncodedData(into)) // Variable are already listed in the parent block, so don't duplicate
+        .addAllObjectHeapIds(objects.map(encodePObject(_)).map(_.asInstanceOf[java.lang.Integer]))
 
     val WithIntoAndKeys = (op: WithIntoAndKeys) =>
         WithIntoAndSeqObject(op.into, op.keys)
@@ -369,10 +358,10 @@ private class InternalProtobufTranslator {
 
     import POperation.Type
 
-    val os: OperationSource = getDecodedData[OperationSource](pOperation.getSourceAddress)
+    val os: OperationSource = getEntityFromDecodedData[OperationSource](pOperation.getSourceHeapId)
 
-    val variables = pOperation.getVariableAddressesList.map(getDecodedData[Variable](_))
-    val objects = pOperation.getObjectAddressesList.map(getDecodedData[Object](_)).toSeq
+    val variables = pOperation.getVariableHeapIdsList.map(getEntityFromDecodedData[Variable](_))
+    val objects = pOperation.getObjectHeapIdsList.map(getEntityFromDecodedData[Object](_)).toSeq
 
     pOperation.getType match {
       case Type.Return => new Operation.Return(os, variables)

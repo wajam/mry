@@ -2,17 +2,17 @@ package com.wajam.mry.api.protobuf;
 option optimize_for = LITE_RUNTIME;
 
 // This schema use a generic container that will truly contains all the data
-// No object contains another one, but instead reference to it, using a uint32 address,
-// 0 is unassigned. In fact, this schema can be compared to an heap based memory model (Think C++), where all object are
-// stored in heap and object are referenced by pointers.
+// No object contains another one, but instead reference to it, using a uint32 address (the heap id),
+// 0 is unassigned. In fact, this schema can be compared to an heap based memory model (Think C++), where all objects are
+// stored in heap and objects are referenced by pointers.
 
-// This schema while wasting space on ids, is very flexible, allow reference (which Protobuf doesn't support
-// out of the box) and allows proper and simple inherintence by linking a "parent" class with an id
-// (the opposive of my parent contains it's child model popular as a suggestion
-// Protobuf on the internet, @see http://www.indelible.org/ink/protobuf-polymorphism/, and which doesn't make fit OO
+// This schema while wasting space on ids, is very flexible, it allows references (which Protobuf doesn't support
+// out of the box) and allows proper and simple inheritance by linking a "parent" class with an id
+// (the opposive of "my parent contains it's every childs model", popular as a suggestion for
+// Protobuf on the internet, @see http://www.indelible.org/ink/protobuf-polymorphism/, and which doesn't fit OO
 // mindset)
 
-// NOTE: the space used for ids is assumed to be small since Protobuf use a very compact way of storing int
+// NOTE: the space used for heap ids is assumed to be small since Protobuf use a very compact way of storing integers
 
 /* Generic */
 
@@ -34,8 +34,8 @@ message PTransport {
 
 	optional PHeap heap = 3;
 
-	optional uint32 /* <PTransaction> */ requestAddress = 1;
-	repeated uint32 /* <PValue> */ responseAddresses = 2;
+	optional uint32 /* <PTransaction> */ requestHeapId = 1;
+	repeated uint32 /* <PValue> */ responseHeapIds = 2;
 }
 
 /* Transaction */
@@ -43,19 +43,19 @@ message PTransport {
 message PTransaction {
 	optional uint32 id = 1;
 
-	optional uint32 /* Block */ blockAddress = 2;
+	optional uint32 /* Block */ blockHeapId = 2;
 }
 
 message PBlock {
 	required uint32 varSeq = 1;
 
-	repeated uint32 /* <POperation> */ operationAddresses = 2;
-	repeated uint32 /* <PVariable> */ variableAddresses = 3;
+	repeated uint32 /* <POperation> */ operationHeapIds = 2;
+	repeated uint32 /* <PVariable> */ variableHeapIds = 3;
 }
 
 message PVariable {
 	required uint32 id = 1;
-	optional uint32 /* <PTransactionValue> */ valueAddress = 2;
+	optional uint32 /* <PTransactionValue> */ valueHeapId = 2;
 }
 
 message POperation {
@@ -72,9 +72,9 @@ message POperation {
 
     optional Type type = 1;
 
-    repeated uint32 /* <PVariable> */ variableAddresses = 2;
-    repeated uint32 /* <PObject> */ objectAddresses = 3;
-    optional uint32 /* <Link To OperationSource> */ sourceAddress = 4;
+    repeated uint32 /* <PVariable> */ variableHeapIds = 2;
+    repeated uint32 /* <PObject> */ objectHeapIds = 3;
+    optional uint32 /* <Link To OperationSource> */ sourceHeapId = 4;
 }
 
 /* Values */
