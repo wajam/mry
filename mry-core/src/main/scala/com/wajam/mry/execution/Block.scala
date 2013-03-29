@@ -61,26 +61,3 @@ trait Block extends ContentEquals  {
     }
   }
 }
-
-object Block {
-
-  /**
-   * Check that all operation.source match
-   */
-  protected[mry] def validateOperationsSources(t1: Transaction, t2: Transaction) {
-
-    val operations = t1.operations.zip(t2.operations)
-    val variables = t1.variables.zip(t2.variables)
-
-    for (op <- operations)
-      if (op._1.source eq t1)
-      {
-        assert(op._2.source eq t2)
-      }
-      else
-      {
-        val vs = variables.find((v) => op._1.source eq v._1).get
-        assert(op._2.source eq vs._2)
-      }
-  }
-}
