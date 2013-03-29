@@ -22,11 +22,13 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   extends Storage with ConsistentStorage with Logging with Value with Instrumented {
   val name = config.name
   private[mysql] var model: Model = _
-  private[mysql] var transactionMetrics: MysqlTransaction.Metrics = _
+  private[mysql] var transactionMetrics: MysqlTransaction.Metrics = null
   private var tablesMutationsCount = Map[Table, AtomicInteger]()
   val valueSerializer = new ProtobufTranslator
   private var currentConsistentTimestamps: (TokenRange) => Timestamp = (_) => Long.MinValue
   private var openReadIterators: List[MutationGroupIterator] = List()
+
+  lazy private val lastTimestampTimer = metrics.timer("get-last-timestamp-time")
 
   val datasource = new ComboPooledDataSource()
   datasource.setDriverClass("com.mysql.jdbc.Driver")
@@ -255,8 +257,10 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   def getLastTimestamp(ranges: Seq[TokenRange]): Option[Timestamp] = {
     var trx: MysqlTransaction = null
     try {
-      trx = createStorageTransaction
-      model.allHierarchyTables.map(table => trx.getLastTimestamp(table, ranges)).max
+      lastTimestampTimer.time {
+        trx = createStorageTransaction
+        model.allHierarchyTables.map(table => trx.getLastTimestamp(table, ranges)).max
+      }
     } finally {
       if (trx != null) {
         trx.rollback()
