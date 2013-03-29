@@ -579,14 +579,18 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     /* Generated SQL looks like:
      *
-     *   SELECT MAX(i.ts) AS max_ts
+     *   SELECT i.ts AS max_ts
      *   FROM `table1_index` AS i
      *   WHERE ((i.tk >= 0 AND i.tk <= 89478485) OR (i.tk >= 536870910 AND i.tk <= 626349395));
+     *   ORDER BY i.ts DESC
+     *   LIMIT 0,1;
      */
     val sql = """
-        SELECT MAX(i.ts) AS max_ts
+        SELECT i.ts AS max_ts
         FROM `%1$s_index` AS i
-        WHERE %2$s;
+        WHERE %2$s
+        ORDER BY i.ts DESC
+        LIMIT 0,1;
               """.format(fullTableName, whereRanges)
 
     metrics.tableMetricGetLastTimestamp(table).time {
