@@ -157,29 +157,24 @@ private class InternalProtobufTranslator {
   private def decodeBlockFromHeapToPool(block: Block) = {
 
     // Yield map with HeapId
-
     val mappedData = Range(1, tempHeap.size + 1).zip(tempHeap)
 
-    // Decode values and register them to pool
-    val values = mappedData
-      .filter(_._2.isInstanceOf[PTransactionValue])
-      .map((v) => v._1 -> decodePValue(v._2.asInstanceOf[PTransactionValue]))
+    /* Order here is import. DO ALL values, then ALL variable, then ALL operation */
 
-    values.foreach((v) => registerDecodedData(v._1 , v._2))
+    // Decode values and register them to pool
+    mappedData.collect {
+      case (key, value: PTransactionValue) => registerDecodedData(key, decodePValue(value))
+    }
 
     // Decode variables and register them to pool
-    val variables = mappedData
-      .filter(_._2.isInstanceOf[PVariable])
-      .map((v) => v._1 -> decodePVariable(block, v._2.asInstanceOf[PVariable]))
+    mappedData.collect {
+      case (key, value: PVariable) => registerDecodedData(key, decodePVariable(block, value))
+    }
 
-    variables.foreach((v) => registerDecodedData(v._1, v._2))
-
-    // Decode operations and register them to pool
-    val operations = mappedData
-      .filter(_._2.isInstanceOf[POperation])
-      .map((v) => v._1 -> decodePOperation(block, v._2.asInstanceOf[POperation]))
-
-    operations.foreach((v) => registerDecodedData(v._1, v._2))
+    // Decode variables and register them to pool
+    mappedData.collect {
+      case (key, value: POperation) => registerDecodedData(key, decodePOperation(block, value))
+    }
   }
 
   def encodePTransport(transport: Transport): PTransport.Builder =  {
@@ -214,8 +209,7 @@ private class InternalProtobufTranslator {
 
     val response: Seq[Value] =
       transport.getResponseHeapIdsList
-        .map(getFromHeap[PTransactionValue](_))
-        .map(decodePValue(_)).toSeq
+        .map(value => (getFromHeap[PTransactionValue] _ andThen decodePValue _)(value)).toSeq
 
     Transport(request, Some(response))
   }

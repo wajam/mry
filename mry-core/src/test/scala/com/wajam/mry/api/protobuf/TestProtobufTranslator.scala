@@ -5,10 +5,8 @@ import com.wajam.mry.execution.Implicits._
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import com.wajam.mry.execution._
-import com.wajam.mry.execution.MapValue
-import com.wajam.mry.execution.ListValue
 import org.scalatest.matchers.ShouldMatchers
-import com.wajam.mry.api.{TransactionPrinter, Transport}
+import com.wajam.mry.api.Transport
 import com.wajam.mry.execution.Operation._
 
 @RunWith(classOf[JUnitRunner])
@@ -72,8 +70,7 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
   }
 
   private def buildTransaction(): Transaction = {
-    val t = new Transaction((b) => b.returns(b.from("B").get(1000).set("C").limit(100).projection("D").delete("E")))
-    t
+    new Transaction((b) => b.returns(b.from("B").get(1000).set("C").limit(100).projection("D").delete("E")))
   }
 
   test("test validation function") {
@@ -172,8 +169,8 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
 
     val merged = results.zip(results2)
 
-    merged.map { (zip) =>
-      zip._1 equalsValue zip._2 should be(true)
+    merged.map { case (z1, z2) =>
+      z1 equalsValue z2 should equal (true)
     }
 
   }
@@ -187,16 +184,17 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     val operations = t1.operations.zip(t2.operations)
     val variables = t1.variables.zip(t2.variables)
 
-    for (op <- operations)
-      if (op._1.source eq t1)
+    for ((op1, op2) <- operations) {
+      if (op1.source eq t1)
       {
-        assert(op._2.source eq t2)
+        assert(op2.source eq t2)
       }
       else
       {
-        val vs = variables.find((v) => op._1.source eq v._1).get
-        assert(op._2.source eq vs._2)
+        val (_, vs) = variables.find((v) => op1.source eq v._1).get
+        assert(op2.source eq vs)
       }
+    }
   }
 
   /**
@@ -213,7 +211,7 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
 
       val validateWithIntoAndSeqObject = (into: Variable, objects: Seq[Object]) => {
 
-        assert(Some(into).forall((v) => t.variables.exists(v eq _)))
+        assert(t.variables.exists(_ eq into))
         assert(objects.filter(_.isInstanceOf[Variable]).forall((v) => t.variables.exists(v eq _)))
       }
 
