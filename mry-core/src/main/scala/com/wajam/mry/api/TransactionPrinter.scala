@@ -1,7 +1,7 @@
 package com.wajam.mry.api
 
 import com.wajam.mry.execution.Operation._
-import com.wajam.mry.execution.Transaction
+import com.wajam.mry.execution.{Variable, Transaction}
 
 /**
   * Generate a very detailed pretty print of a Transaction tree.
@@ -29,44 +29,33 @@ object TransactionPrinter {
     for (o <- transaction.operations)  {
       builder append "\tSource: %s, Type: %s, Addr: %s\n".format(System.identityHashCode(o.source), o.getClass, System.identityHashCode(o))
 
+      val printWithFrom = (from: Seq[Variable]) => {
+        builder append "\tFrom: \n"
+
+        from.foreach { (v) =>
+          builder append "\t\tId: %s, Block: %s, Value: %s, Addr: %s\n".format(v.id, System.identityHashCode(v.block), v.value, System.identityHashCode(v))
+        }
+      }
+
+      val printWithIntoAndSeqObject = (into: Variable, objects: Seq[Object]) => {
+        val v = into
+
+        builder append "\tInto: "
+        builder append "Id: %s, Block: %s, Value: %s, Addr: %s\n".format(v.id, System.identityHashCode(v.block), v.value, System.identityHashCode(v))
+
+        builder append "\tKeys\\Data: \n"
+
+        objects.foreach { (v) => builder append "\t\t%s, Addr: %s\n".format(v, System.identityHashCode(v)) }
+      }
+
       o match {
-        case _: Return =>
-
-          val op = o.asInstanceOf[WithFrom]
-
-          builder append "\tFrom: \n"
-
-          op.from.foreach { (v) =>
-            builder append "\t\tId: %s, Block: %s, Value: %s, Addr: %s\n".format(v.id, System.identityHashCode(v.block), v.value, System.identityHashCode(v))
-          }
-
-        case _: From  |
-             _: Get |
-             _: Projection |
-             _: Limit =>
-
-          val op = o.asInstanceOf[WithIntoAndKeys]
-          val v = op.into
-
-          builder append "\tInto: "
-          builder append "Id: %s, Block: %s, Value: %s, Addr: %s\n".format(v.id, System.identityHashCode(v.block), v.value, System.identityHashCode(v))
-
-          builder append "\tKeys: \n"
-
-          op.keys.foreach { (v) => builder append "\t\t%s, Addr: %s\n".format(v, System.identityHashCode(v)) }
-
-        case _: Set |
-             _: Delete =>
-
-          val op = o.asInstanceOf[WithIntoAndData]
-          val v = op.into
-
-          builder append "\tInto: "
-          builder append "Id: %s, Block: %s, Value: %s, Addr: %s\n".format(v.id, System.identityHashCode(v.block), v.value, System.identityHashCode(v))
-
-          builder append "\tData: \n"
-
-          op.data.foreach { (v) => builder append "\t\t%s, Addr: %s\n".format(v, System.identityHashCode(v)) }
+        case op: Return => printWithFrom(op.from)
+        case op: From => printWithIntoAndSeqObject(op.into, op.keys)
+        case op: Get => printWithIntoAndSeqObject(op.into, op.keys)
+        case op: Set => printWithIntoAndSeqObject(op.into, op.data)
+        case op: Delete => printWithIntoAndSeqObject(op.into, op.data)
+        case op: Limit => printWithIntoAndSeqObject(op.into, op.keys)
+        case op: Projection => printWithIntoAndSeqObject(op.into, op.keys)
       }
     }
 

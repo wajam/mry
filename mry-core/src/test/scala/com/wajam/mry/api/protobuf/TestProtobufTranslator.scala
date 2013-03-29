@@ -206,27 +206,25 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
   def validateOperationVariablesAreBoundsToBlock(t: Transaction) {
 
     for (o <- t.operations) {
+
+      val validateWithFrom = (from: Seq[Variable]) => {
+        assert(from.forall((v) => t.variables.exists(v eq _)))
+      }
+
+      val validateWithIntoAndSeqObject = (into: Variable, objects: Seq[Object]) => {
+
+        assert(Some(into).forall((v) => t.variables.exists(v eq _)))
+        assert(objects.filter(_.isInstanceOf[Variable]).forall((v) => t.variables.exists(v eq _)))
+      }
+
       o match {
-        case _: Return =>
-
-          val op = o.asInstanceOf[WithFrom]
-          assert(op.from.forall((v) => t.variables.exists(v eq _)))
-
-        case _: From  |
-             _: Get |
-             _: Projection |
-             _: Limit =>
-
-          val op = o.asInstanceOf[WithIntoAndKeys]
-          assert(Some(op.into).forall((v) => t.variables.exists(v eq _)))
-          assert(op.keys.filter(_.isInstanceOf[Variable]).forall((v) => t.variables.exists(v eq _)))
-
-        case _: Set |
-             _: Delete =>
-
-          val op = o.asInstanceOf[WithIntoAndData]
-          assert(Some(op.into).forall((v) => t.variables.exists(v eq _)))
-          assert(op.data.filter(_.isInstanceOf[Variable]).forall((v) => t.variables.exists(v eq _)))
+        case op: Return => validateWithFrom(op.from)
+        case op: From => validateWithIntoAndSeqObject(op.into, op.keys)
+        case op: Get => validateWithIntoAndSeqObject(op.into, op.keys)
+        case op: Set => validateWithIntoAndSeqObject(op.into, op.data)
+        case op: Delete => validateWithIntoAndSeqObject(op.into, op.data)
+        case op: Limit => validateWithIntoAndSeqObject(op.into, op.keys)
+        case op: Projection => validateWithIntoAndSeqObject(op.into, op.keys)
       }
     }
   }

@@ -326,29 +326,23 @@ private class InternalProtobufTranslator {
 
     pOperation.setSourceHeapId(getHeapIpForEncodedData(operation.source))
 
-    val withFrom = (op: WithFrom) =>
+    val withFrom = (from: Seq[Variable]) =>
       // Variable are already listed in the parent block, so don't duplicate
-      pOperation.addAllVariableHeapIds(op.from.map(getHeapIpForEncodedData(_)).map(_.asInstanceOf[java.lang.Integer]))
+      pOperation.addAllVariableHeapIds(from.map(getHeapIpForEncodedData(_).asInstanceOf[java.lang.Integer]))
 
-    val WithIntoAndSeqObject = (into: Variable, objects: Seq[Object]) =>
+    val withIntoAndSeqObject = (into: Variable, objects: Seq[Object]) =>
       pOperation
         .addVariableHeapIds(getHeapIpForEncodedData(into)) // Variable are already listed in the parent block, so don't duplicate
-        .addAllObjectHeapIds(objects.map(encodePObject(_)).map(_.asInstanceOf[java.lang.Integer]))
-
-    val WithIntoAndKeys = (op: WithIntoAndKeys) =>
-        WithIntoAndSeqObject(op.into, op.keys)
-
-    val WithIntoAndData = (op: WithIntoAndData) =>
-        WithIntoAndSeqObject(op.into, op.data)
+        .addAllObjectHeapIds(objects.map(encodePObject(_).asInstanceOf[java.lang.Integer]))
 
     operation match {
-      case op: Return with WithFrom => withFrom(op); pOperation.setType(Type.Return)
-      case op: From with WithIntoAndKeys => WithIntoAndKeys(op); pOperation.setType(Type.From)
-      case op: Get with WithIntoAndKeys => WithIntoAndKeys(op); pOperation.setType(Type.Get)
-      case op: Set with WithIntoAndData => WithIntoAndData(op); pOperation.setType(Type.Set)
-      case op: Delete with WithIntoAndData => WithIntoAndData(op); pOperation.setType(Type.Delete)
-      case op: Limit with WithIntoAndKeys => WithIntoAndKeys(op); pOperation.setType(Type.Limit)
-      case op: Projection with WithIntoAndKeys => WithIntoAndKeys(op); pOperation.setType(Type.Projection)
+      case op: Return => withFrom(op.from); pOperation.setType(Type.Return)
+      case op: From => withIntoAndSeqObject(op.into, op.keys); pOperation.setType(Type.From)
+      case op: Get => withIntoAndSeqObject(op.into, op.keys); pOperation.setType(Type.Get)
+      case op: Set => withIntoAndSeqObject(op.into, op.data); pOperation.setType(Type.Set)
+      case op: Delete => withIntoAndSeqObject(op.into, op.data);; pOperation.setType(Type.Delete)
+      case op: Limit => withIntoAndSeqObject(op.into, op.keys); pOperation.setType(Type.Limit)
+      case op: Projection => withIntoAndSeqObject(op.into, op.keys); pOperation.setType(Type.Projection)
     }
 
     pOperation

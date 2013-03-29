@@ -10,11 +10,6 @@ abstract class Operation(var source: OperationSource) extends Executable with Co
 
 object Operation {
 
-  // TODO: To be replaced by proper hierachy when Java serialization in no longer used.
-  type WithIntoAndData = {def into: Variable; def data: Seq[Object]}
-  type WithIntoAndKeys = {def into: Variable; def keys: Seq[Object]}
-  type WithFrom = {def from: Seq[Variable]}
-
   class Return(source: OperationSource, val from: Seq[Variable]) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execReturn(context, from)
