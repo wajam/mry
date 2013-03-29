@@ -12,7 +12,7 @@ import com.wajam.mry.execution.Implicits._
 @RunWith(classOf[JUnitRunner])
 class TestHybridCodec extends FunSuite with BeforeAndAfter with ShouldMatchers {
 
-  private def compareTwoProtocols(mA: HybridCodec.TranslationMode.Value, mB: HybridCodec.TranslationMode.Value) = {
+  private def compareTwoProtocols(mA: HybridCodec.TransitionMode.Value, mB: HybridCodec.TransitionMode.Value) = {
 
     val t = new Transaction((b) => b.returns(b.from("B").get(1000)))
 
@@ -27,33 +27,33 @@ class TestHybridCodec extends FunSuite with BeforeAndAfter with ShouldMatchers {
   }
 
   test("can encode using mry and can decode using both") {
-    compareTwoProtocols(HybridCodec.TranslationMode.BothThenMry, HybridCodec.TranslationMode.BothThenMry)
-    compareTwoProtocols(HybridCodec.TranslationMode.BothThenMry, HybridCodec.TranslationMode.BothThenJava)
+    compareTwoProtocols(HybridCodec.TransitionMode.DecBothEncMry, HybridCodec.TransitionMode.DecBothEncMry)
+    compareTwoProtocols(HybridCodec.TransitionMode.DecBothEncMry, HybridCodec.TransitionMode.DecBothEncJava)
   }
 
   test("can encode using java and can decode using both") {
-    compareTwoProtocols(HybridCodec.TranslationMode.BothThenJava, HybridCodec.TranslationMode.BothThenMry)
-    compareTwoProtocols(HybridCodec.TranslationMode.BothThenJava, HybridCodec.TranslationMode.BothThenJava)
+    compareTwoProtocols(HybridCodec.TransitionMode.DecBothEncJava, HybridCodec.TransitionMode.DecBothEncMry)
+    compareTwoProtocols(HybridCodec.TransitionMode.DecBothEncJava, HybridCodec.TransitionMode.DecBothEncJava)
   }
 
   test("can't encode using mry and can decode using java") {
 
     intercept[java.io.StreamCorruptedException] {
-     compareTwoProtocols(HybridCodec.TranslationMode.MryThenMry, HybridCodec.TranslationMode.JavaThenJava)
+     compareTwoProtocols(HybridCodec.TransitionMode.DecMryEncMry, HybridCodec.TransitionMode.DecJavaEncJava)
     }
 
     intercept[java.io.StreamCorruptedException] {
-      compareTwoProtocols(HybridCodec.TranslationMode.BothThenMry, HybridCodec.TranslationMode.JavaThenJava)
+      compareTwoProtocols(HybridCodec.TransitionMode.DecBothEncMry, HybridCodec.TransitionMode.DecJavaEncJava)
     }
   }
 
   test("can't encode using java and can decode using mry") {
     intercept[com.google.protobuf.InvalidProtocolBufferException ] {
-      compareTwoProtocols(HybridCodec.TranslationMode.JavaThenJava, HybridCodec.TranslationMode.MryThenMry)
+      compareTwoProtocols(HybridCodec.TransitionMode.DecJavaEncJava, HybridCodec.TransitionMode.DecMryEncMry)
     }
 
     intercept[com.google.protobuf.InvalidProtocolBufferException ] {
-      compareTwoProtocols(HybridCodec.TranslationMode.BothThenJava, HybridCodec.TranslationMode.MryThenMry)
+      compareTwoProtocols(HybridCodec.TransitionMode.DecBothEncJava, HybridCodec.TransitionMode.DecMryEncMry)
     }
   }
 }

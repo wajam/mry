@@ -1,6 +1,6 @@
 package com.wajam.mry
 
-import api.HybridCodec.TranslationMode
+import api.HybridCodec.TransitionMode
 import api.{HybridCodec}
 import execution._
 import storage.Storage
@@ -21,7 +21,7 @@ class Database[T <: Storage](serviceName: String = "database")
   var storages = Map[String, T]()
 
   // Set specific messageData codec for nrv
-  applySupport(nrvCodec = Some(new HybridCodec(TranslationMode.BothThenMry)))
+  applySupport(nrvCodec = Some(new HybridCodec(TransitionMode.DecBothEncMry)))
 
   def analyseTransaction(transaction: Transaction): ExecutionContext = {
     val context = new ExecutionContext(storages)

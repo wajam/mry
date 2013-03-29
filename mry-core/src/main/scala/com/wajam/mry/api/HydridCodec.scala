@@ -5,7 +5,11 @@ import com.wajam.nrv.protocol.codec.Codec
 import com.wajam.nrv.Logging
 import java.nio.ByteBuffer
 
-class HybridCodec(mode: HybridCodec.TranslationMode.Value) extends Codec with Logging {
+/**
+ * Used for migration to MryCodec // TODO: Remove
+ */
+@Deprecated
+class HybridCodec(mode: HybridCodec.TransitionMode.Value) extends Codec with Logging {
 
   import HybridCodec._
 
@@ -15,11 +19,11 @@ class HybridCodec(mode: HybridCodec.TranslationMode.Value) extends Codec with Lo
 
     val codec =
       mode match {
-        case TranslationMode.BothThenJava |
-             TranslationMode.JavaThenJava => genericCodec
+        case TransitionMode.DecBothEncJava |
+             TransitionMode.DecJavaEncJava => genericCodec
 
-        case TranslationMode.MryThenMry |
-             TranslationMode.BothThenMry => mryCodec
+        case TransitionMode.DecMryEncMry |
+             TransitionMode.DecBothEncMry => mryCodec
       }
 
     codec.encode(entity, context)
@@ -41,12 +45,12 @@ class HybridCodec(mode: HybridCodec.TranslationMode.Value) extends Codec with Lo
 
     val codec =
       mode match {
-        case TranslationMode.BothThenJava |
-             TranslationMode.BothThenMry => handleBoth()
+        case TransitionMode.DecBothEncJava |
+             TransitionMode.DecBothEncMry => handleBoth()
 
-        case TranslationMode.JavaThenJava => genericCodec
+        case TransitionMode.DecJavaEncJava => genericCodec
 
-        case TranslationMode.MryThenMry => mryCodec
+        case TransitionMode.DecMryEncMry => mryCodec
       }
 
     codec.decode(data, context)
@@ -61,18 +65,18 @@ object HybridCodec {
   // Source: http://docs.oracle.com/javase/6/docs/platform/serialization/spec/protocol.html
   private val JavaSerializeMagicShort : Short = (0xACED).toShort
 
-  object TranslationMode extends Enumeration {
+  object TransitionMode extends Enumeration {
 
     // Decode Both, Encode Java, used as a fallback, or a as migration first step
-    val BothThenJava = Value(1)
+    val DecBothEncJava = Value(1)
 
     // Decode Both, Encode Mry, use when all nodes are Mry aware, to switch to Mry
-    val BothThenMry = Value(2)
+    val DecBothEncMry = Value(2)
 
     // Decode Mry only, Encode Mry, force only Mry traffic on the cluster. Use it to detect un-updated nodes
-    val MryThenMry = Value(3)
+    val DecMryEncMry = Value(3)
 
     // Decode Java only, Encode Java, force only Java traffic on the cluster.
-    val JavaThenJava = Value(4)
+    val DecJavaEncJava = Value(4)
   }
 }
