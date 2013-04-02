@@ -5,11 +5,13 @@ import com.wajam.nrv.utils.ContentEquals
 /**
  * Represents an operation executed within a transaction
  */
+@SerialVersionUID(-6101323863732863722L)
 abstract class Operation(var source: OperationSource) extends Executable with ContentEquals with Serializable {
 }
 
 object Operation {
 
+  @SerialVersionUID(8422228565382223858L)
   class Return(source: OperationSource, val from: Seq[Variable]) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execReturn(context, from)
@@ -27,6 +29,7 @@ object Operation {
     }
   }
 
+  @SerialVersionUID(8632712547655708378L)
   class From(source: OperationSource, val into: Variable, val keys: Object*) extends Operation(source) with Serializable {
 
     def execute(context: ExecutionContext) {
@@ -46,6 +49,7 @@ object Operation {
     }
   }
 
+  @SerialVersionUID(705646469709308372L)
   class Get(source: OperationSource, val into: Variable, val keys: Object*) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execGet(context, into, keys: _*)
@@ -64,6 +68,7 @@ object Operation {
     def reset() {}
   }
 
+  @SerialVersionUID(3)
   class Set(source: OperationSource, val into: Variable, val data: Object*) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execSet(context, into, data: _*)
