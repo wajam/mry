@@ -1,8 +1,10 @@
 package com.wajam.mry.execution
 
+import com.wajam.nrv.utils.ContentEquals
+
 /**
  * Object of a transaction (variable or value)
  */
-trait Object {
-  def value:Value
+trait Object extends ContentEquals {
+  def value: Value
 }

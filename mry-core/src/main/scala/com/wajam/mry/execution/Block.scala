@@ -2,16 +2,17 @@ package com.wajam.mry.execution
 
 import com.wajam.mry.execution.Operation.Return
 import collection.mutable.ArrayBuffer
+import com.wajam.nrv.utils.ContentEquals
 
 /**
  * Programmatic block of operations and variables that is executed against storage
  */
-trait Block {
-  //TODO change to vals and do not expose these publicly, wait til Protobuf MRY codec is done
-  var variables = ArrayBuffer[Variable]()
-  var operations = ArrayBuffer[Operation]()
-  var varSeq = 0
-  var parent: Option[Block] = None
+trait Block extends ContentEquals  {
+
+  private[mry] val variables = ArrayBuffer[Variable]()
+  private[mry] val operations = ArrayBuffer[Operation]()
+  private[mry] var varSeq = 0
+  private[mry] var parent: Option[Block] = None
 
   def defineVariable(count: Int): Seq[Variable] = {
     val newVars = for (i <- 0 until count) yield new Variable(this, this.varSeq + i)
@@ -48,5 +49,15 @@ trait Block {
     }
 
     if (commit) context.commit()
+  }
+
+  override def equalsContent(obj: Any): Boolean = {
+    obj match {
+      case b: Block =>
+        variables.zip(b.variables).forall((zip) => zip._1 equalsContent(zip._2)) &&
+        operations.zip(b.operations).forall((zip) => zip._1 equalsContent(zip._2)) &&
+        varSeq == b.varSeq
+      case None => false
+    }
   }
 }

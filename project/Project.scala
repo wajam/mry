@@ -61,6 +61,9 @@ object MryBuild extends Build {
 
   import sbtprotobuf.{ProtobufPlugin => PB}
 
+  // We keep it as a separate projet, to avoid a dependency on protoc
+  // The protobuf file are under version control, so no need to generate them everytime.
+  // To generate them run sbt shell them run ";project mry-proto ;protobuf:generate"
   lazy val proto = Project(
     id = "mry-proto",
     base = file("mry-core"),
