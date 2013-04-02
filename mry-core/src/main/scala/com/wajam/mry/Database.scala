@@ -1,7 +1,7 @@
 package com.wajam.mry
 
 import api.HybridCodec.TransitionMode
-import api.{HybridCodec}
+import api.HybridCodec
 import execution._
 import storage.Storage
 import com.wajam.nrv.{TimeoutException, Logging}

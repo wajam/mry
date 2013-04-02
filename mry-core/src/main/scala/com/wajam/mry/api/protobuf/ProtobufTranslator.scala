@@ -3,7 +3,6 @@ package com.wajam.mry.api.protobuf
 import com.wajam.mry.api.{TranslationException, ProtocolTranslator}
 import scala.collection.JavaConversions._
 import com.wajam.mry.execution._
-import com.wajam.mry.execution.Transaction
 import com.wajam.mry.api.protobuf.MryProtobuf._
 import com.wajam.mry.api.Transport
 
