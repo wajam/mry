@@ -68,7 +68,7 @@ object Operation {
     def reset() {}
   }
 
-  @SerialVersionUID(3)
+  @SerialVersionUID(8505688065416500637L)
   class Set(source: OperationSource, val into: Variable, val data: Object*) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execSet(context, into, data: _*)
@@ -87,6 +87,7 @@ object Operation {
     }
   }
 
+  @SerialVersionUID(5829527297848291007L)
   class Delete(source: OperationSource, val into: Variable, val data: Object*) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execDelete(context, into, data: _*)
@@ -105,6 +106,7 @@ object Operation {
     }
   }
 
+  @SerialVersionUID(-2116184285973412485L)
   class Limit(source: OperationSource, val into: Variable, val keys: Object*) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execLimit(context, into, keys: _*)
@@ -123,6 +125,7 @@ object Operation {
     }
   }
 
+  @SerialVersionUID(5345979382788068144L)
   class Projection(source: OperationSource, val into: Variable, val keys: Object*) extends Operation(source) with Serializable {
     def execute(context: ExecutionContext) {
       source.execProjection(context, into, keys: _*)
