@@ -1,6 +1,6 @@
 resolvers += "gseitz@github" at "http://gseitz.github.com/maven/"
 
-addSbtPlugin("com.typesafe.startscript" % "xsbt-start-script-plugin" % "0.5.1")
+addSbtPlugin("com.typesafe.sbt" % "sbt-start-script" % "0.7.0")
 
 addSbtPlugin("com.github.gseitz" % "sbt-protobuf" % "0.2.2")
 
