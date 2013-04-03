@@ -37,6 +37,7 @@ class MemoryStorage(val name: String) extends Storage {
 
   class StorageValue extends Value {
     override def execGet(context: ExecutionContext, into: Variable, keys: Object*) {
+
       val key = param[StringValue](keys, 0).strValue
       context.useToken(key)
 
@@ -51,6 +52,7 @@ class MemoryStorage(val name: String) extends Storage {
     }
 
     override def execSet(context: ExecutionContext, into: Variable, data: Object*) {
+
       val key = param[StringValue](data, 0).strValue
       val value = param[Value](data, 1)
 
@@ -64,6 +66,7 @@ class MemoryStorage(val name: String) extends Storage {
     }
 
     override def execDelete(context: ExecutionContext, into: Variable, data: Object*) {
+
       val key = param[StringValue](data, 0).strValue
 
       context.useToken(key)
@@ -75,5 +78,4 @@ class MemoryStorage(val name: String) extends Storage {
       }
     }
   }
-
 }

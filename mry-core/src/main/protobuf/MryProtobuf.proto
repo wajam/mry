@@ -1,0 +1,112 @@
+package com.wajam.mry.api.protobuf;
+option optimize_for = LITE_RUNTIME;
+
+// This schema use a generic container that will truly contains all the data
+// No object contains another one, but instead reference to it, using a uint32 address (the heap id),
+// 0 is unassigned. In fact, this schema can be compared to an heap based memory model (Think C++), where all objects are
+// stored in heap and objects are referenced by pointers.
+
+// This schema while wasting space on ids, is very flexible, it allows references (which Protobuf doesn't support
+// out of the box) and allows proper and simple inheritance by linking a "parent" class with an id
+// (the opposive of "my parent contains it's every childs model", popular as a suggestion for
+// Protobuf on the internet, @see http://www.indelible.org/ink/protobuf-polymorphism/, and which doesn't fit OO
+// mindset)
+
+// NOTE: the space used for heap ids is assumed to be small since Protobuf use a very compact way of storing integers
+
+/* Generic */
+
+message PHeap {
+	repeated PMryData values = 1;
+}
+
+message PMryData {
+	optional PTransaction transaction = 1;
+	optional PBlock block = 2;
+	optional PVariable variable = 3;
+	optional POperation operation = 4;
+	optional PTransactionValue value = 5;
+}
+
+/* Transport */
+
+message PTransport {
+
+	optional PHeap heap = 3;
+
+	optional uint32 /* <PTransaction> */ requestHeapId = 1;
+	repeated uint32 /* <PValue> */ responseHeapIds = 2;
+}
+
+/* Transaction */
+
+message PTransaction {
+	optional uint32 id = 1;
+
+	optional uint32 /* Block */ blockHeapId = 2;
+}
+
+message PBlock {
+	required uint32 varSeq = 1;
+
+	repeated uint32 /* <POperation> */ operationHeapIds = 2;
+	repeated uint32 /* <PVariable> */ variableHeapIds = 3;
+}
+
+message PVariable {
+	required uint32 id = 1;
+	optional uint32 /* <PTransactionValue> */ valueHeapId = 2;
+}
+
+message POperation {
+
+    enum Type {
+        Return= 1;
+        From = 2;
+        Get = 3;
+        Set = 4;
+        Delete = 5;
+        Limit = 6;
+        Projection = 7;
+    }
+
+    optional Type type = 1;
+
+    repeated uint32 /* <PVariable> */ variableHeapIds = 2;
+    repeated uint32 /* <PObject> */ objectHeapIds = 3;
+    optional uint32 /* <Link To OperationSource> */ sourceHeapId = 4;
+}
+
+/* Values */
+
+message PTransactionValue {
+    enum Type {
+        NULL = 1;
+        INT = 2;
+        BOOL = 3;
+        DOUBLE = 4;
+        STRING = 5;
+        BYTES = 6;
+        ARRAY = 7;
+        MAP = 8;
+    }
+
+    optional Type type = 1;
+
+	optional int64 int_value = 2;
+	optional bool bool_value = 3;
+	optional double double_value = 4;
+	optional string string_value = 5;
+	optional bytes bytes_value = 6;
+	optional PTransactionCollection array = 7;
+	optional PTransactionCollection map = 8;
+}
+
+message PTransactionCollection {
+	repeated PTransactionCollectionValue values = 1;
+}
+
+message PTransactionCollectionValue {
+	required PTransactionValue value = 1;
+	optional string key = 2;
+}

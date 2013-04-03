@@ -4,13 +4,17 @@ import org.scalatest.FunSuite
 import com.wajam.mry.execution.Implicits._
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import com.wajam.mry.execution.{ListValue, Value, MapValue, NullValue}
+import com.wajam.mry.execution._
+import org.scalatest.matchers.ShouldMatchers
+import com.wajam.mry.api.Transport
+import com.wajam.mry.execution.Operation._
 
 @RunWith(classOf[JUnitRunner])
-class TestProtobufTranslator extends FunSuite {
+class TestProtobufTranslator extends FunSuite with ShouldMatchers {
   val translator = new ProtobufTranslator
 
   test("value encode/decode") {
+
     var bytes = translator.encodeValue("testvalue")
     var value = translator.decodeValue(bytes)
     assert(value.equalsValue("testvalue"))
@@ -65,8 +69,161 @@ class TestProtobufTranslator extends FunSuite {
     }
   }
 
+  private def buildTransaction(): Transaction = {
+    new Transaction((b) => b.returns(b.from("B").get(1000).set("C").limit(100).projection("D").delete("E")))
+  }
 
-  ignore("transaction encode/decode") {
+  test("test validation function") {
+    val t = buildTransaction
 
+    // Validate the validate function
+    validateOperationsSources(t, t)
+    validateOperationVariablesAreBoundsToBlock(t)
+  }
+
+  test("transaction equals content is working")
+  {
+    val t = buildTransaction
+    val t2 = buildTransaction
+
+    assert(t.equalsContent(t))
+    assert(t.equalsContent(t2))
+
+    t.variables(0).value = new StringValue("Difference")
+
+    assert(!t.equalsContent(t2))
+  }
+
+  test("transaction encode/decode embedded transaction") {
+
+    val composite = (b: Block with OperationApi) => {
+      val context = b.from("context")
+      b.returns(b.from("memory").get("key"), context.get("tokens"), context.get("local_node"))
+    }
+
+    val t = new Transaction(composite)
+
+    val bytes = translator.encodeTransaction(t)
+    val t2 = translator.decodeTransaction(bytes)
+
+    t equalsContent t2 should be(true)
+    validateOperationsSources(t, t2)
+  }
+
+  test("transaction encode/decode") {
+
+    val t = buildTransaction
+
+    // Validate the validate function
+    validateOperationsSources(t, t)
+
+    val bytes = translator.encodeTransaction(t)
+    val t2 = translator.decodeTransaction(bytes)
+
+    t equalsContent t2 should be(true)
+
+    // Validate the decoded transaction
+    validateOperationsSources(t, t2)
+    validateOperationVariablesAreBoundsToBlock(t2)
+  }
+
+  test("transport encode/decode: transaction") {
+
+    val t = buildTransaction
+
+    val transport = new Transport(Some(t), Seq())
+
+    val bytes = translator.encodeAll(transport)
+    val transport2 = translator.decodeAll(bytes)
+
+    transport2.request.isDefined should be(true)
+    transport2.response should be(Seq())
+
+    transport.request.get equalsContent transport2.request.get should be(true)
+
+    // Validate the decoded transaction
+    validateOperationsSources(transport.request.get, transport2.request.get)
+    validateOperationVariablesAreBoundsToBlock(transport2.request.get)
+  }
+
+  test("transport encode/decode: results") {
+
+    val results = Seq(
+      NullValue,
+      new MapValue(Map("A"-> "1")),
+      new ListValue(Seq("2", "3")),
+      new StringValue("4"),
+      new IntValue(5),
+      new BoolValue(true),
+      new BoolValue(false),
+      new DoubleValue(7.35))
+
+    val transport = new Transport(None, results)
+
+    val bytes = translator.encodeAll(transport)
+    val transport2 = translator.decodeAll(bytes)
+
+    val results2 = transport2.response
+
+    transport2.request.isDefined should be(false)
+
+    val merged = results.zip(results2)
+
+    merged.map { case (z1, z2) =>
+      z1 equalsValue z2 should equal (true)
+    }
+
+  }
+
+  /**
+   * Check that all operation.source from t1
+   * match the equivalent source from t2
+   */
+  def validateOperationsSources(t1: Transaction, t2: Transaction) {
+
+    val operations = t1.operations.zip(t2.operations)
+    val variables = t1.variables.zip(t2.variables)
+
+    for ((op1, op2) <- operations) {
+      if (op1.source eq t1)
+      {
+        assert(op2.source eq t2)
+      }
+      else
+      {
+        val (_, vs) = variables.find((v) => op1.source eq v._1).get
+        assert(op2.source eq vs)
+      }
+    }
+  }
+
+  /**
+   * Check that all operation variables are bounds to the a variable
+   * from block and not a copy
+   */
+  def validateOperationVariablesAreBoundsToBlock(t: Transaction) {
+
+    for (o <- t.operations) {
+
+      val validateWithFrom = (from: Seq[Variable]) => {
+        assert(from.forall((v) => t.variables.exists(v eq _)))
+      }
+
+      val validateWithIntoAndSeqObject = (into: Variable, objects: Seq[Object]) => {
+
+        assert(t.variables.exists(_ eq into))
+        assert(objects.filter(_.isInstanceOf[Variable]).forall((v) => t.variables.exists(v eq _)))
+      }
+
+      o match {
+        case op: Return => validateWithFrom(op.from)
+        case op: From => validateWithIntoAndSeqObject(op.into, op.keys)
+        case op: Get => validateWithIntoAndSeqObject(op.into, op.keys)
+        case op: Set => validateWithIntoAndSeqObject(op.into, op.data)
+        case op: Delete => validateWithIntoAndSeqObject(op.into, op.data)
+        case op: Limit => validateWithIntoAndSeqObject(op.into, op.keys)
+        case op: Projection => validateWithIntoAndSeqObject(op.into, op.keys)
+      }
+    }
   }
 }

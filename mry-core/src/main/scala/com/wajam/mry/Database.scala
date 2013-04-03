@@ -1,5 +1,7 @@
 package com.wajam.mry
 
+import api.HybridCodec.TransitionMode
+import api.HybridCodec
 import execution._
 import storage.Storage
 import com.wajam.nrv.{TimeoutException, Logging}
@@ -17,6 +19,9 @@ class Database[T <: Storage](serviceName: String = "database")
   extends Service(serviceName) with CurrentTime with Logging with Instrumented with Traced {
 
   var storages = Map[String, T]()
+
+  // Set specific messageData codec for nrv
+  applySupport(nrvCodec = Some(new HybridCodec(TransitionMode.DecBothEncMry)))
 
   def analyseTransaction(transaction: Transaction): ExecutionContext = {
     val context = new ExecutionContext(storages)
