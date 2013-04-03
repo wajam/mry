@@ -13,7 +13,7 @@ class ProtobufTranslator extends ProtocolTranslator {
 
   def encodeTransaction(transaction: Transaction): Array[Byte] = {
 
-    val transport = new Transport(Some(transaction), Seq())
+    val transport = new Transport(false, Some(transaction), None)
 
     encodeAll(transport)
   }
@@ -177,18 +177,26 @@ private class InternalProtobufTranslator {
   }
 
   def encodePTransport(transport: Transport): PTransport.Builder =  {
-    val Transport(request, response) = transport
+
+    import PTransport.Type
+
+    val Transport(isEmpty, request, response) = transport
 
     val pTransport = PTransport.newBuilder()
+
+    if (isEmpty)
+      pTransport.setType(Type.Empty)
 
     for (r <- request) {
       val pTrans = encodePTransaction(r)
       pTransport.setRequestHeapId(pTrans)
+      pTransport.setType(Type.Request)
     }
 
-    for (v <- response) {
+    for (vo <- response; v <- vo) {
       val value = encodePValue(v)
       pTransport.addResponseHeapIds(addToHeap(value))
+      pTransport.setType(Type.Response)
     }
 
     pTransport.setHeap(encodeHeap())
@@ -198,19 +206,27 @@ private class InternalProtobufTranslator {
 
   def decodePTransport(transport: PTransport): Transport = {
 
+    import PTransport.Type
+
     loadHeap(transport.getHeap)
 
-    val request: Option[Transaction] =
-      if (transport.hasRequestHeapId)
+    val isEmpty = transport.getType == Type.Empty
+
+    val request =
+      if (transport.getType == Type.Request)
         Some(decodePTransaction(transport))
       else
         None
 
-    val response: Seq[Value] =
-      transport.getResponseHeapIdsList
-        .map(value => (getFromHeap[PTransactionValue] _ andThen decodePValue _)(value)).toSeq
+    val response =
+      if (transport.getType == Type.Response)
+        Some(
+          transport.getResponseHeapIdsList
+          .map(value => (getFromHeap[PTransactionValue] _ andThen decodePValue _)(value)).toSeq)
+      else
+        None
 
-    Transport(request, response)
+    Transport(isEmpty, request, response)
   }
 
   private def encodePObject(obj: Object): Int = {

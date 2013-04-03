@@ -131,13 +131,13 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
 
     val t = buildTransaction
 
-    val transport = new Transport(Some(t), Seq())
+    val transport = new Transport(false, Some(t), None)
 
     val bytes = translator.encodeAll(transport)
     val transport2 = translator.decodeAll(bytes)
 
     transport2.request.isDefined should be(true)
-    transport2.response should be(Seq())
+    transport2.response should be(None)
 
     transport.request.get equalsContent transport2.request.get should be(true)
 
@@ -158,7 +158,7 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
       new BoolValue(false),
       new DoubleValue(7.35))
 
-    val transport = new Transport(None, results)
+    val transport = new Transport(false, None, Some(results))
 
     val bytes = translator.encodeAll(transport)
     val transport2 = translator.decodeAll(bytes)

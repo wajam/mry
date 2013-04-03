@@ -1070,6 +1070,10 @@ public final class MryProtobuf {
   public interface PTransportOrBuilder
       extends com.google.protobuf.MessageLiteOrBuilder {
     
+    // optional .com.wajam.mry.api.protobuf.PTransport.Type type = 4;
+    boolean hasType();
+    com.wajam.mry.api.protobuf.MryProtobuf.PTransport.Type getType();
+    
     // optional .com.wajam.mry.api.protobuf.PHeap heap = 3;
     boolean hasHeap();
     com.wajam.mry.api.protobuf.MryProtobuf.PHeap getHeap();
@@ -1101,12 +1105,66 @@ public final class MryProtobuf {
       return defaultInstance;
     }
     
+    public enum Type
+        implements com.google.protobuf.Internal.EnumLite {
+      Empty(0, 1),
+      Request(1, 2),
+      Response(2, 3),
+      ;
+      
+      public static final int Empty_VALUE = 1;
+      public static final int Request_VALUE = 2;
+      public static final int Response_VALUE = 3;
+      
+      
+      public final int getNumber() { return value; }
+      
+      public static Type valueOf(int value) {
+        switch (value) {
+          case 1: return Empty;
+          case 2: return Request;
+          case 3: return Response;
+          default: return null;
+        }
+      }
+      
+      public static com.google.protobuf.Internal.EnumLiteMap<Type>
+          internalGetValueMap() {
+        return internalValueMap;
+      }
+      private static com.google.protobuf.Internal.EnumLiteMap<Type>
+          internalValueMap =
+            new com.google.protobuf.Internal.EnumLiteMap<Type>() {
+              public Type findValueByNumber(int number) {
+                return Type.valueOf(number);
+              }
+            };
+      
+      private final int value;
+      
+      private Type(int index, int value) {
+        this.value = value;
+      }
+      
+      // @@protoc_insertion_point(enum_scope:com.wajam.mry.api.protobuf.PTransport.Type)
+    }
+    
     private int bitField0_;
+    // optional .com.wajam.mry.api.protobuf.PTransport.Type type = 4;
+    public static final int TYPE_FIELD_NUMBER = 4;
+    private com.wajam.mry.api.protobuf.MryProtobuf.PTransport.Type type_;
+    public boolean hasType() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public com.wajam.mry.api.protobuf.MryProtobuf.PTransport.Type getType() {
+      return type_;
+    }
+    
     // optional .com.wajam.mry.api.protobuf.PHeap heap = 3;
     public static final int HEAP_FIELD_NUMBER = 3;
     private com.wajam.mry.api.protobuf.MryProtobuf.PHeap heap_;
     public boolean hasHeap() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
+      return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     public com.wajam.mry.api.protobuf.MryProtobuf.PHeap getHeap() {
       return heap_;
@@ -1116,7 +1174,7 @@ public final class MryProtobuf {
     public static final int REQUESTHEAPID_FIELD_NUMBER = 1;
     private int requestHeapId_;
     public boolean hasRequestHeapId() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
+      return ((bitField0_ & 0x00000004) == 0x00000004);
     }
     public int getRequestHeapId() {
       return requestHeapId_;
@@ -1137,6 +1195,7 @@ public final class MryProtobuf {
     }
     
     private void initFields() {
+      type_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransport.Type.Empty;
       heap_ = com.wajam.mry.api.protobuf.MryProtobuf.PHeap.getDefaultInstance();
       requestHeapId_ = 0;
       responseHeapIds_ = java.util.Collections.emptyList();;
@@ -1159,14 +1218,17 @@ public final class MryProtobuf {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeUInt32(1, requestHeapId_);
       }
       for (int i = 0; i < responseHeapIds_.size(); i++) {
         output.writeUInt32(2, responseHeapIds_.get(i));
       }
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         output.writeMessage(3, heap_);
+      }
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeEnum(4, type_.getNumber());
       }
     }
     
@@ -1176,7 +1238,7 @@ public final class MryProtobuf {
       if (size != -1) return size;
     
       size = 0;
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(1, requestHeapId_);
       }
@@ -1189,9 +1251,13 @@ public final class MryProtobuf {
         size += dataSize;
         size += 1 * getResponseHeapIdsList().size();
       }
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(3, heap_);
+      }
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(4, type_.getNumber());
       }
       memoizedSerializedSize = size;
       return size;
@@ -1295,12 +1361,14 @@ public final class MryProtobuf {
       
       public Builder clear() {
         super.clear();
-        heap_ = com.wajam.mry.api.protobuf.MryProtobuf.PHeap.getDefaultInstance();
+        type_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransport.Type.Empty;
         bitField0_ = (bitField0_ & ~0x00000001);
-        requestHeapId_ = 0;
+        heap_ = com.wajam.mry.api.protobuf.MryProtobuf.PHeap.getDefaultInstance();
         bitField0_ = (bitField0_ & ~0x00000002);
-        responseHeapIds_ = java.util.Collections.emptyList();;
+        requestHeapId_ = 0;
         bitField0_ = (bitField0_ & ~0x00000004);
+        responseHeapIds_ = java.util.Collections.emptyList();;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
       
@@ -1337,14 +1405,18 @@ public final class MryProtobuf {
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
-        result.heap_ = heap_;
+        result.type_ = type_;
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
+        result.heap_ = heap_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
         result.requestHeapId_ = requestHeapId_;
-        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        if (((bitField0_ & 0x00000008) == 0x00000008)) {
           responseHeapIds_ = java.util.Collections.unmodifiableList(responseHeapIds_);
-          bitField0_ = (bitField0_ & ~0x00000004);
+          bitField0_ = (bitField0_ & ~0x00000008);
         }
         result.responseHeapIds_ = responseHeapIds_;
         result.bitField0_ = to_bitField0_;
@@ -1353,6 +1425,9 @@ public final class MryProtobuf {
       
       public Builder mergeFrom(com.wajam.mry.api.protobuf.MryProtobuf.PTransport other) {
         if (other == com.wajam.mry.api.protobuf.MryProtobuf.PTransport.getDefaultInstance()) return this;
+        if (other.hasType()) {
+          setType(other.getType());
+        }
         if (other.hasHeap()) {
           mergeHeap(other.getHeap());
         }
@@ -1362,7 +1437,7 @@ public final class MryProtobuf {
         if (!other.responseHeapIds_.isEmpty()) {
           if (responseHeapIds_.isEmpty()) {
             responseHeapIds_ = other.responseHeapIds_;
-            bitField0_ = (bitField0_ & ~0x00000004);
+            bitField0_ = (bitField0_ & ~0x00000008);
           } else {
             ensureResponseHeapIdsIsMutable();
             responseHeapIds_.addAll(other.responseHeapIds_);
@@ -1400,7 +1475,7 @@ public final class MryProtobuf {
               break;
             }
             case 8: {
-              bitField0_ |= 0x00000002;
+              bitField0_ |= 0x00000004;
               requestHeapId_ = input.readUInt32();
               break;
             }
@@ -1427,16 +1502,49 @@ public final class MryProtobuf {
               setHeap(subBuilder.buildPartial());
               break;
             }
+            case 32: {
+              int rawValue = input.readEnum();
+              com.wajam.mry.api.protobuf.MryProtobuf.PTransport.Type value = com.wajam.mry.api.protobuf.MryProtobuf.PTransport.Type.valueOf(rawValue);
+              if (value != null) {
+                bitField0_ |= 0x00000001;
+                type_ = value;
+              }
+              break;
+            }
           }
         }
       }
       
       private int bitField0_;
       
+      // optional .com.wajam.mry.api.protobuf.PTransport.Type type = 4;
+      private com.wajam.mry.api.protobuf.MryProtobuf.PTransport.Type type_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransport.Type.Empty;
+      public boolean hasType() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      public com.wajam.mry.api.protobuf.MryProtobuf.PTransport.Type getType() {
+        return type_;
+      }
+      public Builder setType(com.wajam.mry.api.protobuf.MryProtobuf.PTransport.Type value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        bitField0_ |= 0x00000001;
+        type_ = value;
+        
+        return this;
+      }
+      public Builder clearType() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        type_ = com.wajam.mry.api.protobuf.MryProtobuf.PTransport.Type.Empty;
+        
+        return this;
+      }
+      
       // optional .com.wajam.mry.api.protobuf.PHeap heap = 3;
       private com.wajam.mry.api.protobuf.MryProtobuf.PHeap heap_ = com.wajam.mry.api.protobuf.MryProtobuf.PHeap.getDefaultInstance();
       public boolean hasHeap() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       public com.wajam.mry.api.protobuf.MryProtobuf.PHeap getHeap() {
         return heap_;
@@ -1447,18 +1555,18 @@ public final class MryProtobuf {
         }
         heap_ = value;
         
-        bitField0_ |= 0x00000001;
+        bitField0_ |= 0x00000002;
         return this;
       }
       public Builder setHeap(
           com.wajam.mry.api.protobuf.MryProtobuf.PHeap.Builder builderForValue) {
         heap_ = builderForValue.build();
         
-        bitField0_ |= 0x00000001;
+        bitField0_ |= 0x00000002;
         return this;
       }
       public Builder mergeHeap(com.wajam.mry.api.protobuf.MryProtobuf.PHeap value) {
-        if (((bitField0_ & 0x00000001) == 0x00000001) &&
+        if (((bitField0_ & 0x00000002) == 0x00000002) &&
             heap_ != com.wajam.mry.api.protobuf.MryProtobuf.PHeap.getDefaultInstance()) {
           heap_ =
             com.wajam.mry.api.protobuf.MryProtobuf.PHeap.newBuilder(heap_).mergeFrom(value).buildPartial();
@@ -1466,32 +1574,32 @@ public final class MryProtobuf {
           heap_ = value;
         }
         
-        bitField0_ |= 0x00000001;
+        bitField0_ |= 0x00000002;
         return this;
       }
       public Builder clearHeap() {
         heap_ = com.wajam.mry.api.protobuf.MryProtobuf.PHeap.getDefaultInstance();
         
-        bitField0_ = (bitField0_ & ~0x00000001);
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
       
       // optional uint32 requestHeapId = 1;
       private int requestHeapId_ ;
       public boolean hasRequestHeapId() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public int getRequestHeapId() {
         return requestHeapId_;
       }
       public Builder setRequestHeapId(int value) {
-        bitField0_ |= 0x00000002;
+        bitField0_ |= 0x00000004;
         requestHeapId_ = value;
         
         return this;
       }
       public Builder clearRequestHeapId() {
-        bitField0_ = (bitField0_ & ~0x00000002);
+        bitField0_ = (bitField0_ & ~0x00000004);
         requestHeapId_ = 0;
         
         return this;
@@ -1500,9 +1608,9 @@ public final class MryProtobuf {
       // repeated uint32 responseHeapIds = 2;
       private java.util.List<java.lang.Integer> responseHeapIds_ = java.util.Collections.emptyList();;
       private void ensureResponseHeapIdsIsMutable() {
-        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
+        if (!((bitField0_ & 0x00000008) == 0x00000008)) {
           responseHeapIds_ = new java.util.ArrayList<java.lang.Integer>(responseHeapIds_);
-          bitField0_ |= 0x00000004;
+          bitField0_ |= 0x00000008;
          }
       }
       public java.util.List<java.lang.Integer>
@@ -1537,7 +1645,7 @@ public final class MryProtobuf {
       }
       public Builder clearResponseHeapIds() {
         responseHeapIds_ = java.util.Collections.emptyList();;
-        bitField0_ = (bitField0_ & ~0x00000004);
+        bitField0_ = (bitField0_ & ~0x00000008);
         
         return this;
       }

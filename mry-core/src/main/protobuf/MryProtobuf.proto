@@ -32,6 +32,14 @@ message PMryData {
 
 message PTransport {
 
+    enum Type {
+		Empty = 1;
+		Request = 2;
+		Response = 3;
+    }
+
+    optional Type type = 4;
+
 	optional PHeap heap = 3;
 
 	optional uint32 /* <PTransaction> */ requestHeapId = 1;
