@@ -17,45 +17,53 @@ option optimize_for = LITE_RUNTIME;
 /* Generic */
 
 message PHeap {
-	repeated PMryData values = 1;
+    repeated PMryData values = 1;
 }
 
 message PMryData {
-	optional PTransaction transaction = 1;
-	optional PBlock block = 2;
-	optional PVariable variable = 3;
-	optional POperation operation = 4;
-	optional PTransactionValue value = 5;
+    optional PTransaction transaction = 1;
+    optional PBlock block = 2;
+    optional PVariable variable = 3;
+    optional POperation operation = 4;
+    optional PTransactionValue value = 5;
 }
 
 /* Transport */
 
 message PTransport {
 
-	optional PHeap heap = 3;
+    enum Type {
+        Empty = 1;
+        Transaction = 2;
+        Values = 3;
+    }
 
-	optional uint32 /* <PTransaction> */ requestHeapId = 1;
-	repeated uint32 /* <PValue> */ responseHeapIds = 2;
+    optional Type type = 4;
+
+    optional PHeap heap = 3;
+
+    optional uint32 /* <PTransaction> */ requestHeapId = 1;
+    repeated uint32 /* <PValue> */ responseHeapIds = 2;
 }
 
 /* Transaction */
 
 message PTransaction {
-	optional uint32 id = 1;
+    optional uint32 id = 1;
 
-	optional uint32 /* Block */ blockHeapId = 2;
+    optional uint32 /* Block */ blockHeapId = 2;
 }
 
 message PBlock {
-	required uint32 varSeq = 1;
+    required uint32 varSeq = 1;
 
-	repeated uint32 /* <POperation> */ operationHeapIds = 2;
-	repeated uint32 /* <PVariable> */ variableHeapIds = 3;
+    repeated uint32 /* <POperation> */ operationHeapIds = 2;
+    repeated uint32 /* <PVariable> */ variableHeapIds = 3;
 }
 
 message PVariable {
-	required uint32 id = 1;
-	optional uint32 /* <PTransactionValue> */ valueHeapId = 2;
+    required uint32 id = 1;
+    optional uint32 /* <PTransactionValue> */ valueHeapId = 2;
 }
 
 message POperation {
@@ -93,20 +101,20 @@ message PTransactionValue {
 
     optional Type type = 1;
 
-	optional int64 int_value = 2;
-	optional bool bool_value = 3;
-	optional double double_value = 4;
-	optional string string_value = 5;
-	optional bytes bytes_value = 6;
-	optional PTransactionCollection array = 7;
-	optional PTransactionCollection map = 8;
+    optional int64 int_value = 2;
+    optional bool bool_value = 3;
+    optional double double_value = 4;
+    optional string string_value = 5;
+    optional bytes bytes_value = 6;
+    optional PTransactionCollection array = 7;
+    optional PTransactionCollection map = 8;
 }
 
 message PTransactionCollection {
-	repeated PTransactionCollectionValue values = 1;
+    repeated PTransactionCollectionValue values = 1;
 }
 
 message PTransactionCollectionValue {
-	required PTransactionValue value = 1;
-	optional string key = 2;
+    required PTransactionValue value = 1;
+    optional string key = 2;
 }

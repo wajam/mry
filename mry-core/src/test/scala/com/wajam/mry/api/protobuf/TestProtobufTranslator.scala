@@ -131,19 +131,19 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
 
     val t = buildTransaction
 
-    val transport = new Transport(Some(t), Seq())
+    val transport = new Transport(Some(t), None)
 
     val bytes = translator.encodeAll(transport)
     val transport2 = translator.decodeAll(bytes)
 
-    transport2.request.isDefined should be(true)
-    transport2.response should be(Seq())
+    transport2.transaction.isDefined should be(true)
+    transport2.values should be(None)
 
-    transport.request.get equalsContent transport2.request.get should be(true)
+    transport.transaction.get equalsContent transport2.transaction.get should be(true)
 
     // Validate the decoded transaction
-    validateOperationsSources(transport.request.get, transport2.request.get)
-    validateOperationVariablesAreBoundsToBlock(transport2.request.get)
+    validateOperationsSources(transport.transaction.get, transport2.transaction.get)
+    validateOperationVariablesAreBoundsToBlock(transport2.transaction.get)
   }
 
   test("transport encode/decode: results") {
@@ -158,14 +158,14 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
       new BoolValue(false),
       new DoubleValue(7.35))
 
-    val transport = new Transport(None, results)
+    val transport = new Transport(None, Some(results))
 
     val bytes = translator.encodeAll(transport)
     val transport2 = translator.decodeAll(bytes)
 
-    val results2 = transport2.response
+    val results2 = transport2.values
 
-    transport2.request.isDefined should be(false)
+    transport2.transaction.isDefined should be(false)
 
     val merged = results.zip(results2)
 
