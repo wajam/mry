@@ -1108,13 +1108,13 @@ public final class MryProtobuf {
     public enum Type
         implements com.google.protobuf.Internal.EnumLite {
       Empty(0, 1),
-      Request(1, 2),
-      Response(2, 3),
+      Transaction(1, 2),
+      Values(2, 3),
       ;
       
       public static final int Empty_VALUE = 1;
-      public static final int Request_VALUE = 2;
-      public static final int Response_VALUE = 3;
+      public static final int Transaction_VALUE = 2;
+      public static final int Values_VALUE = 3;
       
       
       public final int getNumber() { return value; }
@@ -1122,8 +1122,8 @@ public final class MryProtobuf {
       public static Type valueOf(int value) {
         switch (value) {
           case 1: return Empty;
-          case 2: return Request;
-          case 3: return Response;
+          case 2: return Transaction;
+          case 3: return Values;
           default: return null;
         }
       }
