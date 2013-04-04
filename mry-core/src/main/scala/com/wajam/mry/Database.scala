@@ -1,7 +1,6 @@
 package com.wajam.mry
 
-import api.HybridCodec.TransitionMode
-import api.HybridCodec
+import api.MryCodec
 import execution._
 import storage.Storage
 import com.wajam.nrv.{TimeoutException, Logging}
@@ -109,8 +108,8 @@ class Database[T <: Storage](serviceName: String = "database")
   remoteReadExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
 
   // Override default message data codec, for a more flexible and compact codec
-  remoteWriteExecuteToken.applySupport(nrvCodec = Some(new HybridCodec(TransitionMode.DecBothEncMry)))
-  remoteReadExecuteToken.applySupport(nrvCodec = Some(new HybridCodec(TransitionMode.DecBothEncMry)))
+  remoteWriteExecuteToken.applySupport(nrvCodec = Some(new MryCodec))
+  remoteReadExecuteToken.applySupport(nrvCodec = Some(new MryCodec))
 
   private def transactionTimeout = math.max(responseTimeout * 0.75, responseTimeout - 500)
 
