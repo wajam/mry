@@ -108,6 +108,7 @@ class Database[T <: Storage](serviceName: String = "database")
   }, ActionMethod.GET))
   remoteReadExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
 
+  // Override default message data codec, for a more flexible and compact codec
   remoteWriteExecuteToken.applySupport(nrvCodec = Some(new HybridCodec(TransitionMode.DecBothEncMry)))
   remoteReadExecuteToken.applySupport(nrvCodec = Some(new HybridCodec(TransitionMode.DecBothEncMry)))
 
