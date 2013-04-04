@@ -9,8 +9,9 @@ class MryCodec extends Codec {
   def encode(entity: Any, context: Any = null): Array[Byte] = {
 
     val transport = entity match {
-      case request: Transaction => Transport(Some(request), Seq())
-      case response: Seq[Value] if response.forall(_.isInstanceOf[Value]) => Transport(None, response)
+      case request: Transaction => Transport(Some(request), None)
+      case response: Seq[Value] if response.forall(_.isInstanceOf[Value]) => Transport(None, Some(response))
+      case null => Transport(None, None)
       case _ => throw new RuntimeException("Unsupported type for this codec: Class: %s; ToString: %s".format(entity.getClass.toString, entity.toString))
     }
 
@@ -22,8 +23,9 @@ class MryCodec extends Codec {
     val entity = MryCodec.protobufTranslator.decodeAll(data)
 
     entity match {
-      case Transport(Some(request), _) => request
-      case Transport(None, response) => response
+      case Transport(Some(trx), _) => trx
+      case Transport(_, Some(values)) => values
+      case Transport(None, None) => null
       case _ => throw new RuntimeException("Invalid data from transport.")
     }
   }

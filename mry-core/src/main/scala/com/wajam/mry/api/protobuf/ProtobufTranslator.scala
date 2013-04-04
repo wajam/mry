@@ -13,7 +13,7 @@ class ProtobufTranslator extends ProtocolTranslator {
 
   def encodeTransaction(transaction: Transaction): Array[Byte] = {
 
-    val transport = new Transport(Some(transaction), Seq())
+    val transport = new Transport(Some(transaction), None)
 
     encodeAll(transport)
   }
@@ -21,7 +21,7 @@ class ProtobufTranslator extends ProtocolTranslator {
   def decodeTransaction(data: Array[Byte]): Transaction = {
 
     val transport = decodeAll(data)
-    transport.request.get
+    transport.transaction.get
   }
 
   /* EncodeValue and DecodeValue doesn't use PHeap, it's for legacy reason (all data in db use that format)
@@ -177,18 +177,32 @@ private class InternalProtobufTranslator {
   }
 
   def encodePTransport(transport: Transport): PTransport.Builder =  {
-    val Transport(request, response) = transport
+
+    import PTransport.Type
 
     val pTransport = PTransport.newBuilder()
 
-    for (r <- request) {
-      val pTrans = encodePTransaction(r)
-      pTransport.setRequestHeapId(pTrans)
-    }
+    transport match {
+      case Transport(None, None) => {
+        pTransport.setType(Type.Empty)
+      }
 
-    for (v <- response) {
-      val value = encodePValue(v)
-      pTransport.addResponseHeapIds(addToHeap(value))
+      case Transport(Some(transaction), None) => {
+        val pTrans = encodePTransaction(transaction)
+        pTransport.setRequestHeapId(pTrans)
+        pTransport.setType(Type.Transaction)
+      }
+
+      case Transport(None, Some(values)) => {
+        for (v <- values) {
+          val value = encodePValue(v)
+          pTransport.addResponseHeapIds(addToHeap(value))
+          pTransport.setType(Type.Values)
+        }
+      }
+
+      case _ =>
+        throw new RuntimeException("Too many different data types in transport, only one at the time is supported.")
     }
 
     pTransport.setHeap(encodeHeap())
@@ -198,19 +212,25 @@ private class InternalProtobufTranslator {
 
   def decodePTransport(transport: PTransport): Transport = {
 
+    import PTransport.Type
+
     loadHeap(transport.getHeap)
 
-    val request: Option[Transaction] =
-      if (transport.hasRequestHeapId)
+    val transaction =
+      if (transport.getType == Type.Transaction)
         Some(decodePTransaction(transport))
       else
         None
 
-    val response: Seq[Value] =
-      transport.getResponseHeapIdsList
-        .map(value => (getFromHeap[PTransactionValue] _ andThen decodePValue _)(value)).toSeq
+    val values =
+      if (transport.getType == Type.Values)
+        Some(
+          transport.getResponseHeapIdsList
+          .map(value => (getFromHeap[PTransactionValue] _ andThen decodePValue _)(value)).toSeq)
+      else
+        None
 
-    Transport(request, response)
+    Transport(transaction, values)
   }
 
   private def encodePObject(obj: Object): Int = {
