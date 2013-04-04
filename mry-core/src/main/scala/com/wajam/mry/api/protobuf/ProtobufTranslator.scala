@@ -200,6 +200,9 @@ private class InternalProtobufTranslator {
           pTransport.setType(Type.Values)
         }
       }
+
+      case _ =>
+        throw new RuntimeException("Too many different data types in transport, only one at the time is supported.")
     }
 
     pTransport.setHeap(encodeHeap())
