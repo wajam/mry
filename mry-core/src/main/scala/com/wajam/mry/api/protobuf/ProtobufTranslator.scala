@@ -180,23 +180,26 @@ private class InternalProtobufTranslator {
 
     import PTransport.Type
 
-    val Transport(transaction, values) = transport
-
     val pTransport = PTransport.newBuilder()
 
-    if (transaction.isEmpty && values.isEmpty)
-      pTransport.setType(Type.Empty)
+    transport match {
+      case Transport(None, None) => {
+        pTransport.setType(Type.Empty)
+      }
 
-    for (r <- transaction) {
-      val pTrans = encodePTransaction(r)
-      pTransport.setRequestHeapId(pTrans)
-      pTransport.setType(Type.Transaction)
-    }
+      case Transport(Some(transaction), None) => {
+        val pTrans = encodePTransaction(transaction)
+        pTransport.setRequestHeapId(pTrans)
+        pTransport.setType(Type.Transaction)
+      }
 
-    for (vo <- values; v <- vo) {
-      val value = encodePValue(v)
-      pTransport.addResponseHeapIds(addToHeap(value))
-      pTransport.setType(Type.Values)
+      case Transport(None, Some(values)) => {
+        for (v <- values) {
+          val value = encodePValue(v)
+          pTransport.addResponseHeapIds(addToHeap(value))
+          pTransport.setType(Type.Values)
+        }
+      }
     }
 
     pTransport.setHeap(encodeHeap())
