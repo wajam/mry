@@ -333,8 +333,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       def next() = {
         val result = nextGroup
         nextGroup = readNext()
-        // TODO: switch to debug
-        info("readTransactions.next {}", result)
+        debug("readTransactions.next {}", result)
         result.get // Must fail if next is called while hasNext is false
       }
 
