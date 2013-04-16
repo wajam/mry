@@ -19,7 +19,8 @@ class Database[T <: Storage](serviceName: String = "database")
 
   var storages = Map[String, T]()
 
-  // Set specific messageData codec for nrv
+  // Set specific resolver and data codec
+  applySupportOptions(new ActionSupportOptions(resolver = Some(Database.TOKEN_RESOLVER), nrvCodec = Some(new MryCodec)))
 
   def analyseTransaction(transaction: Transaction): ExecutionContext = {
     val context = new ExecutionContext(storages)
@@ -100,16 +101,10 @@ class Database[T <: Storage](serviceName: String = "database")
   protected val remoteWriteExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
     execute(req)
   }, ActionMethod.POST))
-  remoteWriteExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
 
   protected val remoteReadExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
     execute(req)
   }, ActionMethod.GET))
-  remoteReadExecuteToken.applySupport(resolver = Some(Database.TOKEN_RESOLVER))
-
-  // Override default message data codec, for a more flexible and compact codec
-  remoteWriteExecuteToken.applySupport(nrvCodec = Some(new MryCodec))
-  remoteReadExecuteToken.applySupport(nrvCodec = Some(new MryCodec))
 
   private def transactionTimeout = math.max(responseTimeout * 0.75, responseTimeout - 500)
 
