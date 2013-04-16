@@ -333,6 +333,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       def next() = {
         val result = nextGroup
         nextGroup = readNext()
+        debug("readTransactions.next {}", result)
         result.get // Must fail if next is called while hasNext is false
       }
 
@@ -381,6 +382,10 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           table.set(record.accessPath.last.key, record.value)
         }
       }
+    }
+
+    override def toString = {
+      "MutationGroup(tk=%d, ts=%s, tables=%s)".format(token, timestamp, records.map(_.table.name).toSet.toList.sorted)
     }
   }
 
