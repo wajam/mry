@@ -1,9 +1,9 @@
 package com.wajam.mry
 
 import com.wajam.nrv.consistency.{Consistency, ConsistentStore}
-import com.wajam.nrv.data.{InMessage, Message}
+import com.wajam.nrv.data.{MessageType, InMessage, Message}
 import com.wajam.nrv.utils.timestamp.Timestamp
-import com.wajam.nrv.service.TokenRange
+import com.wajam.nrv.service.{ActionMethod, TokenRange}
 import execution.{ExecutionContext, Transaction}
 import storage.ConsistentStorage
 import com.wajam.nrv.utils.Closable
@@ -68,6 +68,11 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
           val transaction = new Transaction()
           value.applyTo(transaction)
           val message = new InMessage(Map(Database.TOKEN_KEY -> value.token), data = transaction)
+          message.token = value.token
+          message.serviceName = name
+          message.method = ActionMethod.POST
+          message.function = MessageType.FUNCTION_CALL
+          message.path = remoteWriteExecuteToken.path.buildPath(message.parameters)
           Consistency.setMessageTimestamp(message, value.timestamp)
           message
         } catch {
