@@ -29,6 +29,9 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   private var openReadIterators: List[MutationGroupIterator] = List()
 
   lazy private val lastTimestampTimer = metrics.timer("get-last-timestamp-time")
+  lazy private val truncateTransactionTimer = metrics.timer("truncate-transaction")
+  lazy private val readTransactionsInitTimer = metrics.timer("read-transactions-init")
+  lazy private val readTransactionsNextTimer = metrics.timer("read-transactions-next")
 
   val datasource = new ComboPooledDataSource()
   datasource.setDriverClass("com.mysql.jdbc.Driver")
@@ -285,24 +288,26 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
    * Truncate all records at the given timestamp for the specified token.
    */
   def truncateAt(timestamp: Timestamp, token: Long) {
-    var trx: MysqlTransaction = null
-    try {
-      trx = createStorageTransaction
-      for (table <- model.allHierarchyTables) {
-        trx.truncateVersion(table, token, timestamp)
-      }
-      trx.commit()
-    } catch {
-      case e: Exception => {
-        try {
-          if (trx != null)
-            trx.rollback()
-        } catch {
-          case _ =>
+    truncateTransactionTimer.time {
+      var trx: MysqlTransaction = null
+      try {
+        trx = createStorageTransaction
+        for (table <- model.allHierarchyTables) {
+          trx.truncateVersion(table, token, timestamp)
         }
+        trx.commit()
+      } catch {
+        case e: Exception => {
+          try {
+            if (trx != null)
+              trx.rollback()
+          } catch {
+            case _ =>
+          }
 
-        error("Caught an exception while truncating records storage (tk={}, ts={})", token, timestamp, e)
-        throw e
+          error("Caught an exception while truncating records storage (tk={}, ts={})", token, timestamp, e)
+          throw e
+        }
       }
     }
   }
@@ -311,36 +316,40 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
    * Returns the mutation transactions from and to the given timestamps inclusively for the specified token ranges.
    */
   def readTransactions(from: Timestamp, to: Timestamp, ranges: Seq[TokenRange]) = {
-    new Iterator[MutationGroup] with Closable {
-      private val itr = new MutationGroupIterator(from, to, ranges)
-      private var nextGroup: Option[MutationGroup] = readNext()
+    readTransactionsInitTimer.time {
+      new Iterator[MutationGroup] with Closable {
+        private val itr = new MutationGroupIterator(from, to, ranges)
+        private var nextGroup: Option[MutationGroup] = readNext()
 
-      // Add this iterator in GC exclusion list until closed
-      MysqlStorage.this.synchronized {
-        openReadIterators = itr :: openReadIterators
-      }
-
-      private def readNext(): Option[MutationGroup] = {
-        if (itr.next()) {
-          Some(itr.mutationGroup)
-        } else {
-          None
-        }
-      }
-
-      def hasNext = nextGroup.isDefined
-
-      def next() = {
-        val result = nextGroup
-        nextGroup = readNext()
-        debug("readTransactions.next {}", result)
-        result.get // Must fail if next is called while hasNext is false
-      }
-
-      def close() {
-        // Remove this iterator from GC exlusion list
+        // Add this iterator in GC exclusion list until closed
         MysqlStorage.this.synchronized {
-          openReadIterators = openReadIterators.filterNot(_ == itr)
+          openReadIterators = itr :: openReadIterators
+        }
+
+        private def readNext(): Option[MutationGroup] = {
+          readTransactionsNextTimer.time {
+            if (itr.next()) {
+              Some(itr.mutationGroup)
+            } else {
+              None
+            }
+          }
+        }
+
+        def hasNext = nextGroup.isDefined
+
+        def next() = {
+          val result = nextGroup
+          nextGroup = readNext()
+          debug("readTransactions.next {}", result)
+          result.get // Must fail if next is called while hasNext is false
+        }
+
+        def close() {
+          // Remove this iterator from GC exlusion list
+          MysqlStorage.this.synchronized {
+            openReadIterators = openReadIterators.filterNot(_ == itr)
+          }
         }
       }
     }
@@ -385,7 +394,8 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
     }
 
     override def toString = {
-      "MutationGroup(tk=%d, ts=%s, tables=%s)".format(token, timestamp, records.map(_.table.name).toSet.toList.sorted)
+      "MutationGroup(tk=%d, ts=%s, tables=%s)".format(token, timestamp,
+        records.groupBy(_.table.name).map(g => "%s (%d)".format(g._1, g._2.length)))
     }
   }
 
@@ -469,12 +479,14 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
     private def loadCache() {
       try {
+        trace("loadCache - start")
         // Load more mutation groups if needed and possible
         if (groupsQueue.isEmpty && (!groupsSummaryQueue.isEmpty ||
           tablesCache.exists(ti => ti.hasMore || !ti.records.isEmpty))) {
 
           // Ensure we have a minimum quantity of transaction summary loaded from each table
           tablesCache.withFilter(_.mustLoadMore).foreach(loadTableSummary(_))
+          trace("loadCache - loadedTableSummary done")
 
           // Group transaction summary by timestamp
           val maxAvailable = tablesCache.minBy(_.lastTimestamp).lastTimestamp // Can group summary up to that timestamp
@@ -505,6 +517,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
             // Finally load, merge and sort the data grouped by timestamp
             groupsQueue = (groupsQueue ++ loadTablesData(loadTables, loadFrom, loadTo)).sortBy(_.timestamp)
+            trace("loadCache - done")
           }
         }
       } catch {
@@ -518,6 +531,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
     private def loadTableSummary(tableSummary: TableSummary): TableSummary = {
       var trx: MysqlTransaction = null
       try {
+        trace("loadTableSummary: {}", tableSummary.table)
         trx = createStorageTransaction
         val records = trx.getTransactionSummaryRecords(tableSummary.table, Timestamp(tableSummary.lastTimestamp.value + 1),
           tableSummarySize, ranges)
@@ -527,7 +541,6 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
         } else {
           records.maxBy(_.timestamp).timestamp
         }
-        debug("loadTableSummary: {}", tableSummary)
         tableSummary
       } finally {
         if (trx != null) {
@@ -544,9 +557,12 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       try {
         trx = createStorageTransaction
         val grouped: mutable.Map[Timestamp, MutationGroup] = mutable.Map()
-        for (table <- tables; record <- trx.getTransactionRecords(table, from, to, ranges)) {
-          val group = grouped.getOrElseUpdate(record.timestamp, MutationGroup(record.token, record.timestamp))
-          group.records = record :: group.records
+        for (table <- tables) {
+          trace("loadTablesData: {}", table)
+          for (record <- trx.getTransactionRecords(table, from, to, ranges)) {
+            val group = grouped.getOrElseUpdate(record.timestamp, MutationGroup(record.token, record.timestamp))
+            group.records = record :: group.records
+          }
         }
         grouped.values.toSeq
       } finally {
