@@ -479,14 +479,14 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
     private def loadCache() {
       try {
-        debug("loadCache - start")
+        trace("loadCache - start")
         // Load more mutation groups if needed and possible
         if (groupsQueue.isEmpty && (!groupsSummaryQueue.isEmpty ||
           tablesCache.exists(ti => ti.hasMore || !ti.records.isEmpty))) {
 
           // Ensure we have a minimum quantity of transaction summary loaded from each table
           tablesCache.withFilter(_.mustLoadMore).foreach(loadTableSummary(_))
-          debug("loadCache - loadedTableSummary done")
+          trace("loadCache - loadedTableSummary done")
 
           // Group transaction summary by timestamp
           val maxAvailable = tablesCache.minBy(_.lastTimestamp).lastTimestamp // Can group summary up to that timestamp
@@ -517,7 +517,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
             // Finally load, merge and sort the data grouped by timestamp
             groupsQueue = (groupsQueue ++ loadTablesData(loadTables, loadFrom, loadTo)).sortBy(_.timestamp)
-            debug("loadCache - done")
+            trace("loadCache - done")
           }
         }
       } catch {
@@ -531,7 +531,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
     private def loadTableSummary(tableSummary: TableSummary): TableSummary = {
       var trx: MysqlTransaction = null
       try {
-        debug("loadTableSummary: {}", tableSummary.table)
+        trace("loadTableSummary: {}", tableSummary.table)
         trx = createStorageTransaction
         val records = trx.getTransactionSummaryRecords(tableSummary.table, Timestamp(tableSummary.lastTimestamp.value + 1),
           tableSummarySize, ranges)
@@ -558,7 +558,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
         trx = createStorageTransaction
         val grouped: mutable.Map[Timestamp, MutationGroup] = mutable.Map()
         for (table <- tables) {
-          debug("loadTablesData: {}", table)
+          trace("loadTablesData: {}", table)
           for (record <- trx.getTransactionRecords(table, from, to, ranges)) {
             val group = grouped.getOrElseUpdate(record.timestamp, MutationGroup(record.token, record.timestamp))
             group.records = record :: group.records
