@@ -633,7 +633,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
                 FROM `%1$s_index` AS i
                 WHERE %2$s
                 AND i.ts >= %3$d
-                GROUP BY i.tk, i.ts
+                GROUP BY i.ts, i.tk
                 ORDER BY i.ts ASC
                 LIMIT 0, %4$d;
               """.format(fullTableName, whereRanges, timestamp.value, count)
@@ -658,24 +658,37 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
   def getTransactionRecords(table: Table, from: Timestamp, to: Timestamp, ranges: Seq[TokenRange]): RecordIterator = {
 
     val fullTableName = table.depthName("_")
-    val projKeys = (for (i <- 1 to table.depth) yield "d.k%1$d".format(i)).mkString(",")
-    val whereRanges = ranges.map(r => "(d.tk >= %1$d AND d.tk <= %2$d)".format(r.start, r.end)).mkString("(", "OR ", ")")
+    val projKeys = (for (i <- 1 to table.depth) yield "i.k%1$d".format(i)).mkString(",")
+    val whereRanges = ranges.map(r => "(i.tk >= %1$d AND i.tk <= %2$d)".format(r.start, r.end)).mkString("(", "OR ", ")")
+    val whereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = d.k%1$d".format(i)).mkString(" AND ")
 
     /* Generated SQL looks like:
      *
-     *   SELECT d.ts, d.tk, d.ec, d.d, d.k1
-     *   FROM `table1_data` AS d
-     *   WHERE ((d.tk >= 0 AND d.tk <= 89478485) OR (d.tk >= 536870910 AND d.tk <= 626349395))
-     *   AND d.ts >= 13578286851700001 AND d.ts <= 13578286975770001
+     *   SELECT i.ts, i.tk, d.ec, d.d, i.k1
+     *   FROM `table1_data` AS d, (
+     *       SELECT i.ts, i.tk, i.k1
+     *       FROM `table1_index` AS i
+     *       WHERE ((i.tk >= 0 AND i.tk <= 89478485) OR (i.tk >= 536870910 AND i.tk <= 626349395))
+     *       AND i.ts >= 13578286851700001 AND i.ts <= 13578286975770001
+     *   ) AS i
+     *   WHERE d.tk = i.tk
+     *   AND d.k1 = i.k1
+     *   AND d.ts = i.ts
      *   ORDER BY d.ts ASC;
      */
     var sql = """
-        SELECT d.ts, d.tk, d.ec, d.d, %1$s
-        FROM `%2$s_data` AS d
-        WHERE %3$s
-        AND d.ts >= %4$d AND d.ts <= %5$d
-        ORDER BY d.ts ASC;
-              """.format(projKeys, fullTableName, whereRanges, from.value, to.value)
+        SELECT i.ts, i.tk, d.ec, d.d, %1$s
+        FROM `%2$s_data` AS d, (
+            SELECT i.ts, i.tk, %1$s
+            FROM `%2$s_index` AS i
+            WHERE %3$s
+            AND i.ts >= %4$d AND i.ts <= %5$d
+        ) AS i
+        WHERE d.tk = i.tk
+        AND %6$s
+        AND d.ts = i.ts
+        ORDER BY i.ts ASC;
+              """.format(projKeys, fullTableName, whereRanges, from.value, to.value, whereKeys)
 
     metrics.tableMetricGetTransactionRecords(table).time {
       var results: SqlResults = null
