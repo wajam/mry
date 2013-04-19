@@ -674,7 +674,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *   WHERE d.tk = i.tk
      *   AND d.k1 = i.k1
      *   AND d.ts = i.ts
-     *   ORDER BY d.ts ASC;
+     *   ORDER BY i.ts, i,k1;
      */
     var sql = """
         SELECT i.ts, i.tk, d.ec, d.d, %1$s
@@ -687,7 +687,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         WHERE d.tk = i.tk
         AND %6$s
         AND d.ts = i.ts
-        ORDER BY i.ts ASC;
+        ORDER BY i.ts, %1$s;
               """.format(projKeys, fullTableName, whereRanges, from.value, to.value, whereKeys)
 
     metrics.tableMetricGetTransactionRecords(table).time {
@@ -748,10 +748,9 @@ case class AccessPath(parts: Seq[AccessKey] = Seq()) {
   override def toString: String = (for (part <- parts) yield part.key).mkString("/")
 }
 
-case class Record(table: Table, var value: Value = new MapValue(Map()), var token: Long = 0) {
-  var accessPath = new AccessPath()
-  var encoding: Byte = 0
-  var timestamp: Timestamp = Timestamp(0)
+case class Record(table: Table, var value: Value = new MapValue(Map()), var token: Long = 0,
+                  var accessPath:AccessPath = new AccessPath(), var encoding: Byte = 0,
+                  var timestamp: Timestamp = Timestamp(0)) {
 
   override def equals(that: Any) = that match {
     case that: Record => that.token.equals(this.token) && this.accessPath.keys.equals(that.accessPath.keys)
