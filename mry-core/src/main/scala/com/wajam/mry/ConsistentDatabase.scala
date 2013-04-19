@@ -60,7 +60,7 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
 
     readTransactionsInitTimer.time {
       new Iterator[Message] with Closable {
-        val itr = storage.readTransactions(from, to, ranges)
+        val itr = storage.readTransactions(from, to.asInstanceOf[Timestamp], ranges)
 
         def hasNext = {
           try {
