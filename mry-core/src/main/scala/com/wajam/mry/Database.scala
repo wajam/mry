@@ -10,12 +10,15 @@ import com.wajam.nrv.tracing.Traced
 import com.wajam.nrv.data.InMessage
 import com.wajam.nrv.utils.{CurrentTime, Promise, Future}
 import com.wajam.nrv.consistency.Consistency
+import java.util.concurrent.TimeUnit
 
 /**
  * MRY database
  */
 class Database[T <: Storage](serviceName: String = "database")
   extends Service(serviceName) with CurrentTime with Logging with Instrumented with Traced {
+
+  lazy private val timeoutRollbackTimer = metrics.timer("timeout-rollback")
 
   var storages = Map[String, T]()
 
@@ -120,6 +123,7 @@ class Database[T <: Storage](serviceName: String = "database")
       transaction.execute(context)
       val elapsedTime = currentTime - startTime
       if (elapsedTime > transactionTimeout) {
+        timeoutRollbackTimer.update(elapsedTime, TimeUnit.MILLISECONDS)
         throw new TimeoutException("Database transaction took too much time to execute", Some(elapsedTime))
       }
       values = context.returnValues

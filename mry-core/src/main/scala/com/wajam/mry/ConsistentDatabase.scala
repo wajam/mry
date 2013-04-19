@@ -7,12 +7,19 @@ import com.wajam.nrv.service.{ActionMethod, TokenRange}
 import execution.{ExecutionContext, Transaction}
 import storage.ConsistentStorage
 import com.wajam.nrv.utils.Closable
+import com.yammer.metrics.scala.Instrumented
 
 /**
  * Consistent MRY database
  */
 class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database")
-  extends Database[T](serviceName) with ConsistentStore {
+  extends Database[T](serviceName) with ConsistentStore with Instrumented {
+
+  lazy private val lastTimestampTimer = metrics.timer("get-last-timestamp")
+  lazy private val truncateTransactionTimer = metrics.timer("truncate-transaction")
+  lazy private val readTransactionsInitTimer = metrics.timer("read-transactions-init")
+  lazy private val readTransactionsNextTimer = metrics.timer("read-transactions-next")
+  lazy private val writeTransactionTimer = metrics.timer("write-transaction")
 
   def requiresConsistency(message: Message): Boolean = {
     findAction(message.path, message.method) match {
@@ -27,7 +34,9 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
    * Returns the latest record timestamp for the specified token ranges
    */
   def getLastTimestamp(ranges: Seq[TokenRange]): Option[Timestamp] = {
-    storages.values.map(_.getLastTimestamp(ranges)).max
+    lastTimestampTimer.time {
+      storages.values.map(_.getLastTimestamp(ranges)).max
+    }
   }
 
   /**
@@ -48,43 +57,47 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
     // TODO: somehow support more than one storage
     val (_, storage) = storages.head
 
-    new Iterator[Message] with Closable {
-      val itr = storage.readTransactions(from, to, ranges)
+    readTransactionsInitTimer.time {
+      new Iterator[Message] with Closable {
+        val itr = storage.readTransactions(from, to, ranges)
 
-      def hasNext = {
-        try {
-          itr.hasNext
-        } catch {
-          case e: Exception => {
-            close()
-            throw e
+        def hasNext = {
+          try {
+            itr.hasNext
+          } catch {
+            case e: Exception => {
+              close()
+              throw e
+            }
           }
         }
-      }
 
-      def next() = {
-        try {
-          val value = itr.next()
-          val transaction = new Transaction()
-          value.applyTo(transaction)
-          val message = new InMessage(Map(Database.TOKEN_KEY -> value.token), data = transaction)
-          message.token = value.token
-          message.serviceName = name
-          message.method = ActionMethod.POST
-          message.function = MessageType.FUNCTION_CALL
-          message.path = remoteWriteExecuteToken.path.buildPath(message.parameters)
-          Consistency.setMessageTimestamp(message, value.timestamp)
-          message
-        } catch {
-          case e: Exception => {
-            close()
-            throw e
+        def next() = {
+          readTransactionsNextTimer.time {
+            try {
+              val value = itr.next()
+              val transaction = new Transaction()
+              value.applyTo(transaction)
+              val message = new InMessage(Map(Database.TOKEN_KEY -> value.token), data = transaction)
+              message.token = value.token
+              message.serviceName = name
+              message.method = ActionMethod.POST
+              message.function = MessageType.FUNCTION_CALL
+              message.path = remoteWriteExecuteToken.path.buildPath(message.parameters)
+              Consistency.setMessageTimestamp(message, value.timestamp)
+              message
+            } catch {
+              case e: Exception => {
+                close()
+                throw e
+              }
+            }
           }
         }
-      }
 
-      def close() {
-        itr.close()
+        def close() {
+          itr.close()
+        }
       }
     }
   }
@@ -94,19 +107,21 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
    * Apply the specified mutation message to this consistent database
    */
   def writeTransaction(message: Message) {
-    val context = new ExecutionContext(storages, Consistency.getMessageTimestamp(message))
-    context.cluster = cluster
+    writeTransactionTimer.time {
+      val context = new ExecutionContext(storages, Consistency.getMessageTimestamp(message))
+      context.cluster = cluster
 
-    try {
-      val transaction = message.getData[Transaction]
-      transaction.execute(context)
-      context.commit()
-      transaction.reset()
-    } catch {
-      case e: Exception => {
-        debug("Got an exception executing transaction", e)
-        context.rollback()
-        throw e
+      try {
+        val transaction = message.getData[Transaction]
+        transaction.execute(context)
+        context.commit()
+        transaction.reset()
+      } catch {
+        case e: Exception => {
+          debug("Got an exception executing transaction", e)
+          context.rollback()
+          throw e
+        }
       }
     }
   }
@@ -115,8 +130,10 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
    * Truncate all records at the given timestamp for the specified token.
    */
   def truncateAt(timestamp: Timestamp, token: Long) {
-    for (storage <- storages.values) {
-      storage.truncateAt(timestamp, token)
+    truncateTransactionTimer.time {
+      for (storage <- storages.values) {
+        storage.truncateAt(timestamp, token)
+      }
     }
   }
 }
