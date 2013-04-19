@@ -9,7 +9,7 @@ import com.wajam.mry.storage._
 import com.yammer.metrics.scala.{Meter, Timer, Instrumented}
 import java.util.concurrent.atomic.AtomicInteger
 import collection.mutable
-import java.util.concurrent.{ConcurrentHashMap, TimeUnit, ScheduledThreadPoolExecutor}
+import java.util.concurrent.{TimeUnit, ScheduledThreadPoolExecutor}
 import com.wajam.nrv.service.TokenRange
 import com.yammer.metrics.core.Gauge
 import com.wajam.nrv.utils.timestamp.Timestamp
@@ -394,8 +394,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
     }
 
     override def toString = {
-      "MutationGroup(tk=%d, ts=%s, tables=%s)".format(token, timestamp,
-        records.groupBy(_.table.name).map(g => "%s (%d)".format(g._1, g._2.length)))
+      "MutationGroup(tk=%d, ts=%s, records=%s)".format(token, timestamp, records)
     }
   }
 
@@ -405,14 +404,15 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
    * @param from start timestamp (inclusive)
    * @param to end timestamp (inclusive)
    * @param ranges token ranges
-   * @param recordCacheSize maximum number of records cached in this iterator. This is not the mutation group size but
+   * @param recordsCacheSize maximum number of records cached in this iterator. This is not the mutation group size but
    *                        the number of records contained in the queued mutation group. A limit of 100 records can be
    *                        reach by having 4 mutation groups of 25 records.
    * @param tableSummarySize number of transaction summary records loaded per table per call from database
    * @param tableSummaryThreshold threshold per table below which more transaction summary records are loaded
    */
-  class MutationGroupIterator(val from: Timestamp, to: Timestamp, val ranges: Seq[TokenRange], recordCacheSize: Int = 100,
-                              tableSummarySize: Int = 50, tableSummaryThreshold: Double = 0.70) extends Traversable[MutationGroup] {
+  class MutationGroupIterator(val from: Timestamp, to: Timestamp, val ranges: Seq[TokenRange],
+                              recordsCacheSize: Int = 100, tableSummarySize: Int = 50,
+                              tableSummaryThreshold: Double = 0.70) extends Traversable[MutationGroup] {
 
     private case class MutationGroupSummary(token: Long, timestamp: Timestamp,
                                             var records: List[TransactionSummaryRecord] = Nil)
@@ -459,12 +459,12 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
       // Go to next queued group and try to load more groups if queue is empty
       groupsQueue match {
+        case Nil => loadCache()
         case _ :: Nil => {
           groupsQueue = Nil
           loadCache()
         }
         case _ :: tail => groupsQueue = tail
-        case Nil => loadCache()
       }
 
       !groupsQueue.isEmpty
@@ -479,52 +479,71 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
     private def loadCache() {
       try {
-        trace("loadCache - start")
-        // Load more mutation groups if needed and possible
-        if (groupsQueue.isEmpty && (!groupsSummaryQueue.isEmpty ||
-          tablesCache.exists(ti => ti.hasMore || !ti.records.isEmpty))) {
-
-          // Ensure we have a minimum quantity of transaction summary loaded from each table
-          tablesCache.withFilter(_.mustLoadMore).foreach(loadTableSummary(_))
-          trace("loadCache - loadedTableSummary done")
-
-          // Group transaction summary by timestamp
-          val maxAvailable = tablesCache.minBy(_.lastTimestamp).lastTimestamp // Can group summary up to that timestamp
-          val grouped: mutable.Map[Timestamp, MutationGroupSummary] = mutable.Map()
-          for (tableSummary <- tablesCache; summary <- tableSummary.takeSummaryRecordsTo(maxAvailable)) {
-            val groupSummary = grouped.getOrElseUpdate(summary.timestamp, MutationGroupSummary(summary.token, summary.timestamp))
-            groupSummary.records = summary :: groupSummary.records
-          }
-          groupsSummaryQueue = (groupsSummaryQueue ++ grouped.valuesIterator).sortBy(_.timestamp)
-
-          // Load mutation group data from database
-          if (!groupsSummaryQueue.isEmpty) {
-
-            // Compute the timestamp range and from which tables to load data while respecting the cache size as much
-            // as possible. A record group is always entirely loaded and cached records can go beyond the cache size
-            // (but never more than the last record group size)
-            var loadCount = 0
-            val loadFrom = groupsSummaryQueue.head.timestamp
-            var loadTo = loadFrom
-            var loadTables: mutable.Set[Table] = mutable.Set()
-            while (!groupsSummaryQueue.isEmpty && loadCount < recordCacheSize) {
-              val head :: tail = groupsSummaryQueue
-              loadTables ++= head.records.map(_.table)
-              loadCount += head.records.size
-              loadTo = head.timestamp
-              groupsSummaryQueue = tail
-            }
-
-            // Finally load, merge and sort the data grouped by timestamp
-            groupsQueue = (groupsQueue ++ loadTablesData(loadTables, loadFrom, loadTo)).sortBy(_.timestamp)
-            trace("loadCache - done")
-          }
+        trace("loadCache - start {}", groupsQueue.size)
+        val loadedCount = loadMutationGroupFromSummaryQueue(maxRecordsCount = recordsCacheSize)
+        if (loadedCount < recordsCacheSize) {
+          loadMoreMutationGroupSummary()
+          loadMutationGroupFromSummaryQueue(maxRecordsCount = recordsCacheSize - loadedCount)
         }
+        trace("loadCache - done {}", groupsQueue.size)
       } catch {
         case e: Exception => {
           error = Some(e)
           throw e
         }
+      }
+    }
+
+    /**
+     * Load mutation group from the database up up to the specified max record count and using the group
+     * summary already loaded. Returns the number of records loaded during this call. The loaded record count can be
+     * lower than the specified max if not enough group summary are cached.
+     */
+    private def loadMutationGroupFromSummaryQueue(maxRecordsCount: Int): Int = {
+      if (!groupsSummaryQueue.isEmpty) {
+        trace("loadMutationGroupRecords: max={}", maxRecordsCount)
+
+        // Compute the timestamp range and from which tables to load data while respecting the maxRecordCount as much
+        // as possible. A record group is always entirely loaded and cached records can go beyond the maxRecordCount
+        // (but never more than the last record group size)
+        var loadCount = 0
+        val loadFrom = groupsSummaryQueue.head.timestamp
+        var loadTo = loadFrom
+        var loadTables: mutable.Set[Table] = mutable.Set()
+        while (!groupsSummaryQueue.isEmpty && loadCount < maxRecordsCount) {
+          val head :: tail = groupsSummaryQueue
+          loadTables ++= head.records.map(_.table)
+          loadCount += head.records.size
+          loadTo = head.timestamp
+          groupsSummaryQueue = tail
+        }
+
+        // Finally load, merge and sort the data grouped by timestamp
+        groupsQueue = (groupsQueue ++ loadTablesData(loadTables, loadFrom, loadTo)).sortBy(_.timestamp)
+        trace("loadMutationGroupRecords done: loaded={}", loadCount)
+        loadCount
+      } else 0
+    }
+
+    /**
+     * Load more mutation groups summary if needed and possible
+     */
+    private def loadMoreMutationGroupSummary() {
+      if (!groupsSummaryQueue.isEmpty || tablesCache.exists(ti => ti.hasMore || !ti.records.isEmpty)) {
+        trace("loadMutationGroupSummary")
+
+        // Ensure we have a minimum quantity of transaction summary loaded from each table
+        tablesCache.withFilter(_.mustLoadMore).foreach(loadTableSummary(_))
+
+        // Group transaction summary by timestamp
+        val maxAvailable = tablesCache.minBy(_.lastTimestamp).lastTimestamp // Can groups summary up to that timestamp
+        val grouped: mutable.Map[Timestamp, MutationGroupSummary] = mutable.Map()
+        for (tableSummary <- tablesCache; summary <- tableSummary.takeSummaryRecordsTo(maxAvailable)) {
+          val groupSummary = grouped.getOrElseUpdate(summary.timestamp, MutationGroupSummary(summary.token, summary.timestamp))
+          groupSummary.records = summary :: groupSummary.records
+        }
+        groupsSummaryQueue = (groupsSummaryQueue ++ grouped.valuesIterator).sortBy(_.timestamp)
+        trace("loadMutationGroupSummary done: queue={}", groupsSummaryQueue.size)
       }
     }
 
