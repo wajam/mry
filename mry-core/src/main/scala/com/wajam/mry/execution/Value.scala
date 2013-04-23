@@ -38,12 +38,21 @@ case class MapValue(mapValue: Map[String, Value]) extends Value {
     new MapValue(newMap)
   }
 
-  override def execProjection(context: ExecutionContext, into: Variable, keys: Object*) {
-    into.value = if (!keys.isEmpty) {
-      MapValue(mapValue.filter(e => keys.contains(StringValue(e._1))))
-    } else {
-      MapValue(mapValue)
+  override def execFiltering(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) {
+    val temp = mapValue.filter {
+      case (k, _) => MryFilters.applyFilter(StringValue(k), filter, value)
     }
+
+    into.value = MapValue(temp)
+  }
+
+  override def execProjection(context: ExecutionContext, into: Variable, keys: Object*) {
+    into.value =
+      if (!keys.isEmpty) {
+        MapValue(mapValue.filter(e => keys.contains(StringValue(e._1))))
+      } else {
+        MapValue(mapValue)
+      }
   }
 }
 
@@ -60,14 +69,28 @@ case class ListValue(listValue: Seq[Value]) extends Value {
   }
 
   override def execProjection(context: ExecutionContext, into: Variable, keys: Object*) {
-    into.value = if (!keys.isEmpty) {
-      ListValue(listValue.map(v => {
-        v.execProjection(context, into, keys: _*)
-        into.value
-      }))
-    } else {
-      ListValue(listValue)
-    }
+    into.value =
+      if (!keys.isEmpty) {
+        ListValue(listValue.map(v => {
+          v.execProjection(context, into, keys: _*)
+          into.value
+        }))
+      } else {
+        ListValue(listValue)
+      }
+  }
+
+  override def execFiltering(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) {
+    into.value =
+      if (listValue.forall(_.isInstanceOf[MapValue])) {
+        ListValue(listValue.map(v => {
+          v.execFiltering(context, into, key, filter, value)
+          into.value
+        }))
+      }
+      else {
+         throw new RuntimeException("Only MapValue can be filtered.")
+      }
   }
 }
 

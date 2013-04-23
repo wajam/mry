@@ -60,6 +60,10 @@ trait OperationSource extends ContentEquals  {
   def execProjection(context: ExecutionContext, into: Variable, keys: Object*) {
     getProxiedSource.execProjection(context, into, keys: _*)
   }
+
+  def execFiltering(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) {
+    getProxiedSource.execFiltering(context, into, key, filter, value)
+  }
 }
 
 class InvalidParameter(reason: String) extends Exception("%s: %s".format(getClass.toString, reason))
