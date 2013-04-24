@@ -14,6 +14,7 @@ import com.wajam.nrv.service.TokenRange
 import com.yammer.metrics.core.Gauge
 import com.wajam.nrv.utils.timestamp.Timestamp
 import com.wajam.nrv.utils.Closable
+import annotation.tailrec
 
 /**
  * MySQL backed storage
@@ -242,10 +243,11 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
   override def execFrom(context: ExecutionContext, into: Variable, keys: Object*) {
 
+    @tailrec
     def getTable(coll: TableCollection, tableNames: List[String]): Option[Table] = {
       tableNames match {
         case Nil => None
-        case head :: Nil => coll.getTable(tableNames.head)
+        case head :: Nil => coll.getTable(head)
         case head :: tail => {
           coll.getTable(head) match {
             case Some(table) => getTable(table, tail)
