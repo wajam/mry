@@ -40,10 +40,23 @@ case class MapValue(mapValue: Map[String, Value]) extends Value {
 
   override def execFiltering(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) {
     into.value =
-      if (into.value == StringValue("--FromList--"))
-        BoolValue(MryFilters.applyFilter(mapValue(key.toString), filter, value))
-      else
-        this
+      MapValue(mapValue.map {
+        // In case of list value, foward the filtering
+        case (k, v: ListValue) =>
+          v.execFiltering(context, into, key, filter, value)
+          (k -> into.value)
+
+        // Else pass-through
+        case kv => kv
+      })
+  }
+
+  def shouldFilter(key: Object, filter: MryFilters.MryFilter, value: Object): Boolean = {
+    mapValue.get(key.toString) match {
+      case Some(v) =>
+        MryFilters.applyFilter(v, filter, value)
+      case None => false
+    }
   }
 
   override def execProjection(context: ExecutionContext, into: Variable, keys: Object*) {
@@ -81,17 +94,14 @@ case class ListValue(listValue: Seq[Value]) extends Value {
   }
 
   override def execFiltering(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) {
-    into.value =
-      if (listValue.forall(_.isInstanceOf[MapValue])) {
-        ListValue(listValue.filter(v => {
-          into.value = StringValue("--FromList--")
-          v.execFiltering(context, into, key, filter, value)
-          into.value.asInstanceOf[BoolValue].boolValue
-        }))
+    val temp =
+
+      listValue filter {
+        case mapValue: MapValue => mapValue.shouldFilter(key, filter, value)
+        case v: Value => true
       }
-      else {
-         throw new RuntimeException("Only MapValue can be filtered.")
-      }
+
+    into.value = ListValue(temp)
   }
 }
 
