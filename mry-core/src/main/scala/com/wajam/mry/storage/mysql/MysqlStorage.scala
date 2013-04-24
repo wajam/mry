@@ -242,21 +242,24 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
   override def execFrom(context: ExecutionContext, into: Variable, keys: Object*) {
 
-    def getTable(coll: TableCollection, tableNames: List[String]): Table = {
-      if (tableNames == Nil) {
-        coll match {
-          case table: Table => table
-          case _ => throw new StorageException("Non existing table")
-        }
-      } else {
-        coll.getTable(tableNames.head) match {
-          case Some(table) => getTable(table, tableNames.tail)
-          case None => throw new StorageException("Non existing table %s".format(tableNames.head))
+    def getTable(coll: TableCollection, tableNames: List[String]): Option[Table] = {
+      tableNames match {
+        case Nil => None
+        case head :: Nil => coll.getTable(tableNames.head)
+        case head :: tail => {
+          coll.getTable(head) match {
+            case Some(table) => getTable(table, tail)
+            case None => None
+          }
         }
       }
     }
 
-    into.value = new TableValue(this, getTable(model, extractTableNames(keys:_*)))
+    val names = extractTableNames(keys: _*)
+    getTable(model, names) match {
+      case Some(table) => into.value = new TableValue(this, table)
+      case None => throw new StorageException("Non existing table %s".format(names.mkString("_")))
+    }
   }
 
   private def extractTableNames(params: Object*): List[String] = {
