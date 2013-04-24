@@ -39,11 +39,11 @@ case class MapValue(mapValue: Map[String, Value]) extends Value {
   }
 
   override def execFiltering(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) {
-    val temp = mapValue.filter {
-      case (k, _) => MryFilters.applyFilter(StringValue(k), filter, value)
-    }
-
-    into.value = MapValue(temp)
+    into.value =
+      if (into.value == StringValue("--FromList--"))
+        BoolValue(MryFilters.applyFilter(mapValue(key.toString), filter, value))
+      else
+        this
   }
 
   override def execProjection(context: ExecutionContext, into: Variable, keys: Object*) {
@@ -83,9 +83,10 @@ case class ListValue(listValue: Seq[Value]) extends Value {
   override def execFiltering(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) {
     into.value =
       if (listValue.forall(_.isInstanceOf[MapValue])) {
-        ListValue(listValue.map(v => {
+        ListValue(listValue.filter(v => {
+          into.value = StringValue("--FromList--")
           v.execFiltering(context, into, key, filter, value)
-          into.value
+          into.value.asInstanceOf[BoolValue].boolValue
         }))
       }
       else {
