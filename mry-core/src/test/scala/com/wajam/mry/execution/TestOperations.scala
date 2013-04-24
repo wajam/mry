@@ -29,50 +29,63 @@ class TestOperations extends FunSuite with ShouldMatchers {
     v.value should be(ListValue(Seq(Map("key2" -> toVal("value2")))))
   }
 
-  test("should support equals filtering at list level") {
+  def sampleFilterList(): ListValue = {
     val expectedMap1Value: MapValue = Map("A" -> toVal("1"))
     val expectedMap2Value: MapValue = Map("A" -> toVal("2"))
     val expectedMap3Value: MapValue = Map("A" -> toVal("2"))
 
     val expectedList: ListValue = Seq(expectedMap1Value, expectedMap2Value, expectedMap3Value)
 
+    expectedList
+  }
+
+  def assertFilterResult(list: ListValue, count: Int) {
+
+    list.listValue.size should equal(count)
+
+    val target = MapValue(Map("A" -> toVal("2")))
+
+    list(0) should be(target)
+    list(1) should be(target)
+  }
+
+  test("should support equals filtering at list level") {
+
+    val expectedList = sampleFilterList()
+
     val operationSource: OperationSource = expectedList
 
     val v = new Variable(null, 0)
 
     operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
 
-    v.value.asInstanceOf[ListValue].listValue.size should equal(2)
+    val finalList = v.value.asInstanceOf[ListValue]
+    assertFilterResult(finalList, 2)
   }
-
 
   test("should support equals filtering at list level with heterogeneous list") {
 
-    val expectedMap0Value: IntValue = 1
-    val expectedMap1Value: MapValue = Map("A" -> toVal("1"))
-    val expectedMap2Value: MapValue = Map("A" -> toVal("2"))
-    val expectedMap3Value: MapValue = Map("A" -> toVal("2"))
     val expectedMap4Value: DoubleValue = 4.0
 
-    val expectedList: ListValue = Seq(expectedMap0Value, expectedMap1Value, expectedMap2Value, expectedMap3Value, expectedMap4Value)
+    val expectedList = sampleFilterList()
 
-    val operationSource: OperationSource = expectedList
+    // Add non-map before and after
+    val lv = expectedList.listValue
+    val expectedList2 = ListValue(lv :+ expectedMap4Value)
+
+    val operationSource: OperationSource = expectedList2
 
     val v = new Variable(null, 0)
 
     operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
 
-    v.value.asInstanceOf[ListValue].listValue.size should equal(4)
+    val finalList = v.value.asInstanceOf[ListValue]
+    assertFilterResult(finalList, 3)
   }
 
   test("should support equals filtering at map level with heterogeneous map") {
 
-    val expectedMap1Value: MapValue = Map("A" -> toVal("1"))
-    val expectedMap2Value: MapValue = Map("A" -> toVal("2"))
-    val expectedMap3Value: MapValue = Map("A" -> toVal("2"))
-
-    val expectedList: ListValue = Seq(expectedMap1Value, expectedMap2Value, expectedMap3Value)
-
+    val expectedList = sampleFilterList()
     val extraMapValue: IntValue = 1
 
     val root: MapValue = Map("list" -> expectedList, "extra" -> extraMapValue)
@@ -85,16 +98,16 @@ class TestOperations extends FunSuite with ShouldMatchers {
 
     val map = v.value.asInstanceOf[MapValue].mapValue
 
-    map("list").asInstanceOf[ListValue].listValue.size should equal(2)
+    val finalList = map("list").asInstanceOf[ListValue]
+
+    assertFilterResult(finalList, 2)
+
     map("extra") should equal(IntValue(1))
   }
 
   test("should support equals filtering with map-list-map hierarchy") {
-    val expectedMap1Value: MapValue = Map("A" -> toVal("1"))
-    val expectedMap2Value: MapValue = Map("A" -> toVal("2"))
-    val expectedMap3Value: MapValue = Map("A" -> toVal("2"))
 
-    val expectedList: ListValue = Seq(expectedMap1Value, expectedMap2Value, expectedMap3Value)
+    val expectedList = sampleFilterList()
 
     val root: MapValue = Map("list" -> expectedList)
 
@@ -104,15 +117,14 @@ class TestOperations extends FunSuite with ShouldMatchers {
 
     operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
 
-    v.value.asInstanceOf[MapValue].mapValue("list").asInstanceOf[ListValue].listValue.size should equal(2)
+    val finalList = v.value.asInstanceOf[MapValue].mapValue("list").asInstanceOf[ListValue]
+
+    assertFilterResult(finalList, 2)
   }
 
   test("equals filtering recurse list-map (map-list-map-list-map to infinity)") {
-    val expectedMap1Value: MapValue = Map("A" -> toVal("1"))
-    val expectedMap2Value: MapValue = Map("A" -> toVal("2"))
-    val expectedMap3Value: MapValue = Map("A" -> toVal("2"))
 
-    val expectedList2: ListValue = Seq(expectedMap1Value, expectedMap2Value, expectedMap3Value)
+    val expectedList2 = sampleFilterList()
 
     val intermediateMap: MapValue = Map("list2" -> expectedList2)
 
@@ -126,6 +138,8 @@ class TestOperations extends FunSuite with ShouldMatchers {
 
     operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
 
-    v.value.asInstanceOf[MapValue].mapValue("list1").asInstanceOf[ListValue].listValue(0).asInstanceOf[MapValue].mapValue("list2").asInstanceOf[ListValue].listValue.size should equal(2)
+    val finalList = v.value.asInstanceOf[MapValue].mapValue("list1").asInstanceOf[ListValue].listValue(0).asInstanceOf[MapValue].mapValue("list2").asInstanceOf[ListValue]
+
+    assertFilterResult(finalList, 2)
   }
 }
