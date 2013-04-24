@@ -55,7 +55,7 @@ case class MapValue(mapValue: Map[String, Value]) extends Value {
     mapValue.get(key.toString) match {
       case Some(v) =>
         MryFilters.applyFilter(v, filter, value)
-      case None => false
+      case None => true
     }
   }
 
@@ -94,14 +94,25 @@ case class ListValue(listValue: Seq[Value]) extends Value {
   }
 
   override def execFiltering(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) {
-    val temp =
 
-      listValue filter {
-        case mapValue: MapValue => mapValue.shouldFilter(key, filter, value)
+    // Filter the child mapValue that doesn't match the filter
+    val temp = listValue filter {
+        case mapValue: MapValue =>
+          mapValue.shouldFilter(key, filter, value)
         case v: Value => true
       }
 
-    into.value = ListValue(temp)
+    val temp2 = temp.map {
+      // Foward the filtering, to filter child of child
+      case mapValue: MapValue =>
+        mapValue.execFiltering(context, into, key, filter, value)
+        into.value
+
+      // Doesn't support filtering
+      case v => v
+    }
+
+    into.value = ListValue(temp2)
   }
 }
 
