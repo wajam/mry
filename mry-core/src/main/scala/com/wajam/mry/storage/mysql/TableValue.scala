@@ -10,8 +10,7 @@ class TableValue(storage: MysqlStorage, table: Table, accessPrefix: AccessPath =
     if (keys.length > 0) {
       // get a specific row
 
-      val key = param[StringValue](keys, 0).strValue
-      val accessPath = new AccessPath(accessPrefix.parts ++ Seq(new AccessKey(key)))
+      val accessPath = extractAccessPath(keys:_*)
 
       val token = context.getToken(accessPath(0).key)
       context.useToken(token)
@@ -37,9 +36,8 @@ class TableValue(storage: MysqlStorage, table: Table, accessPrefix: AccessPath =
   }
 
   override def execSet(context: ExecutionContext, into: Variable, data: Object*) {
-    val key = param[StringValue](data, 0).strValue
+    val accessPath = extractAccessPath(data:_*)
     val mapVal = param[MapValue](data, 1)
-    val accessPath = new AccessPath(accessPrefix.parts ++ Seq(new AccessKey(key)))
 
     val token = context.getToken(accessPath(0).key)
     context.useToken(token)
@@ -56,8 +54,7 @@ class TableValue(storage: MysqlStorage, table: Table, accessPrefix: AccessPath =
   }
 
   override def execDelete(context: ExecutionContext, into: Variable, data: Object*) {
-    val key = param[StringValue](data, 0).strValue
-    val accessPath = new AccessPath(accessPrefix.parts ++ Seq(new AccessKey(key)))
+    val accessPath = extractAccessPath(data:_*)
 
     val token = context.getToken(accessPath(0).key)
     context.useToken(token)
@@ -71,6 +68,23 @@ class TableValue(storage: MysqlStorage, table: Table, accessPrefix: AccessPath =
     }
   }
 
+  private def extractAccessPath(params: Object*): AccessPath = {
+    val accessSuffix = params(0) match {
+      case StringValue(key) => {
+        Seq(new AccessKey(key))
+      }
+      case ListValue(values) => {
+        values.map {
+          case StringValue(key) => new AccessKey(key)
+          case _ => throw new InvalidParameter("Expected parameter at position 0 to be of instance ListValue[Seq[StringValue]]")
+        }
+      }
+      case _ => {
+        throw new InvalidParameter("Expected parameter at position 0 to be of instance StringValue or ListValue")
+      }
+    }
+    new AccessPath(accessPrefix.parts ++ accessSuffix)
+  }
 }
 
 

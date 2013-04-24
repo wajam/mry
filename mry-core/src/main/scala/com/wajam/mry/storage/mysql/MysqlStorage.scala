@@ -14,6 +14,7 @@ import com.wajam.nrv.service.TokenRange
 import com.yammer.metrics.core.Gauge
 import com.wajam.nrv.utils.timestamp.Timestamp
 import com.wajam.nrv.utils.Closable
+import annotation.tailrec
 
 /**
  * MySQL backed storage
@@ -241,16 +242,42 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   }
 
   override def execFrom(context: ExecutionContext, into: Variable, keys: Object*) {
-    val tableName = param[StringValue](keys, 0).strValue
-    val optTable = model.getTable(tableName)
 
-    optTable match {
-      case Some(t) =>
-        into.value = new TableValue(this, t)
+    @tailrec
+    def getTable(coll: TableCollection, tableNames: List[String]): Option[Table] = {
+      tableNames match {
+        case Nil => None
+        case head :: Nil => coll.getTable(head)
+        case head :: tail => {
+          coll.getTable(head) match {
+            case Some(table) => getTable(table, tail)
+            case None => None
+          }
+        }
+      }
+    }
 
-      case None =>
-        throw new StorageException("Non existing table %s".format(tableName))
+    val names = extractTableNames(keys: _*)
+    getTable(model, names) match {
+      case Some(table) => into.value = new TableValue(this, table)
+      case None => throw new StorageException("Non existing table %s".format(names.mkString("_")))
+    }
+  }
 
+  private def extractTableNames(params: Object*): List[String] = {
+    params(0) match {
+      case StringValue(tableName) => {
+        List(tableName)
+      }
+      case ListValue(values) => {
+        values.map {
+          case StringValue(tableName) => tableName
+          case _ => throw new InvalidParameter("Expected parameter at position 0 to be of instance ListValue[Seq[StringValue]]")
+        }.toList
+      }
+      case _ => {
+        throw new InvalidParameter("Expected parameter at position 0 to be of instance StringValue or ListValue")
+      }
     }
   }
 
@@ -370,25 +397,12 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       // Set or delete each record
       val storage = transaction.from("mysql")
       for (record <- records.sortBy(_.table.depth)) {
-
-        // Select the parent table if any
-        val parent = record.table.parentTable match {
-          case Some(tableParent) => {
-            tableParent.path.zip(record.accessPath.keys).foldLeft(storage) {
-              case (p, (t, k)) => {
-                p.from(t.name).get(k)
-              }
-            }
-          }
-          case None => storage
-        }
-
-        // Finally set or delete the record data
-        val table = parent.from(record.table.name)
+        val tableNames = record.table.path.map(_.name)
+        val keys = record.accessPath.keys
         if (record.value.isNull) {
-          table.delete(record.accessPath.last.key)
+          storage.from(tableNames).delete(keys)
         } else {
-          table.set(record.accessPath.last.key, record.value)
+          storage.from(tableNames).set(keys, record.value)
         }
       }
     }
