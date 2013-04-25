@@ -67,6 +67,15 @@ trait OperationApi extends OperationSource {
     this.projectionInto(this.sourceBlock.defineVariable(), keys: _*)
   }
 
+  def filter(key: Object, filter: MryFilters.MryFilter, value: Value): Variable = {
+    this.filterInto(this.sourceBlock.defineVariable(), key, filter, value)
+  }
+
+  def filterInto(into: Variable, key: Object, filter: MryFilters.MryFilter, value: Value): Variable = {
+    sourceBlock.addOperation(new Filter(this, into, key, filter, value))
+    into
+  }
+
   def projectionInto(into: Variable, keys: Object*): Variable = {
     sourceBlock.addOperation(new Projection(this, into, keys: _*))
     into

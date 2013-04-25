@@ -3,7 +3,7 @@ package com.wajam.mry.execution
 object MryFilters extends Enumeration {
   type MryFilter = Value
 
-  val Equals = Value("eq")
+  val Equals = Value(1, "eq")
 
   private val operatorsFunctions: Map[String, (Object, Object) => Boolean] = Map(
     Equals.toString -> ((left: Object, right: Object) => {

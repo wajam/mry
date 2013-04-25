@@ -144,5 +144,25 @@ object Operation {
     }
   }
 
+  class Filter(source: OperationSource, val into: Variable, val key: Object, val filter: MryFilters.MryFilter, val value: Object) extends Operation(source) with Serializable {
+    def execute(context: ExecutionContext) {
+      source.execFiltering(context, into, key, filter, value)
+    }
+
+    def reset() {}
+
+    override def equalsContent(obj: Any): Boolean = {
+      obj match {
+        case o: Filter =>
+          into.equalsContent(o.into) &&
+          key.equalsContent(o.key) &&
+          value.equalsContent(o.value) &&
+          filter == o.filter
+
+        case _ => false
+      }
+    }
+  }
+
 }
 

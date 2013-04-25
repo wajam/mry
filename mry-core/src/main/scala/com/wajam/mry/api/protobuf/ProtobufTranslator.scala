@@ -346,6 +346,15 @@ private class InternalProtobufTranslator {
         .addVariableHeapIds(getHeapIpForEncodedData(into)) // Variable are already listed in the parent block, so don't duplicate
         .addAllObjectHeapIds(objects.map(encodePObject(_).asInstanceOf[java.lang.Integer]))
 
+    val withFilter = (op: Filter) => {
+
+      val objs: List[Object] = List(op.key, StringValue(op.filter.toString), op.value)
+
+      pOperation
+        .addVariableHeapIds(getHeapIpForEncodedData(op.into)) // Variable are already listed in the parent block, so don't duplicate
+        .addAllObjectHeapIds(objs.map(encodePObject(_).asInstanceOf[java.lang.Integer]))
+    }
+
     operation match {
       case op: Return => withFrom(op.from); pOperation.setType(Type.Return)
       case op: From => withIntoAndSeqObject(op.into, op.keys); pOperation.setType(Type.From)
@@ -354,6 +363,7 @@ private class InternalProtobufTranslator {
       case op: Delete => withIntoAndSeqObject(op.into, op.data);; pOperation.setType(Type.Delete)
       case op: Limit => withIntoAndSeqObject(op.into, op.keys); pOperation.setType(Type.Limit)
       case op: Projection => withIntoAndSeqObject(op.into, op.keys); pOperation.setType(Type.Projection)
+      case op: Filter => withFilter(op); pOperation.setType(Type.Filter)
     }
 
     pOperation
@@ -376,6 +386,7 @@ private class InternalProtobufTranslator {
       case Type.Delete => new Operation.Delete(os, variables(0), objects:_*)
       case Type.Limit => new Operation.Limit(os, variables(0), objects:_*)
       case Type.Projection => new Operation.Projection(os, variables(0), objects:_*)
+      case Type.Filter => new Operation.Filter(os, variables(0), objects(0), MryFilters.withName(objects(1).asInstanceOf[StringValue].strValue), objects(2))
     }
   }
 
