@@ -13,12 +13,13 @@ import com.wajam.nrv.service.TokenRange
 import com.wajam.nrv.utils.TimestampIdGenerator
 import com.wajam.nrv.utils.timestamp.Timestamp
 import org.mockito.Mockito._
+import org.scalatest.matchers.ShouldMatchers
 
 /**
  * Test MySQL storage
  */
 @RunWith(classOf[JUnitRunner])
-class TestMysqlStorage extends TestMysqlBase {
+class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
 
   test("should get committed record") {
     exec(t => {
@@ -39,6 +40,35 @@ class TestMysqlStorage extends TestMysqlBase {
       case _ =>
         fail("Didn't receive a map")
     }
+  }
+
+  test("should support filtering") {
+    val expectedMap1Value: MapValue = Map("A" -> toVal("1"))
+    val expectedMap2Value: MapValue = Map("A" -> toVal("2"))
+    val expectedMap3Value: MapValue = Map("A" -> toVal("2"))
+
+    val expectedList: ListValue = Seq(expectedMap1Value, expectedMap2Value, expectedMap3Value)
+
+    val metaMapValue: MapValue = Map("list" -> expectedList)
+
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", metaMapValue)
+    }, commit = true)
+
+    val Seq(v) = exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      t.ret(table.get("key1").filter("A", MryFilters.Equals, "2"))
+    }, commit = false)
+
+    val finalList = v.value.asInstanceOf[MapValue].mapValue("list").asInstanceOf[ListValue]
+
+    finalList.size should equal(2)
+
+    finalList(0) should be(MapValue(Map("A" -> toVal("2"))))
+    finalList(1) should be(MapValue(Map("A" -> toVal("2"))))
   }
 
   test("should support projection on single record") {
