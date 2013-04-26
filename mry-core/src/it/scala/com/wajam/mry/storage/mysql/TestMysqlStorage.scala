@@ -71,6 +71,35 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
     finalList(1) should be(MapValue(Map("A" -> toVal("2"))))
   }
 
+  test("should support filtering, lte") {
+    val expectedMap1Value: MapValue = Map("A" -> toVal(1))
+    val expectedMap2Value: MapValue = Map("A" -> toVal(2))
+    val expectedMap3Value: MapValue = Map("A" -> toVal(4))
+
+    val expectedList: ListValue = Seq(expectedMap1Value, expectedMap2Value, expectedMap3Value)
+
+    val metaMapValue: MapValue = Map("list" -> expectedList)
+
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", metaMapValue)
+    }, commit = true)
+
+    val Seq(v) = exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      t.ret(table.get("key1").filter("A", MryFilters.LesserThanOrEqual, 3))
+    }, commit = false)
+
+    val finalList = v.value.asInstanceOf[MapValue].mapValue("list").asInstanceOf[ListValue]
+
+    finalList.size should equal(2)
+
+    finalList(0) should be(MapValue(Map("A" -> toVal(1))))
+    finalList(1) should be(MapValue(Map("A" -> toVal(2))))
+  }
+
   test("should support projection on single record") {
     val expectedMapValue: MapValue = Map("mapk" -> toVal("value1"))
     exec(t => {

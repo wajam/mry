@@ -16,10 +16,12 @@ trait Value extends Object with OperationSource {
   }
 
   def isNull = false
+
+  def supportFiltering = false
 }
 
 @SerialVersionUID(-8696609946517999638L)
-class NullValue extends Value with Serializable {
+class NullValue extends Value  with Serializable {
   override def equalsValue(that: Value): Boolean = this.isInstanceOf[NullValue]
   override def isNull = true
 }
@@ -38,6 +40,8 @@ case class MapValue(mapValue: Map[String, Value]) extends Value {
     new MapValue(newMap)
   }
 
+  override def supportFiltering = true
+
   override def execFiltering(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) {
     into.value =
       MapValue(mapValue.map {
@@ -51,12 +55,14 @@ case class MapValue(mapValue: Map[String, Value]) extends Value {
       })
   }
 
-  def shouldFilter(key: Object, filter: MryFilters.MryFilter, value: Object): Boolean = {
-    mapValue.get(key.toString) match {
+  override def execPredicate(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) = {
+    val result = mapValue.get(key.toString) match {
       case Some(v) =>
         MryFilters.applyFilter(v, filter, value)
       case None => true
     }
+
+    into.value = BoolValue(result)
   }
 
   override def execProjection(context: ExecutionContext, into: Variable, keys: Object*) {
@@ -98,18 +104,15 @@ case class ListValue(listValue: Seq[Value]) extends Value {
     // Filter the child mapValue that doesn't match the filter
     val temp = listValue filter {
         case mapValue: MapValue =>
-          mapValue.shouldFilter(key, filter, value)
+          mapValue.execPredicate(context, into, key, filter, value)
+          into.value.asInstanceOf[BoolValue].boolValue
         case v: Value => true
       }
 
-    val temp2 = temp.map {
-      // Foward the filtering, to filter child of child
-      case mapValue: MapValue =>
-        mapValue.execFiltering(context, into, key, filter, value)
-        into.value
-
-      // Doesn't support filtering
-      case v => v
+    // Foward the filter to allow recursion
+    val temp2 = temp.map { (v) =>
+      v.execFiltering(context, into, key, filter, value)
+      into.value
     }
 
     into.value = ListValue(temp2)

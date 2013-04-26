@@ -37,6 +37,7 @@ class Transaction(blockCreator: (Block with OperationApi) => Unit = null) extend
 
   override def execReturn(context: ExecutionContext, from: Seq[Variable]) {
 
+    var i = 0
     context.returnValues = for (variable <- from) yield variable.value.serializableValue
   }
 

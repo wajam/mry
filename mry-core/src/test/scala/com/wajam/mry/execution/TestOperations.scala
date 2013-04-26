@@ -39,6 +39,17 @@ class TestOperations extends FunSuite with ShouldMatchers {
     expectedList
   }
 
+  def sampleFilterList2(): ListValue = {
+    val expectedMap1Value: MapValue = Map("A" -> toVal(1))
+    val expectedMap2Value: MapValue = Map("A" -> toVal(2))
+    val expectedMap3Value: MapValue = Map("A" -> toVal(2))
+    val expectedMap4Value: MapValue = Map("A" -> toVal(3))
+
+    val expectedList: ListValue = Seq(expectedMap1Value, expectedMap2Value, expectedMap3Value, expectedMap4Value)
+
+    expectedList
+  }
+
   def assertFilterResult(list: ListValue, count: Int) {
 
     list.listValue.size should equal(count)
@@ -141,5 +152,76 @@ class TestOperations extends FunSuite with ShouldMatchers {
     val finalList = v.value.asInstanceOf[MapValue].mapValue("list1").asInstanceOf[ListValue].listValue(0).asInstanceOf[MapValue].mapValue("list2").asInstanceOf[ListValue]
 
     assertFilterResult(finalList, 2)
+  }
+
+  test("lte filtering") {
+
+    val expectedList = sampleFilterList2()
+
+    val operationSource: OperationSource = expectedList
+
+    val v = new Variable(null, 0)
+
+    operationSource.execFiltering(null, v, StringValue("A"), MryFilters.LesserThanOrEqual, IntValue(2))
+
+    val finalList = v.value.asInstanceOf[ListValue]
+    finalList.size should equal(3)
+
+    finalList(0) should be(MapValue(Map("A" -> toVal(1))))
+    finalList(1) should be(MapValue(Map("A" -> toVal(2))))
+    finalList(2) should be(MapValue(Map("A" -> toVal(2))))
+  }
+
+  test("lt filtering") {
+
+    val expectedList = sampleFilterList2()
+
+    val operationSource: OperationSource = expectedList
+
+    val v = new Variable(null, 0)
+
+    operationSource.execFiltering(null, v, StringValue("A"), MryFilters.LesserThan, IntValue(3))
+
+    val finalList = v.value.asInstanceOf[ListValue]
+    finalList.size should equal(3)
+
+    finalList(0) should be(MapValue(Map("A" -> toVal(1))))
+    finalList(1) should be(MapValue(Map("A" -> toVal(2))))
+    finalList(2) should be(MapValue(Map("A" -> toVal(2))))
+  }
+
+  test("gt filtering") {
+
+    val expectedList = sampleFilterList2()
+
+    val operationSource: OperationSource = expectedList
+
+    val v = new Variable(null, 0)
+
+    operationSource.execFiltering(null, v, StringValue("A"), MryFilters.GreaterThan, IntValue(2))
+
+    val finalList = v.value.asInstanceOf[ListValue]
+    finalList.size should equal(1)
+
+    finalList(0) should be(MapValue(Map("A" -> toVal(3))))
+
+  }
+
+  test("gte filtering") {
+
+    val expectedList = sampleFilterList2()
+
+    val operationSource: OperationSource = expectedList
+
+    val v = new Variable(null, 0)
+
+    operationSource.execFiltering(null, v, StringValue("A"), MryFilters.GreaterThanOrEqual, IntValue(2))
+
+    val finalList = v.value.asInstanceOf[ListValue]
+    finalList.size should equal(3)
+
+    finalList(0) should be(MapValue(Map("A" -> toVal(2))))
+    finalList(1) should be(MapValue(Map("A" -> toVal(2))))
+    finalList(2) should be(MapValue(Map("A" -> toVal(3))))
   }
 }
