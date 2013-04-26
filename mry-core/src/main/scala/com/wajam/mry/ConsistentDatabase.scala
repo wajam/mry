@@ -1,7 +1,7 @@
 package com.wajam.mry
 
 import api.TransactionPrinter
-import com.wajam.nrv.consistency.{Consistency, ConsistentStore}
+import com.wajam.nrv.consistency.ConsistentStore
 import com.wajam.nrv.data.{MessageType, InMessage, Message}
 import com.wajam.nrv.utils.timestamp.Timestamp
 import com.wajam.nrv.service.{ActionMethod, TokenRange}
@@ -81,11 +81,11 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
               value.applyTo(transaction)
               val message = new InMessage(Map(Database.TOKEN_KEY -> value.token), data = transaction)
               message.token = value.token
+              message.timestamp = Some(value.timestamp)
               message.serviceName = name
               message.method = ActionMethod.POST
               message.function = MessageType.FUNCTION_CALL
               message.path = remoteWriteExecuteToken.path.buildPath(message.parameters)
-              Consistency.setMessageTimestamp(message, value.timestamp)
               message
             } catch {
               case e: Exception => {
@@ -110,7 +110,7 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
   def writeTransaction(message: Message) {
     writeTransactionTimer.time {
       val transaction = message.getData[Transaction]
-      val timestamp = Consistency.getMessageTimestamp(message)
+      val timestamp = message.timestamp
       val context = new ExecutionContext(storages, timestamp)
       context.cluster = cluster
 

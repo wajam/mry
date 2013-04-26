@@ -9,7 +9,6 @@ import com.wajam.nrv.service._
 import com.wajam.nrv.tracing.Traced
 import com.wajam.nrv.data.InMessage
 import com.wajam.nrv.utils.{CurrentTime, Promise, Future}
-import com.wajam.nrv.consistency.Consistency
 import java.util.concurrent.TimeUnit
 
 /**
@@ -101,6 +100,7 @@ class Database[T <: Storage](serviceName: String = "database")
   }
 
   def getStorage(name: String): T = this.storages.get(name).get
+
   protected val remoteWriteExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
     execute(req)
   }, ActionMethod.POST))
@@ -113,7 +113,7 @@ class Database[T <: Storage](serviceName: String = "database")
 
   private def execute(req: InMessage) {
     var values: Seq[Value] = null
-    val context = new ExecutionContext(storages, Consistency.getMessageTimestamp(req))
+    val context = new ExecutionContext(storages, req.timestamp)
     context.cluster = Database.this.cluster
 
     try {
