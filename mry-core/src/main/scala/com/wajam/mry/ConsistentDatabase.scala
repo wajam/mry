@@ -122,7 +122,7 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
         case e: Exception => {
           if (log.isDebugEnabled) {
             val txTree = TransactionPrinter.printTree(transaction, timestamp.getOrElse("").toString)
-            debug("Got an exception executing transaction {}", txTree, e)
+            info("Got an exception executing transaction {}", txTree, e)
           }
           context.rollback()
           throw e
