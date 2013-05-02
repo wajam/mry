@@ -50,7 +50,7 @@ class Database[T <: Storage](serviceName: String = "database")
         debug("Got an exception executing transaction", ex)
 
         if (ret != null) {
-          ret(null, Some(ex))
+          ret(Seq(), Some(ex))
         }
     }
   }
@@ -77,9 +77,13 @@ class Database[T <: Storage](serviceName: String = "database")
         data = transaction,
         onReply = (resp, optException) => {
           if (ret != null) {
-            if (optException.isEmpty)
-              ret(resp.getData[Seq[Value]], None)
-            else
+            if (optException.isEmpty) {
+              val responseData = resp.getData[Seq[Value]]
+              if (responseData == null) {
+                warn("null response data detected.", new Exception())
+              }
+              ret(responseData, None)
+            } else
               ret(Seq(), optException)
           }
         })
@@ -89,7 +93,7 @@ class Database[T <: Storage](serviceName: String = "database")
         debug("Got an exception executing transaction", ex)
 
         if (ret != null) {
-          ret(null, Some(ex))
+          ret(Seq(), Some(ex))
         }
     }
   }
@@ -127,6 +131,7 @@ class Database[T <: Storage](serviceName: String = "database")
         throw new TimeoutException("Database transaction took too much time to execute", Some(elapsedTime))
       }
       values = context.returnValues
+      if (values == null) warn("null values detected", new Exception())
       context.commit()
       transaction.reset()
 
