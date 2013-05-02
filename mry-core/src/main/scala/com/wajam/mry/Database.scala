@@ -78,11 +78,7 @@ class Database[T <: Storage](serviceName: String = "database")
         onReply = (resp, optException) => {
           if (ret != null) {
             if (optException.isEmpty) {
-              val responseData = resp.getData[Seq[Value]]
-              if (responseData == null) {
-                warn("null response data detected.", new Exception())
-              }
-              ret(responseData, None)
+              ret(resp.getData[Seq[Value]], None)
             } else
               ret(Seq(), optException)
           }
