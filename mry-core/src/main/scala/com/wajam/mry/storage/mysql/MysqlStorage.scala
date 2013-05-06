@@ -345,7 +345,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   def readTransactions(from: Timestamp, to: Timestamp, ranges: Seq[TokenRange]) = {
     readTransactionsInitTimer.time {
       new Iterator[MutationGroup] with Closable {
-        private val itr = new MutationGroupIterator(from, to.asInstanceOf[Timestamp], ranges)
+        private val itr = new MutationGroupIterator(from, to, ranges)
         private var nextGroup: Option[MutationGroup] = readNext()
 
         // Add this iterator in GC exclusion list until closed
