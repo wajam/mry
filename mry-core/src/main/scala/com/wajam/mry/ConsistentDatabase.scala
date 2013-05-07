@@ -120,7 +120,7 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
         transaction.reset()
       } catch {
         case e: Exception => {
-          if (log.isDebugEnabled) {
+          if (innerLog.isDebugEnabled) {
             val txTree = TransactionPrinter.printTree(transaction, timestamp.getOrElse("").toString)
             info("Got an exception executing transaction {}", txTree, e)
           }
