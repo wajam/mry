@@ -1272,23 +1272,23 @@ class TestMysqlStorage extends TestMysqlBase {
     val grp8 = spyStorage.MutationGroup(tk8, 8L, List(Record(table1, tk8, 8L, NullValue, "k8")))
 
     // After first and before last
-    val grp2to7 = new spyStorage.MutationGroupIterator(from = 2L, to = 7L, List(TokenRange.All), 4, 1, 1)
+    val grp2to7 = new spyStorage.MutationGroupIterator(fromTime = 2L, toTime = 7L, List(TokenRange.All), 4, 1, 1)
     grp2to7.toList should be(List(grp2, grp3, grp4, grp5, grp6, grp7))
 
     // Same from and to
-    val grp1to1 = new spyStorage.MutationGroupIterator(from = 1L, to = 1L, List(TokenRange.All), 4, 2, 1)
+    val grp1to1 = new spyStorage.MutationGroupIterator(fromTime = 1L, toTime = 1L, List(TokenRange.All), 4, 2, 1)
     grp1to1.toList should be(List(grp1))
 
     // Before first
-    val grp0to3 = new spyStorage.MutationGroupIterator(from = 0L, to = 3L, List(TokenRange.All), 4, 2, 1)
+    val grp0to3 = new spyStorage.MutationGroupIterator(fromTime = 0L, toTime = 3L, List(TokenRange.All), 4, 2, 1)
     grp0to3.toList should be(List(grp1, grp2, grp3))
 
     // Beyond last
-    val grp5to9 = new spyStorage.MutationGroupIterator(from = 5L, to = 9L, List(TokenRange.All), 4, 2, 1)
+    val grp5to9 = new spyStorage.MutationGroupIterator(fromTime = 5L, toTime = 9L, List(TokenRange.All), 4, 2, 1)
     grp5to9.toList should be(List(grp5, grp6, grp7, grp8))
 
     // Loading records error
-    val grpError = new spyStorage.MutationGroupIterator(from = 1L, to = 3L, List(TokenRange.All), 4, 2, 1)
+    val grpError = new spyStorage.MutationGroupIterator(fromTime = 1L, toTime = 3L, List(TokenRange.All), 4, 2, 1)
     when(spyStorage.createStorageTransaction).thenThrow(new RuntimeException())
     evaluating {
       grpError.next()
@@ -1316,7 +1316,7 @@ class TestMysqlStorage extends TestMysqlBase {
     val grp1 = storage.MutationGroup(tk1, ts1, List(table1_r1, table1_1_r2, table1_1_r1, table1_1_1_r1))
 
     // Verify database is empty before
-    val before = new storage.MutationGroupIterator(from = 0L, to = 3L, ranges = List(TokenRange.All))
+    val before = new storage.MutationGroupIterator(fromTime = 0L, toTime = 3L, ranges = List(TokenRange.All))
     before.toList should be(List())
 
     // Generate mutations transaction and apply the operations
@@ -1327,7 +1327,7 @@ class TestMysqlStorage extends TestMysqlBase {
     }, commit = true, onTimestamp = ts1)
 
     // Ensure mutations are applied to database
-    val after = new storage.MutationGroupIterator(from = 0L, to = 3L, ranges = List(TokenRange.All))
+    val after = new storage.MutationGroupIterator(fromTime = 0L, toTime = 3L, ranges = List(TokenRange.All))
     after.toList should be(List(grp1))
 
     // Create and apply a mutation group which deletes the intermediate record (i.e. with a parent and a child)
