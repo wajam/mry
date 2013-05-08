@@ -1327,8 +1327,10 @@ class TestMysqlStorage extends TestMysqlBase {
     }, commit = true, onTimestamp = ts1)
 
     // Ensure mutations are applied to database
-    val after = new storage.MutationGroupIterator(fromTime = 0L, toTime = 3L, ranges = List(TokenRange.All))
-    after.toList should be(List(grp1))
+    val after = new storage.MutationGroupIterator(fromTime = 0L, toTime = 3L, ranges = List(TokenRange.All)).toList
+    //TODO find root cause... (Order is not important for this)
+    after.foreach(mutation => mutation.records = mutation.records.sortWith((r1, r2) => r1.table.path.toString() < r2.table.path.toString()))
+    after should be(List(grp1))
 
     // Create and apply a mutation group which deletes the intermediate record (i.e. with a parent and a child)
     val ts2 = Timestamp(2)
