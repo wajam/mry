@@ -16,12 +16,21 @@ trait Value extends Object with OperationSource {
   }
 
   def isNull = false
+}
 
-  def supportFiltering = false
+trait NoFiltering extends Value with OperationSource {
+
+  override def execPredicate(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) = {
+    into.value = BoolValue(true)
+  }
+
+  override def execFiltering(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) = {
+    into.value = this.value.value
+  }
 }
 
 @SerialVersionUID(-8696609946517999638L)
-class NullValue extends Value  with Serializable {
+class NullValue extends Value with NoFiltering with Serializable {
   override def equalsValue(that: Value): Boolean = this.isInstanceOf[NullValue]
   override def isNull = true
 }
@@ -40,18 +49,13 @@ case class MapValue(mapValue: Map[String, Value]) extends Value {
     new MapValue(newMap)
   }
 
-  override def supportFiltering = true
-
   override def execFiltering(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) {
+
+    // Foward filtering to children
     into.value =
-      MapValue(mapValue.map {
-        // In case of list value, foward the filtering
-        case (k, v: ListValue) =>
+      MapValue(mapValue.map { case (k, v) =>
           v.execFiltering(context, into, key, filter, value)
           (k -> into.value)
-
-        // Else pass-through
-        case kv => kv
       })
   }
 
@@ -102,11 +106,9 @@ case class ListValue(listValue: Seq[Value]) extends Value {
   override def execFiltering(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) {
 
     // Filter the child mapValue that doesn't match the filter
-    val temp = listValue filter {
-        case mapValue: MapValue =>
-          mapValue.execPredicate(context, into, key, filter, value)
+    val temp = listValue filter { (v) =>
+          v.execPredicate(context, into, key, filter, value)
           into.value.asInstanceOf[BoolValue].boolValue
-        case v: Value => true
       }
 
     // Foward the filter to allow recursion
@@ -120,7 +122,7 @@ case class ListValue(listValue: Seq[Value]) extends Value {
 }
 
 @SerialVersionUID(-3026000576636973393L)
-case class StringValue(strValue: String) extends Value {
+case class StringValue(strValue: String) extends Value with NoFiltering  {
   override def toString = strValue
 
   override def equalsValue(that: Value): Boolean = {
@@ -132,7 +134,7 @@ case class StringValue(strValue: String) extends Value {
 }
 
 @SerialVersionUID(6885681030783170441L)
-case class IntValue(intValue: Long) extends Value {
+case class IntValue(intValue: Long) extends Value with NoFiltering {
   override def toString = String.valueOf(intValue)
 
   override def equalsValue(that: Value): Boolean = {
@@ -144,7 +146,7 @@ case class IntValue(intValue: Long) extends Value {
 }
 
 @SerialVersionUID(3071120965134758093L)
-case class BoolValue(boolValue: Boolean) extends Value {
+case class BoolValue(boolValue: Boolean) extends Value with NoFiltering  {
   override def toString = String.valueOf(boolValue)
 
   override def equalsValue(that: Value): Boolean = {
@@ -156,7 +158,7 @@ case class BoolValue(boolValue: Boolean) extends Value {
 }
 
 @SerialVersionUID(-4318700849067154549L)
-case class DoubleValue(doubleValue: Double) extends Value {
+case class DoubleValue(doubleValue: Double) extends Value with NoFiltering  {
   override def toString = String.valueOf(doubleValue)
 
   override def equalsValue(that: Value): Boolean = {

@@ -9,6 +9,16 @@ import org.scalatest.matchers.ShouldMatchers
  */
 class TestOperations extends FunSuite with ShouldMatchers {
 
+  // This mock class is used to simulate the proxy concept used in Record and MultipleRecordValue
+  case class MockProxy(innerValue: Value) extends Value {
+
+    // Serialized version of this record is the inner map or null
+    override def serializableValue = innerValue
+
+    // Operations are executed on record data (map or null)
+    override def proxiedSource: Option[OperationSource] = Some(innerValue)
+  }
+
   test("should support projection on single record, at map level") {
     val mapValue: MapValue = Map("key1" -> toVal("value1"), "key2" -> toVal("value2"))
     val operationSource: OperationSource = mapValue
@@ -35,6 +45,16 @@ class TestOperations extends FunSuite with ShouldMatchers {
     val expectedMap3Value: MapValue = Map("A" -> toVal("2"))
 
     val expectedList: ListValue = Seq(expectedMap1Value, expectedMap2Value, expectedMap3Value)
+
+    expectedList
+  }
+
+  def sampleProxyFilterList() = {
+    val expectedMap1Value = MockProxy(Map("A" -> toVal("1")))
+    val expectedMap2Value = MockProxy(Map("A" -> toVal("2")))
+    val expectedMap3Value = MockProxy(Map("A" -> toVal("2")))
+
+    val expectedList = MockProxy(Seq(expectedMap1Value, expectedMap2Value, expectedMap3Value))
 
     expectedList
   }
@@ -116,11 +136,42 @@ class TestOperations extends FunSuite with ShouldMatchers {
     map("extra") should equal(IntValue(1))
   }
 
+  test("should support equals filtering at list level with proxies") {
+
+    val expectedList = sampleProxyFilterList()
+
+    val operationSource: OperationSource = expectedList
+
+    val v = new Variable(null, 0)
+
+    operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
+
+    val finalList = v.value.asInstanceOf[ListValue]
+    assertFilterResult(finalList, 2)
+  }
+
   test("should support equals filtering with map-list-map hierarchy") {
 
     val expectedList = sampleFilterList()
 
     val root: MapValue = Map("list" -> expectedList)
+
+    val operationSource: OperationSource = root
+
+    val v = new Variable(null, 0)
+
+    operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
+
+    val finalList = v.value.asInstanceOf[MapValue].mapValue("list").asInstanceOf[ListValue]
+
+    assertFilterResult(finalList, 2)
+  }
+
+  test("should support equals filtering with map-list-map hierarchy with proxies") {
+
+    val expectedList = sampleProxyFilterList()
+
+    val root = MockProxy(Map("list" -> expectedList))
 
     val operationSource: OperationSource = root
 
