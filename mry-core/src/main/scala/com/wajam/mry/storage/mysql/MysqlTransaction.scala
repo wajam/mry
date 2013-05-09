@@ -245,59 +245,67 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
   def getTimeline(table: Table, timestamp: Timestamp, count: Int, ranges: Seq[TokenRange] = Seq(TokenRange.All),
                   selectMode: TimelineSelectMode = TimelineSelectMode.FromTimestamp): Seq[MutationRecord] = {
-    val projKeys = (for (i <- 1 to table.depth) yield "ai.k%1$d".format(i)).mkString(",")
-    val whereKeys1 = (for (i <- 1 to table.depth) yield "ai.k%1$d = ad.k%1$d".format(i)).mkString(" AND ")
+    val projOuterKeys = (for (i <- 1 to table.depth) yield "q1.k%1$d".format(i)).mkString(",")
+    val projInnerKeys = (for (i <- 1 to table.depth) yield "ai.k%1$d".format(i)).mkString(",")
+    val whereKeys1 = (for (i <- 1 to table.depth) yield "q1.k%1$d = ad.k%1$d".format(i)).mkString(" AND ")
     val whereKeys2 = (for (i <- 1 to table.depth) yield "ai.k%1$d = bi.k%1$d".format(i)).mkString(" AND ")
     val whereKeys3 = (for (i <- 1 to table.depth) yield "ci.k%1$d = ai.k%1$d".format(i)).mkString(" AND ")
-    val whereKeys4 = (for (i <- 1 to table.depth) yield "bi.k%1$d = bd.k%1$d".format(i)).mkString(" AND ")
-    val whereRanges = ranges.map(r => "(ai.tk >= %1$d AND ai.tk <= %2$d)".format(r.start, r.end)).mkString("(", "OR ", ")")
+    val whereKeys4 = (for (i <- 1 to table.depth) yield "q1.k%1$d = bd.k%1$d".format(i)).mkString(" AND ")
     val fullTableName = table.depthName("_")
     val lastConsistentTimestamp = storage.getCurrentConsistentTimestamp(ranges)
 
+    val innerWhere = (Seq(
+      ranges.map(r => "(ai.tk >= %1$d AND ai.tk <= %2$d)".format(r.start, r.end)).mkString("(", "OR ", ")")
+    ) ++ (selectMode match {
+      case TimelineSelectMode.FromTimestamp => Seq(
+        """
+              AND ai.ts >= %1$d AND ai.ts <= %3$d
+              ORDER BY ai.ts ASC
+              LIMIT 0, %2$d
+        """.format(timestamp.value, count, lastConsistentTimestamp.value)
+      )
+      case TimelineSelectMode.AtTimestamp => Seq("AND ai.ts = %1$d".format(timestamp.value))
+    })).mkString
+
+
     /* Generated SQL looks like:
      *
-     *     SELECT ai.tk, ai.ts, ad.ec, ad.d, bi.ts, bd.ec, bd.d, ai.k1
+     *     SELECT q1.tk, ad.ts, ad.ec, ad.d, bd.ts, bd.ec, bd.d, q1.k1, q1.k2, q1.k3
+     *     FROM (
+     *       SELECT ai.tk, ai.ts AS new_ts, bi.ts AS old_ts, ai.k1,ai.k2,ai.k3
      *       FROM `table1_index` AS ai
-     *       JOIN `table1_data` AS ad ON (ai.k1 = ad.k1 AND ai.tk = ad.tk AND ai.ts = ad.ts)
-     *       LEFT JOIN `table1_index` AS bi ON (ai.k1 = bi.k1 AND ai.tk = bi.tk AND bi.ts = (
-     *           SELECT MAX(ci.ts)
-     *           FROM `table1_index` AS ci
-     *           WHERE ci.tk = ai.tk AND ci.k1 = ai.k1
-     *           AND ci.ts < ai.ts
-     *       )) LEFT JOIN `table1_data` AS bd ON (bi.k1 = bd.k1 AND bi.tk = bd.tk AND bi.ts = bd.ts)
-     *     WHERE ((ai.tk >= 0 AND ai.tk <= 89478485) OR (ai.tk >= 536870910 AND ai.tk <= 626349395))
-     *     AND ai.ts >= 0 AND ai.ts <= 13631089220001
-     *     ORDER BY ai.ts ASC
-     *     LIMIT 0, 100;
+     *       LEFT JOIN `table1_index` AS bi ON (ai.k1 = bi.k1 AND ai.k2 = bi.k2 AND ai.k3 = bi.k3 AND ai.tk = bi.tk AND bi.ts = (
+     *         SELECT MAX(ci.ts)
+     *         FROM `table1_index` AS ci
+     *         WHERE ci.tk = ai.tk AND ci.k1 = ai.k1 AND ci.k2 = ai.k2 AND ci.k3 = ai.k3
+     *         AND ci.ts < ai.ts
+     *       ))
+     *       WHERE ((ai.tk >= 3221225461 AND ai.tk <= 3310703945))
+     *       AND ai.ts >= 13667145296450014 AND ai.ts <= 13667318799830001
+     *       ORDER BY ai.ts ASC
+     *       LIMIT 0, 100
+     *     ) AS q1
+     *     JOIN `table1_data` AS ad ON (q1.k1 = ad.k1 AND q1.k2 = ad.k2 AND q1.k3 = ad.k3 AND q1.tk = ad.tk AND q1.new_ts = ad.ts)
+     *     LEFT JOIN `table1_data` AS bd ON (q1.k1 = bd.k1 AND q1.k2 = bd.k2 AND q1.k3 = bd.k3 AND q1.tk = bd.tk AND q1.old_ts = bd.ts)
+     *     ORDER BY ad.ts ASC;
      */
-    var sql = """
-                SELECT ai.tk, ai.ts, ad.ec, ad.d, bi.ts, bd.ec, bd.d, %1$s
+    val sql = """
+                SELECT q1.tk, ad.ts, ad.ec, ad.d, bd.ts, bd.ec, bd.d, %1$s
+                FROM (
+                    SELECT ai.tk, ai.ts AS new_ts, bi.ts AS old_ts, %8$s
                     FROM `%2$s_index` AS ai
-                    JOIN `%2$s_data` AS ad ON (%3$s AND ai.tk = ad.tk AND ai.ts = ad.ts)
                     LEFT JOIN `%2$s_index` AS bi ON (%4$s AND ai.tk = bi.tk AND bi.ts = (
                         SELECT MAX(ci.ts)
                         FROM `%2$s_index` AS ci
                         WHERE ci.tk = ai.tk AND %5$s
                         AND ci.ts < ai.ts
-                    )) LEFT JOIN `%2$s_data` AS bd ON (%6$s AND bi.tk = bd.tk AND bi.ts = bd.ts)
-                WHERE %7$s
-              """.format(projKeys, fullTableName, whereKeys1, whereKeys2, whereKeys3, whereKeys4, whereRanges)
-
-    selectMode match {
-      case TimelineSelectMode.FromTimestamp => {
-        sql +=
-          """
-            AND ai.ts >= %1$d AND ai.ts <= %3$d
-            ORDER BY ai.ts ASC
-            LIMIT 0, %2$d;
-          """.format(timestamp.value, count, lastConsistentTimestamp.value)
-      }
-      case TimelineSelectMode.AtTimestamp => {
-        sql +=
-          """
-            AND ai.ts = %1$d;""".format(timestamp.value)
-      }
-    }
+                    ))
+                    WHERE %7$s
+                ) AS q1
+                JOIN `%2$s_data` AS ad ON (%3$s AND q1.tk = ad.tk AND q1.new_ts = ad.ts)
+                LEFT JOIN `%2$s_data` AS bd ON (%6$s AND q1.tk = bd.tk AND q1.old_ts = bd.ts)
+                ORDER BY ad.ts ASC;
+              """.format(projOuterKeys, fullTableName, whereKeys1, whereKeys2, whereKeys3, whereKeys4, innerWhere, projInnerKeys)
 
     val ret = ArrayBuffer[MutationRecord]()
     var results: SqlResults = null
@@ -749,7 +757,7 @@ case class AccessPath(parts: Seq[AccessKey] = Seq()) {
 }
 
 case class Record(table: Table, var value: Value = new MapValue(Map()), var token: Long = 0,
-                  var accessPath:AccessPath = new AccessPath(), var encoding: Byte = 0,
+                  var accessPath: AccessPath = new AccessPath(), var encoding: Byte = 0,
                   var timestamp: Timestamp = Timestamp(0)) {
 
   override def equals(that: Any) = that match {

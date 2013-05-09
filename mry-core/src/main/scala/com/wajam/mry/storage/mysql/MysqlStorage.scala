@@ -14,6 +14,7 @@ import com.wajam.nrv.service.TokenRange
 import com.yammer.metrics.core.Gauge
 import com.wajam.nrv.utils.timestamp.Timestamp
 import com.wajam.nrv.utils.Closable
+import annotation.tailrec
 
 /**
  * MySQL backed storage
@@ -241,16 +242,42 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   }
 
   override def execFrom(context: ExecutionContext, into: Variable, keys: Object*) {
-    val tableName = param[StringValue](keys, 0).strValue
-    val optTable = model.getTable(tableName)
 
-    optTable match {
-      case Some(t) =>
-        into.value = new TableValue(this, t)
+    @tailrec
+    def getTable(coll: TableCollection, tableNames: List[String]): Option[Table] = {
+      tableNames match {
+        case Nil => None
+        case head :: Nil => coll.getTable(head)
+        case head :: tail => {
+          coll.getTable(head) match {
+            case Some(table) => getTable(table, tail)
+            case None => None
+          }
+        }
+      }
+    }
 
-      case None =>
-        throw new StorageException("Non existing table %s".format(tableName))
+    val names = extractTableNames(keys: _*)
+    getTable(model, names) match {
+      case Some(table) => into.value = new TableValue(this, table)
+      case None => throw new StorageException("Non existing table %s".format(names.mkString("_")))
+    }
+  }
 
+  private def extractTableNames(params: Object*): List[String] = {
+    params(0) match {
+      case StringValue(tableName) => {
+        List(tableName)
+      }
+      case ListValue(values) => {
+        values.map {
+          case StringValue(tableName) => tableName
+          case _ => throw new InvalidParameter("Expected parameter at position 0 to be of instance ListValue[Seq[StringValue]]")
+        }.toList
+      }
+      case _ => {
+        throw new InvalidParameter("Expected parameter at position 0 to be of instance StringValue or ListValue")
+      }
     }
   }
 
@@ -341,7 +368,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
         def next() = {
           val result = nextGroup
           nextGroup = readNext()
-          debug("readTransactions.next {}", result)
+          trace("readTransactions.next {}", result)
           result.get // Must fail if next is called while hasNext is false
         }
 
@@ -370,25 +397,12 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       // Set or delete each record
       val storage = transaction.from("mysql")
       for (record <- records.sortBy(_.table.depth)) {
-
-        // Select the parent table if any
-        val parent = record.table.parentTable match {
-          case Some(tableParent) => {
-            tableParent.path.zip(record.accessPath.keys).foldLeft(storage) {
-              case (p, (t, k)) => {
-                p.from(t.name).get(k)
-              }
-            }
-          }
-          case None => storage
-        }
-
-        // Finally set or delete the record data
-        val table = parent.from(record.table.name)
+        val tableNames = record.table.path.map(_.name)
+        val keys = record.accessPath.keys
         if (record.value.isNull) {
-          table.delete(record.accessPath.last.key)
+          storage.from(tableNames).delete(keys)
         } else {
-          table.set(record.accessPath.last.key, record.value)
+          storage.from(tableNames).set(keys, record.value)
         }
       }
     }
@@ -479,13 +493,13 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
     private def loadCache() {
       try {
-        trace("loadCache - start {}", groupsQueue.size)
+        debug("loadCache - start %d".format(groupsQueue.size))
         val loadedCount = loadMutationGroupFromSummaryQueue(maxRecordsCount = recordsCacheSize)
         if (loadedCount < recordsCacheSize) {
           loadMoreMutationGroupSummary()
           loadMutationGroupFromSummaryQueue(maxRecordsCount = recordsCacheSize - loadedCount)
         }
-        trace("loadCache - done {}", groupsQueue.size)
+        debug("loadCache - done %d".format(groupsQueue.size))
       } catch {
         case e: Exception => {
           error = Some(e)
@@ -501,7 +515,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
      */
     private def loadMutationGroupFromSummaryQueue(maxRecordsCount: Int): Int = {
       if (!groupsSummaryQueue.isEmpty) {
-        trace("loadMutationGroupRecords: max={}", maxRecordsCount)
+        debug("loadMutationGroupFromSummaryQueue: max=%d".format(maxRecordsCount))
 
         // Compute the timestamp range and from which tables to load data while respecting the maxRecordCount as much
         // as possible. A record group is always entirely loaded and cached records can go beyond the maxRecordCount
@@ -520,7 +534,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
         // Finally load, merge and sort the data grouped by timestamp
         groupsQueue = (groupsQueue ++ loadTablesData(loadTables, loadFrom, loadTo)).sortBy(_.timestamp)
-        trace("loadMutationGroupRecords done: loaded={}", loadCount)
+        debug("loadMutationGroupFromSummaryQueue done: groupsQueue=%d".format(loadCount))
         loadCount
       } else 0
     }
@@ -530,7 +544,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
      */
     private def loadMoreMutationGroupSummary() {
       if (!groupsSummaryQueue.isEmpty || tablesCache.exists(ti => ti.hasMore || !ti.records.isEmpty)) {
-        trace("loadMutationGroupSummary")
+        debug("loadMoreMutationGroupSummary")
 
         // Ensure we have a minimum quantity of transaction summary loaded from each table
         tablesCache.withFilter(_.mustLoadMore).foreach(loadTableSummary(_))
@@ -543,14 +557,14 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           groupSummary.records = summary :: groupSummary.records
         }
         groupsSummaryQueue = (groupsSummaryQueue ++ grouped.valuesIterator).sortBy(_.timestamp)
-        trace("loadMutationGroupSummary done: queue={}", groupsSummaryQueue.size)
+        debug("loadMoreMutationGroupSummary done: groupsSummaryQueue=%d".format(groupsSummaryQueue.size))
       }
     }
 
     private def loadTableSummary(tableSummary: TableSummary): TableSummary = {
       var trx: MysqlTransaction = null
       try {
-        trace("loadTableSummary: {}", tableSummary.table)
+        trace("loadTableSummary: %s %d".format(tableSummary.table, tableSummary.records.size))
         trx = createStorageTransaction
         val records = trx.getTransactionSummaryRecords(tableSummary.table, Timestamp(tableSummary.lastTimestamp.value + 1),
           tableSummarySize, ranges)
@@ -560,6 +574,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
         } else {
           records.maxBy(_.timestamp).timestamp
         }
+        debug("loadTableSummary: done %s %d".format(tableSummary.table, tableSummary.records.size))
         tableSummary
       } finally {
         if (trx != null) {
@@ -577,7 +592,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
         trx = createStorageTransaction
         val grouped: mutable.Map[Timestamp, MutationGroup] = mutable.Map()
         for (table <- tables) {
-          trace("loadTablesData: {}", table)
+          debug("loadTablesData: {}", table)
           for (record <- trx.getTransactionRecords(table, from, to, ranges)) {
             val group = grouped.getOrElseUpdate(record.timestamp, MutationGroup(record.token, record.timestamp))
             group.records = record :: group.records

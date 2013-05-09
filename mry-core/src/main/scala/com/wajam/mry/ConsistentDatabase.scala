@@ -1,6 +1,7 @@
 package com.wajam.mry
 
-import com.wajam.nrv.consistency.{Consistency, ConsistentStore}
+import api.TransactionPrinter
+import com.wajam.nrv.consistency.ConsistentStore
 import com.wajam.nrv.data.{MessageType, InMessage, Message}
 import com.wajam.nrv.utils.timestamp.Timestamp
 import com.wajam.nrv.service.{ActionMethod, TokenRange}
@@ -80,11 +81,11 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
               value.applyTo(transaction)
               val message = new InMessage(Map(Database.TOKEN_KEY -> value.token), data = transaction)
               message.token = value.token
+              message.timestamp = Some(value.timestamp)
               message.serviceName = name
               message.method = ActionMethod.POST
               message.function = MessageType.FUNCTION_CALL
               message.path = remoteWriteExecuteToken.path.buildPath(message.parameters)
-              Consistency.setMessageTimestamp(message, value.timestamp)
               message
             } catch {
               case e: Exception => {
@@ -108,17 +109,21 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
    */
   def writeTransaction(message: Message) {
     writeTransactionTimer.time {
-      val context = new ExecutionContext(storages, Consistency.getMessageTimestamp(message))
+      val transaction = message.getData[Transaction]
+      val timestamp = message.timestamp
+      val context = new ExecutionContext(storages, timestamp)
       context.cluster = cluster
 
       try {
-        val transaction = message.getData[Transaction]
         transaction.execute(context)
         context.commit()
         transaction.reset()
       } catch {
         case e: Exception => {
-          debug("Got an exception executing transaction", e)
+          if (log.isDebugEnabled) {
+            val txTree = TransactionPrinter.printTree(transaction, timestamp.getOrElse("").toString)
+            info("Got an exception executing transaction {}", txTree, e)
+          }
           context.rollback()
           throw e
         }
