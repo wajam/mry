@@ -105,19 +105,21 @@ case class ListValue(listValue: Seq[Value]) extends Value {
 
   override def execFiltering(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) {
 
-    // Filter the child mapValue that doesn't match the filter
-    val temp = listValue filter { (v) =>
-          v.execPredicate(context, into, key, filter, value)
-          into.value.asInstanceOf[BoolValue].boolValue
+    val temp = listValue
+
+      // Filter the child mapValue that doesn't match the filter
+      .withFilter { (v) =>
+        v.execPredicate(context, into, key, filter, value)
+        into.value.asInstanceOf[BoolValue].boolValue
       }
 
-    // Foward the filter to allow recursion
-    val temp2 = temp.map { (v) =>
-      v.execFiltering(context, into, key, filter, value)
-      into.value
-    }
+      // Foward the filter to allow recursion
+      .map { (v) =>
+        v.execFiltering(context, into, key, filter, value)
+        into.value
+      }
 
-    into.value = ListValue(temp2)
+    into.value = ListValue(temp)
   }
 }
 
