@@ -91,18 +91,18 @@ object Benchmark extends App with Instrumented {
       descr = "password of the mysql server")
 
 
-    override protected def onError(e: Throwable) = e match {
-      case Help =>
-        builder.printHelp
-        sys.exit(0)
-      case _ =>
-        println("Error: %s".format(e.getMessage))
-        println()
-        builder.printHelp
-        sys.exit(1)
+    override protected def onError(e: Throwable) {
+      e match {
+        case _: Help =>
+          builder.printHelp()
+          sys.exit(0)
+        case _ =>
+          println("Error: %s".format(e.getMessage))
+          println()
+          builder.printHelp()
+          sys.exit(1)
+      }
     }
-
-    verify
   }
 
   val db: Database[_] = if (Conf.local()) {
