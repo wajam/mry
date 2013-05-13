@@ -25,7 +25,7 @@ object MryBuild extends Build {
     "com.wajam" %% "scn-core" % "0.1-SNAPSHOT",
     "com.google.protobuf" % "protobuf-java" % "2.4.1",
     "c3p0" % "c3p0" % "0.9.1.2",
-    "org.rogach" %% "scallop" % "0.6.3",
+    "org.rogach" %% "scallop" % "0.9.1",
     "mysql" % "mysql-connector-java" % "5.1.6",
     "org.scalatest" %% "scalatest" % "1.9.1" % "test,it",
     "junit" % "junit" % "4.10" % "test,it",
