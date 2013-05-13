@@ -54,13 +54,13 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
   /**
    * Returns the mutation messages from the given timestamp inclusively for the specified token ranges.
    */
-  def readTransactions(from: Timestamp, to: Timestamp, ranges: Seq[TokenRange]): Iterator[Message] with Closable = {
+  def readTransactions(fromTime: Timestamp, toTime: Timestamp, ranges: Seq[TokenRange]): Iterator[Message] with Closable = {
     // TODO: somehow support more than one storage
     val (_, storage) = storages.head
 
     readTransactionsInitTimer.time {
       new Iterator[Message] with Closable {
-        val itr = storage.readTransactions(from, to, ranges)
+        val itr = storage.readTransactions(fromTime, toTime, ranges)
 
         def hasNext = {
           try {
