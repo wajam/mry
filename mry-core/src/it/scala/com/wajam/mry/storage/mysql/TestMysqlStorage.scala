@@ -43,11 +43,11 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
   }
 
   test("should support filtering") {
-    val expectedMap1Value: MapValue = Map("A" -> toVal("1"))
-    val expectedMap2Value: MapValue = Map("A" -> toVal("2"))
-    val expectedMap3Value: MapValue = Map("A" -> toVal("2"))
+    val mapValue1: MapValue = Map("A" -> toVal("1"))
+    val mapValue2: MapValue = Map("A" -> toVal("2"))
+    val mapValue3: MapValue = Map("A" -> toVal("2"))
 
-    val expectedList: ListValue = Seq(expectedMap1Value, expectedMap2Value, expectedMap3Value)
+    val expectedList: ListValue = Seq(mapValue1, mapValue2, mapValue3)
 
     val metaMapValue: MapValue = Map("list" -> expectedList)
 
@@ -67,16 +67,16 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
 
     finalList.size should equal(2)
 
-    finalList(0) should be(MapValue(Map("A" -> toVal("2"))))
-    finalList(1) should be(MapValue(Map("A" -> toVal("2"))))
+    finalList(0) should equal(mapValue2)
+    finalList(1) should equal(mapValue3)
   }
 
   test("should support filtering, lte") {
-    val expectedMap1Value: MapValue = Map("A" -> toVal(1))
-    val expectedMap2Value: MapValue = Map("A" -> toVal(2))
-    val expectedMap3Value: MapValue = Map("A" -> toVal(4))
+    val mapValue1: MapValue = Map("A" -> toVal(1))
+    val mapValue2: MapValue = Map("A" -> toVal(2))
+    val mapValue3: MapValue = Map("A" -> toVal(4))
 
-    val expectedList: ListValue = Seq(expectedMap1Value, expectedMap2Value, expectedMap3Value)
+    val expectedList: ListValue = Seq(mapValue1, mapValue2, mapValue3)
 
     val metaMapValue: MapValue = Map("list" -> expectedList)
 
@@ -96,16 +96,16 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
 
     finalList.size should equal(2)
 
-    finalList(0) should be(MapValue(Map("A" -> toVal(1))))
-    finalList(1) should be(MapValue(Map("A" -> toVal(2))))
+    finalList(0) should equal(mapValue1)
+    finalList(1) should equal(mapValue2)
   }
 
   test("should support projection on single record") {
-    val expectedMapValue: MapValue = Map("mapk" -> toVal("value1"))
+    val mapValue: MapValue = Map("mapk" -> toVal("value1"))
     exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
-      table.set("key1", expectedMapValue)
+      table.set("key1", mapValue)
     }, commit = true)
 
     val Seq(v) = exec(t => {
@@ -114,15 +114,15 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
       t.ret(table.get("key1").projection("mapk"))
     }, commit = false)
 
-    assert(v.equalsValue(expectedMapValue))
+    assert(v.equalsValue(mapValue))
   }
 
   test("empty projection should return all fields") {
-    val expectedMapValue: MapValue = Map("mapk" -> toVal("value1"))
+    val mapValue: MapValue = Map("mapk" -> toVal("value1"))
     exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
-      table.set("key1", expectedMapValue)
+      table.set("key1", mapValue)
     }, commit = true)
 
     val Seq(v) = exec(t => {
@@ -131,16 +131,16 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
       t.ret(table.get("key1").projection())
     }, commit = false)
 
-    assert(v.equalsValue(expectedMapValue))
+    assert(v.equalsValue(mapValue))
   }
 
 
   test("should support multiple projection on single record") {
-    val expectedMapValue: MapValue = Map("key1" -> toVal("value1"), "key2" -> toVal("value2"))
+    val mapValue: MapValue = Map("key1" -> toVal("value1"), "key2" -> toVal("value2"))
     exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
-      table.set("key1", expectedMapValue)
+      table.set("key1", mapValue)
     }, commit = true)
 
     val Seq(v) = exec(t => {
@@ -149,7 +149,7 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
       t.ret(table.get("key1").projection("key1", "key2", "other"))
     }, commit = false)
 
-    assert(v.equalsValue(expectedMapValue))
+    assert(v.equalsValue(mapValue))
   }
 
   test("should support projection that results in empty record") {

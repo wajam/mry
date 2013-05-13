@@ -40,32 +40,32 @@ class TestOperations extends FunSuite with ShouldMatchers {
   }
 
   def sampleFilterList(): ListValue = {
-    val expectedMap1Value: MapValue = Map("A" -> toVal("1"))
-    val expectedMap2Value: MapValue = Map("A" -> toVal("2"))
-    val expectedMap3Value: MapValue = Map("A" -> toVal("2"))
+    val map1Value: MapValue = Map("A" -> toVal("1"))
+    val map2Value: MapValue = Map("A" -> toVal("2"))
+    val map3Value: MapValue = Map("A" -> toVal("2"))
 
-    val expectedList: ListValue = Seq(expectedMap1Value, expectedMap2Value, expectedMap3Value)
+    val expectedList: ListValue = Seq(map1Value, map2Value, map3Value)
 
     expectedList
   }
 
   def sampleProxyFilterList() = {
-    val expectedMap1Value = MockProxy(Map("A" -> toVal("1")))
-    val expectedMap2Value = MockProxy(Map("A" -> toVal("2")))
-    val expectedMap3Value = MockProxy(Map("A" -> toVal("2")))
+    val map1Value = MockProxy(Map("A" -> toVal("1")))
+    val map2Value = MockProxy(Map("A" -> toVal("2")))
+    val map3Value = MockProxy(Map("A" -> toVal("2")))
 
-    val expectedList = MockProxy(Seq(expectedMap1Value, expectedMap2Value, expectedMap3Value))
+    val expectedList = MockProxy(Seq(map1Value, map2Value, map3Value))
 
     expectedList
   }
 
   def sampleFilterList2(): ListValue = {
-    val expectedMap1Value: MapValue = Map("A" -> toVal(1))
-    val expectedMap2Value: MapValue = Map("A" -> toVal(2))
-    val expectedMap3Value: MapValue = Map("A" -> toVal(2))
-    val expectedMap4Value: MapValue = Map("A" -> toVal(3))
+    val map1Value: MapValue = Map("A" -> toVal(1))
+    val map2Value: MapValue = Map("A" -> toVal(2))
+    val map3Value: MapValue = Map("A" -> toVal(2))
+    val map4Value: MapValue = Map("A" -> toVal(3))
 
-    val expectedList: ListValue = Seq(expectedMap1Value, expectedMap2Value, expectedMap3Value, expectedMap4Value)
+    val expectedList: ListValue = Seq(map1Value, map2Value, map3Value, map4Value)
 
     expectedList
   }
@@ -96,12 +96,12 @@ class TestOperations extends FunSuite with ShouldMatchers {
 
   test("should support equals filtering at list level with heterogeneous list") {
 
-    val expectedMap4Value: DoubleValue = 4.0
+    val map4Value: DoubleValue = 4.0
 
     val expectedList = sampleFilterList()
 
     val lv = expectedList.listValue
-    val expectedList2 = ListValue(lv :+ expectedMap4Value)
+    val expectedList2 = ListValue(lv :+ map4Value)
 
     val operationSource: OperationSource = expectedList2
 
