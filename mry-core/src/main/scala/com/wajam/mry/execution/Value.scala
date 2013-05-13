@@ -59,8 +59,7 @@ case class MapValue(mapValue: Map[String, Value]) extends Value {
   override def execFiltering(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) {
 
     // Foward filtering to children
-    into.value =
-      MapValue(mapValue.map { case (k, v) =>
+    into.value = MapValue(mapValue.map { case (k, v) =>
           v.execFiltering(context, into, key, filter, value)
           (k -> into.value)
       })
@@ -77,8 +76,7 @@ case class MapValue(mapValue: Map[String, Value]) extends Value {
   }
 
   override def execProjection(context: ExecutionContext, into: Variable, keys: Object*) {
-    into.value =
-      if (!keys.isEmpty) {
+    into.value = if (!keys.isEmpty) {
         MapValue(mapValue.filter(e => keys.contains(StringValue(e._1))))
       } else {
         MapValue(mapValue)

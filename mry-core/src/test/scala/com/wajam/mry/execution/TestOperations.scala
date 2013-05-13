@@ -39,166 +39,161 @@ class TestOperations extends FunSuite with ShouldMatchers {
     v.value should be(ListValue(Seq(Map("key2" -> toVal("value2")))))
   }
 
-  def sampleFilterList(): ListValue = {
+  test("should support equals filtering at list level") {
+
     val map1Value: MapValue = Map("A" -> toVal("1"))
     val map2Value: MapValue = Map("A" -> toVal("2"))
     val map3Value: MapValue = Map("A" -> toVal("2"))
 
-    val expectedList: ListValue = Seq(map1Value, map2Value, map3Value)
+    val list: ListValue = Seq(map1Value, map2Value, map3Value)
 
-    expectedList
+    val operationSource: OperationSource = list
+
+    val v = new Variable(null, 0)
+
+    operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
+
+    val ListValue(finalList) = v.value
+
+    finalList.listValue.size should equal(2)
+
+    finalList(0) should be(map2Value)
+    finalList(1) should be(map3Value)
   }
 
-  def sampleProxyFilterList() = {
+  test("should support equals filtering at list level with heterogeneous list") {
+
+    val map1Value: MapValue = Map("A" -> toVal("1"))
+    val map2Value: MapValue = Map("A" -> toVal("2"))
+    val map3Value: MapValue = Map("A" -> toVal("2"))
+    val map4Value: DoubleValue = 4.0
+
+    val list: ListValue = Seq(map1Value, map2Value, map3Value, map4Value)
+
+    val operationSource: OperationSource = list
+
+    val v = new Variable(null, 0)
+
+    operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
+
+    val ListValue(finalList) = v.value
+
+    finalList.listValue.size should equal(2)
+
+    finalList(0) should be(map2Value)
+    finalList(1) should be(map3Value)
+  }
+
+  test("should support equals filtering at list level with proxies") {
+
     val map1Value = MockProxy(Map("A" -> toVal("1")))
     val map2Value = MockProxy(Map("A" -> toVal("2")))
     val map3Value = MockProxy(Map("A" -> toVal("2")))
 
-    val expectedList = MockProxy(Seq(map1Value, map2Value, map3Value))
+    val list = MockProxy(Seq(map1Value, map2Value, map3Value))
 
-    expectedList
+    val operationSource: OperationSource = list
+
+    val v = new Variable(null, 0)
+
+    operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
+
+    val ListValue(finalList) = v.value
+
+    finalList.listValue.size should equal(2)
+
+    finalList(0) should be(map2Value)
+    finalList(1) should be(map3Value)
   }
 
-  def sampleFilterList2(): ListValue = {
+  test("lte filtering") {
+
     val map1Value: MapValue = Map("A" -> toVal(1))
     val map2Value: MapValue = Map("A" -> toVal(2))
     val map3Value: MapValue = Map("A" -> toVal(2))
     val map4Value: MapValue = Map("A" -> toVal(3))
 
-    val expectedList: ListValue = Seq(map1Value, map2Value, map3Value, map4Value)
+    val list: ListValue = Seq(map1Value, map2Value, map3Value, map4Value)
 
-    expectedList
-  }
-
-  def assertFilterResult(list: ListValue, count: Int) {
-
-    list.listValue.size should equal(count)
-
-    val target = MapValue(Map("A" -> toVal("2")))
-
-    list(0) should be(target)
-    list(1) should be(target)
-  }
-
-  test("should support equals filtering at list level") {
-
-    val expectedList = sampleFilterList()
-
-    val operationSource: OperationSource = expectedList
-
-    val v = new Variable(null, 0)
-
-    operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
-
-    val finalList = v.value.asInstanceOf[ListValue]
-    assertFilterResult(finalList, 2)
-  }
-
-  test("should support equals filtering at list level with heterogeneous list") {
-
-    val map4Value: DoubleValue = 4.0
-
-    val expectedList = sampleFilterList()
-
-    val lv = expectedList.listValue
-    val expectedList2 = ListValue(lv :+ map4Value)
-
-    val operationSource: OperationSource = expectedList2
-
-    val v = new Variable(null, 0)
-
-    operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
-
-    val finalList = v.value.asInstanceOf[ListValue]
-
-    // Should drop all non maps, and should works
-    assertFilterResult(finalList, 2)
-  }
-
-  test("should support equals filtering at list level with proxies") {
-
-    val expectedList = sampleProxyFilterList()
-
-    val operationSource: OperationSource = expectedList
-
-    val v = new Variable(null, 0)
-
-    operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
-
-    // Materialize the list
-    val finalList = v.value.asInstanceOf[ListValue].map { case(v) => v.serializableValue}
-
-    assertFilterResult(finalList, 2)
-  }
-
-  test("lte filtering") {
-
-    val expectedList = sampleFilterList2()
-
-    val operationSource: OperationSource = expectedList
+    val operationSource: OperationSource = list
 
     val v = new Variable(null, 0)
 
     operationSource.execFiltering(null, v, StringValue("A"), MryFilters.LesserThanOrEqual, IntValue(2))
 
-    val finalList = v.value.asInstanceOf[ListValue]
+    val ListValue(finalList) = v.value
     finalList.size should equal(3)
 
-    finalList(0) should be(MapValue(Map("A" -> toVal(1))))
-    finalList(1) should be(MapValue(Map("A" -> toVal(2))))
-    finalList(2) should be(MapValue(Map("A" -> toVal(2))))
+    finalList(0) should be(map1Value)
+    finalList(1) should be(map2Value)
+    finalList(2) should be(map3Value)
   }
 
   test("lt filtering") {
 
-    val expectedList = sampleFilterList2()
+    val map1Value: MapValue = Map("A" -> toVal(1))
+    val map2Value: MapValue = Map("A" -> toVal(2))
+    val map3Value: MapValue = Map("A" -> toVal(2))
+    val map4Value: MapValue = Map("A" -> toVal(3))
 
-    val operationSource: OperationSource = expectedList
+    val list: ListValue = Seq(map1Value, map2Value, map3Value, map4Value)
+
+    val operationSource: OperationSource = list
 
     val v = new Variable(null, 0)
 
     operationSource.execFiltering(null, v, StringValue("A"), MryFilters.LesserThan, IntValue(3))
 
-    val finalList = v.value.asInstanceOf[ListValue]
+    val ListValue(finalList) = v.value
     finalList.size should equal(3)
 
-    finalList(0) should be(MapValue(Map("A" -> toVal(1))))
-    finalList(1) should be(MapValue(Map("A" -> toVal(2))))
-    finalList(2) should be(MapValue(Map("A" -> toVal(2))))
+    finalList(0) should be(map1Value)
+    finalList(1) should be(map2Value)
+    finalList(2) should be(map2Value)
   }
 
   test("gt filtering") {
 
-    val expectedList = sampleFilterList2()
+    val map1Value: MapValue = Map("A" -> toVal(1))
+    val map2Value: MapValue = Map("A" -> toVal(2))
+    val map3Value: MapValue = Map("A" -> toVal(2))
+    val map4Value: MapValue = Map("A" -> toVal(3))
 
-    val operationSource: OperationSource = expectedList
+    val list: ListValue = Seq(map1Value, map2Value, map3Value, map4Value)
+
+    val operationSource: OperationSource = list
 
     val v = new Variable(null, 0)
 
     operationSource.execFiltering(null, v, StringValue("A"), MryFilters.GreaterThan, IntValue(2))
 
-    val finalList = v.value.asInstanceOf[ListValue]
+    val ListValue(finalList) = v.value
     finalList.size should equal(1)
 
-    finalList(0) should be(MapValue(Map("A" -> toVal(3))))
+    finalList(0) should be(map4Value)
 
   }
 
   test("gte filtering") {
 
-    val expectedList = sampleFilterList2()
+    val map1Value: MapValue = Map("A" -> toVal(1))
+    val map2Value: MapValue = Map("A" -> toVal(2))
+    val map3Value: MapValue = Map("A" -> toVal(2))
+    val map4Value: MapValue = Map("A" -> toVal(3))
 
-    val operationSource: OperationSource = expectedList
+    val list: ListValue = Seq(map1Value, map2Value, map3Value, map4Value)
+
+    val operationSource: OperationSource = list
 
     val v = new Variable(null, 0)
 
     operationSource.execFiltering(null, v, StringValue("A"), MryFilters.GreaterThanOrEqual, IntValue(2))
 
-    val finalList = v.value.asInstanceOf[ListValue]
+    val ListValue(finalList) = v.value
     finalList.size should equal(3)
 
-    finalList(0) should be(MapValue(Map("A" -> toVal(2))))
-    finalList(1) should be(MapValue(Map("A" -> toVal(2))))
-    finalList(2) should be(MapValue(Map("A" -> toVal(3))))
+    finalList(0) should be(map2Value)
+    finalList(1) should be(map3Value)
+    finalList(2) should be(map4Value)
   }
 }
