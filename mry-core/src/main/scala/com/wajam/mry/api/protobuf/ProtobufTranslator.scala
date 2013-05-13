@@ -378,6 +378,11 @@ private class InternalProtobufTranslator {
     val variables = pOperation.getVariableHeapIdsList.map(getEntityFromDecodedData[Variable](_))
     val objects = pOperation.getObjectHeapIdsList.map(getEntityFromDecodedData[Object](_)).toSeq
 
+    val buildFilter = () => {
+      val StringValue(filter) = objects(1)
+      new Operation.Filter(os, variables(0), objects(0), MryFilters.withName(filter), objects(2))
+    }
+
     pOperation.getType match {
       case Type.Return => new Operation.Return(os, variables)
       case Type.From => new Operation.From(os, variables(0), objects:_*)
@@ -386,7 +391,7 @@ private class InternalProtobufTranslator {
       case Type.Delete => new Operation.Delete(os, variables(0), objects:_*)
       case Type.Limit => new Operation.Limit(os, variables(0), objects:_*)
       case Type.Projection => new Operation.Projection(os, variables(0), objects:_*)
-      case Type.Filter => new Operation.Filter(os, variables(0), objects(0), MryFilters.withName(objects(1).asInstanceOf[StringValue].strValue), objects(2))
+      case Type.Filter => buildFilter()
     }
   }
 

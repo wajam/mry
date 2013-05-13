@@ -63,7 +63,8 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
       t.ret(table.get("key1").filter("A", MryFilters.Equals, "2"))
     }, commit = false)
 
-    val finalList = v.value.asInstanceOf[MapValue].mapValue("list").asInstanceOf[ListValue]
+    val MapValue(mapValue) = v.value
+    val ListValue(finalList) = mapValue("list")
 
     finalList.size should equal(2)
 
@@ -92,7 +93,8 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
       t.ret(table.get("key1").filter("A", MryFilters.LesserThanOrEqual, 3))
     }, commit = false)
 
-    val finalList = v.value.asInstanceOf[MapValue].mapValue("list").asInstanceOf[ListValue]
+    val MapValue(mapValue) = v.value
+    val ListValue(finalList) = mapValue("list")
 
     finalList.size should equal(2)
 
