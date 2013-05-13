@@ -100,7 +100,6 @@ class TestOperations extends FunSuite with ShouldMatchers {
 
     val expectedList = sampleFilterList()
 
-    // Add non-map before and after
     val lv = expectedList.listValue
     val expectedList2 = ListValue(lv :+ expectedMap4Value)
 
@@ -111,29 +110,9 @@ class TestOperations extends FunSuite with ShouldMatchers {
     operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
 
     val finalList = v.value.asInstanceOf[ListValue]
-    assertFilterResult(finalList, 3)
-  }
 
-  test("should support equals filtering at map level with heterogeneous map") {
-
-    val expectedList = sampleFilterList()
-    val extraMapValue: IntValue = 1
-
-    val root: MapValue = Map("list" -> expectedList, "extra" -> extraMapValue)
-
-    val operationSource: OperationSource = root
-
-    val v = new Variable(null, 0)
-
-    operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
-
-    val map = v.value.asInstanceOf[MapValue].mapValue
-
-    val finalList = map("list").asInstanceOf[ListValue]
-
+    // Should drop all non maps, and should works
     assertFilterResult(finalList, 2)
-
-    map("extra") should equal(IntValue(1))
   }
 
   test("should support equals filtering at list level with proxies") {
@@ -146,61 +125,8 @@ class TestOperations extends FunSuite with ShouldMatchers {
 
     operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
 
-    val finalList = v.value.asInstanceOf[ListValue]
-    assertFilterResult(finalList, 2)
-  }
-
-  test("should support equals filtering with map-list-map hierarchy") {
-
-    val expectedList = sampleFilterList()
-
-    val root: MapValue = Map("list" -> expectedList)
-
-    val operationSource: OperationSource = root
-
-    val v = new Variable(null, 0)
-
-    operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
-
-    val finalList = v.value.asInstanceOf[MapValue].mapValue("list").asInstanceOf[ListValue]
-
-    assertFilterResult(finalList, 2)
-  }
-
-  test("should support equals filtering with map-list-map hierarchy with proxies") {
-
-    val expectedList = sampleProxyFilterList()
-
-    val root = MockProxy(Map("list" -> expectedList))
-
-    val operationSource: OperationSource = root
-
-    val v = new Variable(null, 0)
-
-    operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
-
-    val finalList = v.value.asInstanceOf[MapValue].mapValue("list").asInstanceOf[ListValue]
-
-    assertFilterResult(finalList, 2)
-  }
-
-  test("equals filtering recurse list-map (map-list-map-list-map to infinity)") {
-
-    val expectedList2 = sampleFilterList()
-
-    val intermediateMap: MapValue = Map("list2" -> expectedList2)
-
-    val expectedList1: ListValue = Seq(intermediateMap)
-
-    val root: MapValue = Map("list1" -> expectedList1)
-
-    val operationSource: OperationSource = root
-
-    val v = new Variable(null, 0)
-
-    operationSource.execFiltering(null, v, StringValue("A"), MryFilters.Equals, StringValue("2"))
-
-    val finalList = v.value.asInstanceOf[MapValue].mapValue("list1").asInstanceOf[ListValue].listValue(0).asInstanceOf[MapValue].mapValue("list2").asInstanceOf[ListValue]
+    // Materialize the list
+    val finalList = v.value.asInstanceOf[ListValue].map { case(v) => v.serializableValue}
 
     assertFilterResult(finalList, 2)
   }

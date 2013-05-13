@@ -18,19 +18,26 @@ trait Value extends Object with OperationSource {
   def isNull = false
 }
 
-trait NoFiltering extends Value with OperationSource {
+/**
+ * Default (Not supported) predicate
+ *
+ * It allow Mry proxying (see OperationSource (getProxiedSource.execPredicate)) to work.
+ * Without it concrete class would throw a runtime exception.
+ *
+ * It avoid duplication and it allow smooth transition from no support to full predicate support, in the concrete class.
+ *
+ * TODO: Implement predicate on all values.
+ */
+trait DefaultPredicate extends Value with OperationSource {
 
   override def execPredicate(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) = {
-    into.value = BoolValue(true)
-  }
 
-  override def execFiltering(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) = {
-    into.value = this.value.value
+    into.value = BoolValue(false)
   }
 }
 
 @SerialVersionUID(-8696609946517999638L)
-class NullValue extends Value with NoFiltering with Serializable {
+class NullValue extends Value with DefaultPredicate with Serializable {
   override def equalsValue(that: Value): Boolean = this.isInstanceOf[NullValue]
   override def isNull = true
 }
@@ -108,15 +115,10 @@ case class ListValue(listValue: Seq[Value]) extends Value {
     val temp = listValue
 
       // Filter the child mapValue that doesn't match the filter
-      .withFilter { (v) =>
+      .filter { (v) =>
         v.execPredicate(context, into, key, filter, value)
-        into.value.asInstanceOf[BoolValue].boolValue
-      }
-
-      // Foward the filter to allow recursion
-      .map { (v) =>
-        v.execFiltering(context, into, key, filter, value)
-        into.value
+        val BoolValue(filtered) = into.value
+        filtered
       }
 
     into.value = ListValue(temp)
@@ -124,7 +126,7 @@ case class ListValue(listValue: Seq[Value]) extends Value {
 }
 
 @SerialVersionUID(-3026000576636973393L)
-case class StringValue(strValue: String) extends Value with NoFiltering  {
+case class StringValue(strValue: String) extends Value with DefaultPredicate  {
   override def toString = strValue
 
   override def equalsValue(that: Value): Boolean = {
@@ -136,7 +138,7 @@ case class StringValue(strValue: String) extends Value with NoFiltering  {
 }
 
 @SerialVersionUID(6885681030783170441L)
-case class IntValue(intValue: Long) extends Value with NoFiltering {
+case class IntValue(intValue: Long) extends Value with DefaultPredicate {
   override def toString = String.valueOf(intValue)
 
   override def equalsValue(that: Value): Boolean = {
@@ -148,7 +150,7 @@ case class IntValue(intValue: Long) extends Value with NoFiltering {
 }
 
 @SerialVersionUID(3071120965134758093L)
-case class BoolValue(boolValue: Boolean) extends Value with NoFiltering  {
+case class BoolValue(boolValue: Boolean) extends Value with DefaultPredicate  {
   override def toString = String.valueOf(boolValue)
 
   override def equalsValue(that: Value): Boolean = {
@@ -160,7 +162,7 @@ case class BoolValue(boolValue: Boolean) extends Value with NoFiltering  {
 }
 
 @SerialVersionUID(-4318700849067154549L)
-case class DoubleValue(doubleValue: Double) extends Value with NoFiltering  {
+case class DoubleValue(doubleValue: Double) extends Value with DefaultPredicate  {
   override def toString = String.valueOf(doubleValue)
 
   override def equalsValue(that: Value): Boolean = {
