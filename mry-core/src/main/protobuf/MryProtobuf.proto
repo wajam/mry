@@ -76,6 +76,7 @@ message POperation {
         Delete = 5;
         Limit = 6;
         Projection = 7;
+        Filter = 8;
     }
 
     optional Type type = 1;

@@ -2904,6 +2904,7 @@ public final class MryProtobuf {
       Delete(4, 5),
       Limit(5, 6),
       Projection(6, 7),
+      Filter(7, 8),
       ;
       
       public static final int Return_VALUE = 1;
@@ -2913,6 +2914,7 @@ public final class MryProtobuf {
       public static final int Delete_VALUE = 5;
       public static final int Limit_VALUE = 6;
       public static final int Projection_VALUE = 7;
+      public static final int Filter_VALUE = 8;
       
       
       public final int getNumber() { return value; }
@@ -2926,6 +2928,7 @@ public final class MryProtobuf {
           case 5: return Delete;
           case 6: return Limit;
           case 7: return Projection;
+          case 8: return Filter;
           default: return null;
         }
       }

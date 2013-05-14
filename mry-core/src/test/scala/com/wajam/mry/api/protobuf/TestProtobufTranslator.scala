@@ -70,7 +70,7 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
   }
 
   private def buildTransaction(): Transaction = {
-    new Transaction((b) => b.returns(b.from("B").get(1000).set("C").limit(100).projection("D").delete("E")))
+    new Transaction((b) => b.returns(b.from("B").get(1000).set("C").filter("A", MryFilters.Equals, "1").limit(100).projection("D").delete("E")))
   }
 
   test("test validation function") {
@@ -215,6 +215,10 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
         assert(objects.filter(_.isInstanceOf[Variable]).forall((v) => t.variables.exists(v eq _)))
       }
 
+      val validateFilter = (op: Filter) => {
+        assert(t.variables.exists(_ eq op.into))
+      }
+
       o match {
         case op: Return => validateWithFrom(op.from)
         case op: From => validateWithIntoAndSeqObject(op.into, op.keys)
@@ -223,6 +227,7 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
         case op: Delete => validateWithIntoAndSeqObject(op.into, op.data)
         case op: Limit => validateWithIntoAndSeqObject(op.into, op.keys)
         case op: Projection => validateWithIntoAndSeqObject(op.into, op.keys)
+        case op: Filter => validateFilter(op)
       }
     }
   }
