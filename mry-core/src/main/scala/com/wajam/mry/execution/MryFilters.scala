@@ -3,25 +3,23 @@ package com.wajam.mry.execution
 object MryFilters extends Enumeration {
   type MryFilter = Value
 
-  val Equals = Value(1, "eq")
-  val GreaterThan = Value(2, "gt")
-  val GreaterThanOrEqual = Value(3, "gte")
-  val LesserThan = Value(4, "lt")
-  val LesserThanOrEqual = Value(5, "lte")
+  val Equals = Value(1)
+  val GreaterThan = Value(2)
+  val GreaterThanOrEqual = Value(3)
+  val LesserThan = Value(4)
+  val LesserThanOrEqual = Value(5)
 
-  def applyFilter(left: Object, filter: MryFilters.MryFilter, right: Object): Boolean = {
-    val operator = filter match {
-      case Equals => EqualsFilter()
-      case GreaterThan => GreaterThanFilter()
-      case GreaterThanOrEqual => GreaterThanOrEqualFilter()
-      case LesserThan => LesserThanFilter()
-      case LesserThanOrEqual => LesserThanOrEqualFilter()
+  def apply(filter: MryFilters.MryFilter): Filter = {
+    filter match {
+      case Equals => EqualsFilter
+      case GreaterThan => GreaterThanFilter
+      case GreaterThanOrEqual => GreaterThanOrEqualFilter
+      case LesserThan => LesserThanFilter
+      case LesserThanOrEqual => LesserThanOrEqualFilter
     }
-
-    operator.execute(left, right)
   }
 
-  trait Filter {
+  sealed trait Filter {
     def execute(left: Object, right: Object): Boolean
 
     protected def throwMatchError(left: com.wajam.mry.execution.Value,
@@ -30,13 +28,13 @@ object MryFilters extends Enumeration {
     }
   }
 
-  case class EqualsFilter() extends Filter {
+  case object EqualsFilter extends Filter {
     def execute(left: Object, right: Object) = {
       left.value.equalsValue(right.value)
     }
   }
 
-  case class GreaterThanFilter() extends Filter {
+  case object GreaterThanFilter extends Filter {
     def execute(left: Object, right: Object) = {
       (left.value, right.value) match {
         case (l: IntValue, r: IntValue) => l.intValue > r.intValue
@@ -45,7 +43,7 @@ object MryFilters extends Enumeration {
     }
   }
 
-  case class GreaterThanOrEqualFilter() extends Filter {
+  case object GreaterThanOrEqualFilter extends Filter {
     def execute(left: Object, right: Object) = {
       (left.value, right.value) match {
         case (l: IntValue, r: IntValue) => l.intValue >= r.intValue
@@ -54,7 +52,7 @@ object MryFilters extends Enumeration {
     }
   }
 
-  case class LesserThanFilter() extends Filter {
+  case object LesserThanFilter extends Filter {
     def execute(left: Object, right: Object) = {
       (left.value, right.value) match {
         case (l: IntValue, r: IntValue) => l.intValue < r.intValue
@@ -63,7 +61,7 @@ object MryFilters extends Enumeration {
     }
   }
 
-  case class LesserThanOrEqualFilter() extends Filter {
+  case object LesserThanOrEqualFilter extends Filter {
     def execute(left: Object, right: Object) = {
       (left.value, right.value) match {
         case (l: IntValue, r: IntValue) => l.intValue <= r.intValue

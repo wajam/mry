@@ -68,7 +68,7 @@ case class MapValue(mapValue: Map[String, Value]) extends Value {
   override def execPredicate(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) = {
     val result = mapValue.get(key.toString) match {
       case Some(v) =>
-        MryFilters.applyFilter(v, filter, value)
+        MryFilters(filter).execute(v, value)
       case None => true
     }
 
