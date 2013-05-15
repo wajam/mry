@@ -13,12 +13,13 @@ import com.wajam.nrv.service.TokenRange
 import com.wajam.nrv.utils.TimestampIdGenerator
 import com.wajam.nrv.utils.timestamp.Timestamp
 import org.mockito.Mockito._
+import org.scalatest.matchers.ShouldMatchers
 
 /**
  * Test MySQL storage
  */
 @RunWith(classOf[JUnitRunner])
-class TestMysqlStorage extends TestMysqlBase {
+class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
 
   test("should get committed record") {
     exec(t => {
@@ -41,12 +42,72 @@ class TestMysqlStorage extends TestMysqlBase {
     }
   }
 
-  test("should support projection on single record") {
-    val expectedMapValue: MapValue = Map("mapk" -> toVal("value1"))
+  test("should support filtering") {
+    val mapValue1: MapValue = Map("A" -> toVal("1"))
+    val mapValue2: MapValue = Map("A" -> toVal("2"))
+    val mapValue3: MapValue = Map("A" -> toVal("2"))
+
+    val expectedList: ListValue = Seq(mapValue1, mapValue2, mapValue3)
+
+    val metaMapValue: MapValue = Map("list" -> expectedList)
+
     exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
-      table.set("key1", expectedMapValue)
+      table.set("key1", metaMapValue)
+    }, commit = true)
+
+    val Seq(v) = exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      t.ret(table.get("key1").filter("A", MryFilters.Equals, "2"))
+    }, commit = false)
+
+    val MapValue(mapValue) = v.value
+    val ListValue(finalList) = mapValue("list")
+
+    finalList.size should equal(2)
+
+    finalList(0) should equal(mapValue2)
+    finalList(1) should equal(mapValue3)
+  }
+
+  test("should support filtering, lte") {
+    val mapValue1: MapValue = Map("A" -> toVal(1))
+    val mapValue2: MapValue = Map("A" -> toVal(2))
+    val mapValue3: MapValue = Map("A" -> toVal(4))
+
+    val expectedList: ListValue = Seq(mapValue1, mapValue2, mapValue3)
+
+    val metaMapValue: MapValue = Map("list" -> expectedList)
+
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", metaMapValue)
+    }, commit = true)
+
+    val Seq(v) = exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      t.ret(table.get("key1").filter("A", MryFilters.LesserThanOrEqual, 3))
+    }, commit = false)
+
+    val MapValue(mapValue) = v.value
+    val ListValue(finalList) = mapValue("list")
+
+    finalList.size should equal(2)
+
+    finalList(0) should equal(mapValue1)
+    finalList(1) should equal(mapValue2)
+  }
+
+  test("should support projection on single record") {
+    val mapValue: MapValue = Map("mapk" -> toVal("value1"))
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", mapValue)
     }, commit = true)
 
     val Seq(v) = exec(t => {
@@ -55,15 +116,15 @@ class TestMysqlStorage extends TestMysqlBase {
       t.ret(table.get("key1").projection("mapk"))
     }, commit = false)
 
-    assert(v.equalsValue(expectedMapValue))
+    assert(v.equalsValue(mapValue))
   }
 
   test("empty projection should return all fields") {
-    val expectedMapValue: MapValue = Map("mapk" -> toVal("value1"))
+    val mapValue: MapValue = Map("mapk" -> toVal("value1"))
     exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
-      table.set("key1", expectedMapValue)
+      table.set("key1", mapValue)
     }, commit = true)
 
     val Seq(v) = exec(t => {
@@ -72,16 +133,16 @@ class TestMysqlStorage extends TestMysqlBase {
       t.ret(table.get("key1").projection())
     }, commit = false)
 
-    assert(v.equalsValue(expectedMapValue))
+    assert(v.equalsValue(mapValue))
   }
 
 
   test("should support multiple projection on single record") {
-    val expectedMapValue: MapValue = Map("key1" -> toVal("value1"), "key2" -> toVal("value2"))
+    val mapValue: MapValue = Map("key1" -> toVal("value1"), "key2" -> toVal("value2"))
     exec(t => {
       val storage = t.from("mysql")
       val table = storage.from("table1")
-      table.set("key1", expectedMapValue)
+      table.set("key1", mapValue)
     }, commit = true)
 
     val Seq(v) = exec(t => {
@@ -90,7 +151,7 @@ class TestMysqlStorage extends TestMysqlBase {
       t.ret(table.get("key1").projection("key1", "key2", "other"))
     }, commit = false)
 
-    assert(v.equalsValue(expectedMapValue))
+    assert(v.equalsValue(mapValue))
   }
 
   test("should support projection that results in empty record") {
