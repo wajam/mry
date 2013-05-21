@@ -687,6 +687,8 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       "gc-collected-record", table.uniqueName, "records", TimeUnit.SECONDS))
     lazy private val extraVersionsLoadedMeter = new Meter(metrics.metricsRegistry.newMeter(GarbageCollector.getClass,
       "gc-extra-record-loaded", table.uniqueName, "extra-record-loaded", TimeUnit.SECONDS))
+    lazy private val collectError = new Meter(metrics.metricsRegistry.newMeter(GarbageCollector.getClass,
+      "gc-collect-error", table.uniqueName, "gc-collect-error", TimeUnit.SECONDS))
     private val collectedTokenGauge = metrics.metricsRegistry.newGauge(GarbageCollector.getClass,
       "gc-collected-token", table.uniqueName, new Gauge[Long] {
         def value = {
@@ -741,7 +743,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           val lastToken = tableNextToken
           val lastRange = tableNextRange
           val toToken = math.min(lastToken + config.gcTokenStep, lastRange.end)
-          val consistentTimestamp = getGcConsistentTimestamp(tokenRanges)
+          val consistentTimestamp = getGcConsistentTimestamp(Seq(lastRange))
 
           // no more versions in cache, fetch new batch
           var nextToken = lastToken
@@ -805,6 +807,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
           trx.commit()
         } catch {
           case e: Exception => {
+            collectError.mark()
             try {
               if (trx != null)
                 trx.rollback()
