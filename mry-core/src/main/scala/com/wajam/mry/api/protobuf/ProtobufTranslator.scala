@@ -188,18 +188,20 @@ private class InternalProtobufTranslator {
       }
 
       case Transport(Some(transaction), None) => {
+        pTransport.setType(Type.Transaction)
+
         val pTrans = encodePTransaction(transaction)
         pTransport.setRequestHeapId(pTrans)
-        pTransport.setType(Type.Transaction)
+
       }
 
       case Transport(None, Some(values)) => {
+        pTransport.setType(Type.Values)
+
         for (v <- values) {
           val value = encodePValue(v)
           pTransport.addResponseHeapIds(addToHeap(value))
         }
-
-        pTransport.setType(Type.Values)
       }
 
       case _ =>

@@ -187,7 +187,7 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
 
     transport2.transaction.isDefined should be(false)
 
-    results equalsValue results2
+    assert(results == results2)
   }
 
   /**
