@@ -722,7 +722,7 @@ object MysqlTransaction {
     val metricCommit = tracedTimer("mysql-commit")
     val metricRollback = tracedTimer("mysql-rollback")
     val tableMetricTimeline = generateTablesTimers("mysql-timeline")
-    val tableMetricGetAllLatest = generateTablesTimers("mysql-timeline")
+    val tableMetricGetAllLatest = generateTablesTimers("mysql-get-all-latests")
     val tableMetricTopMostVersions = generateTablesTimers("mysql-topmosversions")
     val tableMetricSet = generateTablesTimers("mysql-set")
     val tableMetricGet = generateTablesTimers("mysql-get")
