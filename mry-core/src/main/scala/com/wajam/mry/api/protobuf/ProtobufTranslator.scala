@@ -188,16 +188,19 @@ private class InternalProtobufTranslator {
       }
 
       case Transport(Some(transaction), None) => {
+        pTransport.setType(Type.Transaction)
+
         val pTrans = encodePTransaction(transaction)
         pTransport.setRequestHeapId(pTrans)
-        pTransport.setType(Type.Transaction)
+
       }
 
       case Transport(None, Some(values)) => {
+        pTransport.setType(Type.Values)
+
         for (v <- values) {
           val value = encodePValue(v)
           pTransport.addResponseHeapIds(addToHeap(value))
-          pTransport.setType(Type.Values)
         }
       }
 
@@ -396,6 +399,7 @@ private class InternalProtobufTranslator {
   }
 
   def encodePValue(value: Value): PTransactionValue.Builder = {
+
     value.serializableValue match {
       case strValue: StringValue =>
         PTransactionValue.newBuilder()
@@ -451,6 +455,7 @@ private class InternalProtobufTranslator {
   }
 
   def decodePValue(protoVal: PTransactionValue): Value = {
+
     protoVal.getType match {
       case PTransactionValue.Type.STRING =>
         StringValue(protoVal.getStringValue)
