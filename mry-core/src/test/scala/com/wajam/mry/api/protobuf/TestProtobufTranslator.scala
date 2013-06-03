@@ -172,7 +172,22 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     merged.map { case (z1, z2) =>
       z1 equalsValue z2 should equal (true)
     }
+  }
 
+  test("transport encode/decode: empty result") {
+
+    val results: Seq[Value] = Seq()
+
+    val transport = new Transport(None, Some(results))
+
+    val bytes = translator.encodeAll(transport)
+    val transport2 = translator.decodeAll(bytes)
+
+    val results2 = transport2.values.get
+
+    transport2.transaction.isDefined should be(false)
+
+    assert(results == results2)
   }
 
   /**
