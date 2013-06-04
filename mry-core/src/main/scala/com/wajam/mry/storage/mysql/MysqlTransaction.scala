@@ -581,32 +581,40 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
   }
 
   def getLastTimestamp(table: Table, ranges: Seq[TokenRange]): Option[Timestamp] = {
+    getFirstTableTimestamp(table, ranges, sortAscending = false)
+  }
+
+  def getFirstTimestamp(table: Table, ranges: Seq[TokenRange]): Option[Timestamp] = {
+    getFirstTableTimestamp(table, ranges, sortAscending = true)
+  }
+
+  private def getFirstTableTimestamp(table: Table, ranges: Seq[TokenRange], sortAscending: Boolean): Option[Timestamp] = {
 
     val whereRanges = ranges.map(r => "(i.tk >= %1$d AND i.tk <= %2$d)".format(r.start, r.end)).mkString("(", "OR ", ")")
     val fullTableName = table.depthName("_")
 
     /* Generated SQL looks like:
      *
-     *   SELECT i.ts AS max_ts
+     *   SELECT i.ts AS ts
      *   FROM `table1_index` AS i
      *   WHERE ((i.tk >= 0 AND i.tk <= 89478485) OR (i.tk >= 536870910 AND i.tk <= 626349395));
      *   ORDER BY i.ts DESC
      *   LIMIT 0,1;
      */
     val sql = """
-        SELECT i.ts AS max_ts
+        SELECT i.ts AS ts
         FROM `%1$s_index` AS i
         WHERE %2$s
-        ORDER BY i.ts DESC
+        ORDER BY i.ts %3$s
         LIMIT 0,1;
-              """.format(fullTableName, whereRanges)
+              """.format(fullTableName, whereRanges, if (sortAscending) "ASC" else "DESC")
 
     metrics.tableMetricGetLastTimestamp(table).time {
       var results: SqlResults = null
       try {
-        results = storage.executeSql(connection, false, sql)
+        results = storage.executeSql(connection, update = false, sql)
         if (results.resultset.next()) {
-          val value = results.resultset.getLong("max_ts")
+          val value = results.resultset.getLong("ts")
           if (results.resultset.wasNull()) {
             None
           } else {
@@ -622,7 +630,8 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     }
   }
 
-  def getTransactionSummaryRecords(table: Table, timestamp: Timestamp, count: Int, ranges: Seq[TokenRange]): Seq[TransactionSummaryRecord] = {
+  def getTransactionSummaryRecords(table: Table, fromTimestamp: Timestamp, toTimestamp: Timestamp, count: Int,
+                                   ranges: Seq[TokenRange]): Seq[TransactionSummaryRecord] = {
     val fullTableName = table.depthName("_")
     val whereRanges = ranges.map(r => "(i.tk >= %1$d AND i.tk <= %2$d)".format(r.start, r.end)).mkString("(", "OR ", ")")
 
@@ -631,7 +640,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *     SELECT i.tk , i.ts, COUNT(*) AS count
      *     FROM `table1_index` AS i
      *     WHERE ((i.tk >= 0 AND i.tk <= 89478485) OR (i.tk >= 536870910 AND i.tk <= 626349395))
-     *     AND i.ts >= 0
+     *     AND i.ts >= 0 AND i.ts <= 864000000000
      *     GROUP BY i.tk, i.ts
      *     ORDER BY i.ts ASC
      *     LIMIT 0, 100;
@@ -640,11 +649,11 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
                 SELECT i.tk , i.ts, COUNT(*) AS count
                 FROM `%1$s_index` AS i
                 WHERE %2$s
-                AND i.ts >= %3$d
+                AND i.ts >= %3$d AND i.ts <= %5$d
                 GROUP BY i.ts, i.tk
                 ORDER BY i.ts ASC
                 LIMIT 0, %4$d;
-              """.format(fullTableName, whereRanges, timestamp.value, count)
+              """.format(fullTableName, whereRanges, fromTimestamp.value, count, toTimestamp.value)
 
     var ret = List[TransactionSummaryRecord]()
     metrics.tableMetricGetTransactionSummaryRecords(table).time {
