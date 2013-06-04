@@ -415,8 +415,8 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   /**
    * Iterate group of mutation records <b>from</b> the specified timestamp up <b>to</b> specified timestamp.
    *
-   * @param fromTime start timestamp (inclusive)
-   * @param toTime end timestamp (inclusive)
+   * @param startTimestamp start timestamp (inclusive)
+   * @param endTimestamp end timestamp (inclusive)
    * @param ranges token ranges
    * @param recordsCacheSize maximum number of records cached in this iterator. This is not the mutation group size but
    *                        the number of records contained in the queued mutation group. A limit of 100 records can be
@@ -424,16 +424,17 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
    * @param tableSummarySize number of transaction summary records loaded per table per call from database
    * @param tableSummaryThreshold threshold per table below which more transaction summary records are loaded
    */
-  class MutationGroupIterator(val fromTime: Timestamp, toTime: Timestamp, val ranges: Seq[TokenRange],
+  class MutationGroupIterator(val startTimestamp: Timestamp, endTimestamp: Timestamp, val ranges: Seq[TokenRange],
                               recordsCacheSize: Int = 100, tableSummarySize: Int = 50,
-                              tableSummaryThreshold: Double = 0.70) extends Traversable[MutationGroup] {
+                              tableSummaryThreshold: Double = 0.70,
+                              tableSummaryTimestampIncrement: Long = 864000000000L) extends Traversable[MutationGroup] {
 
     private case class MutationGroupSummary(token: Long, timestamp: Timestamp,
                                             var records: List[TransactionSummaryRecord] = Nil)
 
     private case class TableSummary(table: Table, var lastTimestamp: Timestamp,
                                     var records: List[TransactionSummaryRecord] = Nil) {
-      def hasMore: Boolean = lastTimestamp < toTime
+      def hasMore: Boolean = lastTimestamp < endTimestamp
 
       def mustLoadMore: Boolean = hasMore && records.size < tableSummarySize * tableSummaryThreshold
 
@@ -452,8 +453,10 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
     // Transaction summary cached per table.
     private val tablesCache: Seq[TableSummary] = {
-      val initialTimestamp = Timestamp(fromTime.value - 1)
-      model.allHierarchyTables.map(table => loadTableSummary(TableSummary(table, initialTimestamp))).toSeq
+      model.allHierarchyTables.map(table => {
+        val initialTimestamp = Timestamp(findInitialTableTimestamp(table) -1)
+        loadTableSummary(TableSummary(table, initialTimestamp))
+      }).toSeq
     }
 
     private var error: Option[Exception] = None
@@ -561,21 +564,45 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
       }
     }
 
+    @tailrec
     private def loadTableSummary(tableSummary: TableSummary): TableSummary = {
       var trx: MysqlTransaction = null
       try {
         trace("loadTableSummary: %s %d".format(tableSummary.table, tableSummary.records.size))
         trx = createStorageTransaction
-        val records = trx.getTransactionSummaryRecords(tableSummary.table, Timestamp(tableSummary.lastTimestamp.value + 1),
+        val fromTimestamp = Timestamp(tableSummary.lastTimestamp.value + 1)
+        val toTimestamp = Timestamp(math.min(fromTimestamp.value + tableSummaryTimestampIncrement, endTimestamp.value))
+        val records = trx.getTransactionSummaryRecords(tableSummary.table, fromTimestamp, toTimestamp,
           tableSummarySize, ranges)
         tableSummary.records = (tableSummary.records ++ records.toList).sortBy(_.timestamp)
         tableSummary.lastTimestamp = if (records.isEmpty) {
-          toTime
+          toTimestamp
         } else {
           records.maxBy(_.timestamp).timestamp
         }
         debug("loadTableSummary: done %s %d".format(tableSummary.table, tableSummary.records.size))
+      } finally {
+        if (trx != null) {
+          trx.rollback()
+        }
+      }
+
+      if (tableSummary.mustLoadMore) {
+        loadTableSummary(tableSummary)
+      } else {
         tableSummary
+      }
+    }
+
+    private def findInitialTableTimestamp(table: Table): Long = {
+      var trx: MysqlTransaction = null
+      try {
+        trx = createStorageTransaction
+        val initialTimestamp: Long = trx.getFirstTimestamp(table, ranges) match {
+          case Some(firstTableTimestamp) => math.max(startTimestamp.value, firstTableTimestamp.value)
+          case None => endTimestamp.value
+        }
+        initialTimestamp
       } finally {
         if (trx != null) {
           trx.rollback()
@@ -830,7 +857,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
      * currently read for replication.
      */
     private def getGcConsistentTimestamp(ranges: Seq[TokenRange]): Timestamp = {
-      val rangesReadStartTimestamps = openReadIterators.withFilter(!_.ranges.intersect(ranges).isEmpty).map(_.fromTime)
+      val rangesReadStartTimestamps = openReadIterators.withFilter(!_.ranges.intersect(ranges).isEmpty).map(_.startTimestamp)
       (getCurrentConsistentTimestamp(ranges) :: rangesReadStartTimestamps).min
     }
   }
