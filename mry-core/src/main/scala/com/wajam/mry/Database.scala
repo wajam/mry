@@ -14,12 +14,12 @@ import java.util.concurrent.TimeUnit
 /**
  * MRY database
  */
-class Database[T <: Storage](serviceName: String = "database")
+class Database(serviceName: String = "database")
   extends Service(serviceName) with CurrentTime with Logging with Instrumented with Traced {
 
   lazy private val timeoutRollbackTimer = metrics.timer("timeout-rollback")
 
-  var storages = Map[String, T]()
+  var storages = Map[String, Storage]()
 
   // Set specific resolver and data codec
   applySupportOptions(new ActionSupportOptions(resolver = Some(Database.TOKEN_RESOLVER), nrvCodec = Some(new MryCodec)))
@@ -94,12 +94,12 @@ class Database[T <: Storage](serviceName: String = "database")
     }
   }
 
-  def registerStorage(storage: T) {
+  def registerStorage(storage: Storage) {
     this.storages += (storage.name -> storage)
     storage.start()
   }
 
-  def getStorage(name: String): T = this.storages.get(name).get
+  def getStorage(name: String): Storage = this.storages.get(name).get
 
   protected val remoteWriteExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
     execute(req)
