@@ -31,7 +31,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
 
     val token = Resolver.MAX_TOKEN / size * i
 
-    val db = new Database[Storage]("mry")
+    val db = new Database("mry")
     cluster.registerService(db)
     db.registerStorage(spy(new MemoryStorage("memory")))
 
@@ -41,7 +41,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
   }
 
   def testDatabaseInstance(instance: TestingClusterInstance) {
-    val db = instance.data.asInstanceOf[Database[_]]
+    val db = instance.data.asInstanceOf[Database]
 
     for (i <- 0 to 100) {
       val key = UUID.randomUUID().toString
@@ -93,7 +93,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
     val instance = createClusterInstance(1, 1, new StaticClusterManager)
 
     try {
-      val db = instance.data.asInstanceOf[Database[_]]
+      val db = instance.data.asInstanceOf[Database]
       db.applySupport(responseTimeout = Some(1000))
       instance.cluster.start()
 

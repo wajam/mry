@@ -6,15 +6,16 @@ import com.wajam.nrv.data.{MessageType, InMessage, Message}
 import com.wajam.nrv.utils.timestamp.Timestamp
 import com.wajam.nrv.service.{ActionMethod, TokenRange}
 import execution.{ExecutionContext, Transaction}
-import storage.ConsistentStorage
+import com.wajam.mry.storage.{Storage, ConsistentStorage}
 import com.wajam.nrv.utils.Closable
 import com.yammer.metrics.scala.Instrumented
 
 /**
  * Consistent MRY database
  */
-class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database")
-  extends Database[T](serviceName) with ConsistentStore with Instrumented {
+trait ConsistentDatabase extends ConsistentStore with Instrumented {
+
+  self: Database =>
 
   lazy private val lastTimestampTimer = metrics.timer("get-last-timestamp")
   lazy private val truncateTransactionTimer = metrics.timer("truncate-transaction")
@@ -22,13 +23,19 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
   lazy private val readTransactionsNextTimer = metrics.timer("read-transactions-next")
   lazy private val writeTransactionTimer = metrics.timer("write-transaction")
 
+  def consistentStorages: Iterable[ConsistentStorage] = storages.values.collect {
+    case storage: ConsistentStorage => storage
+  }
+
   def requiresConsistency(message: Message): Boolean = {
-    findAction(message.path, message.method) match {
-      case Some(action) => {
-        action == remoteWriteExecuteToken || action == remoteReadExecuteToken
+    if (consistentStorages.nonEmpty) {
+      findAction(message.path, message.method) match {
+        case Some(action) => {
+          action == remoteWriteExecuteToken || action == remoteReadExecuteToken
+        }
+        case _ => false
       }
-      case _ => false
-    }
+    } else false
   }
 
   /**
@@ -36,7 +43,7 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
    */
   def getLastTimestamp(ranges: Seq[TokenRange]): Option[Timestamp] = {
     lastTimestampTimer.time {
-      storages.values.map(_.getLastTimestamp(ranges)).max
+      consistentStorages.map(_.getLastTimestamp(ranges)).max
     }
   }
 
@@ -46,7 +53,7 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
    * unconfirmed and these records must be excluded from processing tasks such as GC or percolation.
    */
   def setCurrentConsistentTimestamp(getCurrentConsistentTimestamp: (TokenRange) => Timestamp) {
-    for (storage <- storages.values) {
+    for (storage <- consistentStorages) {
       storage.setCurrentConsistentTimestamp(getCurrentConsistentTimestamp)
     }
   }
@@ -56,7 +63,7 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
    */
   def readTransactions(fromTime: Timestamp, toTime: Timestamp, ranges: Seq[TokenRange]): Iterator[Message] with Closable = {
     // TODO: somehow support more than one storage
-    val (_, storage) = storages.head
+    val storage = consistentStorages.head
 
     readTransactionsInitTimer.time {
       new Iterator[Message] with Closable {
@@ -136,7 +143,7 @@ class ConsistentDatabase[T <: ConsistentStorage](serviceName: String = "database
    */
   def truncateAt(timestamp: Timestamp, token: Long) {
     truncateTransactionTimer.time {
-      for (storage <- storages.values) {
+      for (storage <- consistentStorages) {
         storage.truncateAt(timestamp, token)
       }
     }
