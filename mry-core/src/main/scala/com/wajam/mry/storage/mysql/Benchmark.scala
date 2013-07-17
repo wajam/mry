@@ -109,16 +109,9 @@ object Benchmark extends App with Instrumented {
     val node = new LocalNode(Map("nrv" -> 1234))
     val cluster = new Cluster(node, new StaticClusterManager())
 
-    val scn = new Scn("scn", ScnConfig(), StorageType.MEMORY)
-    val scnClient = new ScnClient(scn, ScnClientConfig()).start()
-    cluster.registerService(scn)
-    scn.addMember(0, cluster.localNode)
-
     val db = new Database()
-    val consistency: ConsistencyMasterSlave = new ConsistencyMasterSlave(scnClient, "", txLogEnabled = false)
-    db.applySupport(switchboard = Some(new Switchboard("mry", 10, 50)), consistency = Some(consistency))
+    db.applySupport(switchboard = Some(new Switchboard("mry", 10, 50)))
     cluster.registerService(db)
-    consistency.bindService(db)
     db.addMember(0, cluster.localNode)
 
     val mysql = new MysqlStorage(MysqlStorageConfiguration("mysql", Conf.mysqlHost(), Conf.mysqlDatabase(),

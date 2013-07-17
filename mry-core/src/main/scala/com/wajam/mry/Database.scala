@@ -8,7 +8,7 @@ import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service._
 import com.wajam.nrv.tracing.Traced
 import com.wajam.nrv.data.InMessage
-import com.wajam.nrv.utils.{CurrentTime, Promise, Future}
+import com.wajam.nrv.utils._
 import java.util.concurrent.TimeUnit
 
 /**
@@ -20,6 +20,8 @@ class Database(serviceName: String = "database")
   lazy private val timeoutRollbackTimer = metrics.timer("timeout-rollback")
 
   var storages = Map[String, Storage]()
+
+  private var timestampGenerator = new TimestampIdGenerator with SynchronizedIdGenerator[Long]
 
   // Set specific resolver and data codec
   applySupportOptions(new ActionSupportOptions(resolver = Some(Database.TOKEN_RESOLVER), nrvCodec = Some(new MryCodec)))
@@ -102,10 +104,16 @@ class Database(serviceName: String = "database")
   def getStorage(name: String): Storage = this.storages.get(name).get
 
   protected val remoteWriteExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
+    if (req.timestamp.isEmpty) {
+      req.timestamp = Some(timestampGenerator.nextId)
+    }
     execute(req)
   }, ActionMethod.POST))
 
   protected val remoteReadExecuteToken = this.registerAction(new Action("/execute/:" + Database.TOKEN_KEY, req => {
+    if (req.timestamp.isEmpty) {
+      req.timestamp = Some(timestampGenerator.nextId)
+    }
     execute(req)
   }, ActionMethod.GET))
 
