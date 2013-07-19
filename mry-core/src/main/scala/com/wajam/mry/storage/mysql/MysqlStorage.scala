@@ -26,7 +26,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   private[mysql] var transactionMetrics: MysqlTransaction.Metrics = null
   private var tablesMutationsCount = Map[Table, AtomicInteger]()
   val valueSerializer = new ProtobufTranslator
-  private var currentConsistentTimestamps: (TokenRange) => Timestamp = (_) => Long.MinValue
+  private var currentConsistentTimestamps: (TokenRange) => Timestamp = (_) => Long.MaxValue
   private var openReadIterators: List[MutationGroupIterator] = List()
 
   lazy private val lastTimestampTimer = metrics.timer("get-last-timestamp-time")
