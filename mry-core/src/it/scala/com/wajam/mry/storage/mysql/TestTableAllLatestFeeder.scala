@@ -25,7 +25,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     }, commit = true, onTimestamp = createTimestamp(0))
 
 
-    val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1, List(TokenRange.All))
+    val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1, List(TokenRange.All)) with TableContinuousFeeder
     val records = Iterator.continually({
       feeder.next()
     }).take(100).flatten.toList
@@ -54,7 +54,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     }
 
     // Should load records starting from context data record
-    val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1, List(TokenRange.All))
+    val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1, List(TokenRange.All)) with TableContinuousFeeder
     val feederContext = new TaskContext()
     feederContext.data += (Token -> keys(5)._1)
     feederContext.data += (Keys -> Seq(keys(5)._2))
@@ -82,7 +82,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     }
 
     // Should load records from start
-    val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1, List(TokenRange.All))
+    val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1, List(TokenRange.All)) with TableContinuousFeeder
     val feederContext = new TaskContext()
     feederContext.data += (Token -> keys(5))
     feederContext.data += (Keys -> Seq(keys(5)._2))
@@ -110,7 +110,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     }
 
     // Should load records from start
-    val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1, List(TokenRange.All))
+    val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1, List(TokenRange.All)) with TableContinuousFeeder
     feeder.init(new TaskContext())
     val records = Iterator.continually({
       feeder.next()
@@ -135,7 +135,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     }
 
     // Load some records
-    val feeder1 = new TableAllLatestFeeder("test", mysqlStorage, table1_1, List(TokenRange.All))
+    val feeder1 = new TableAllLatestFeeder("test", mysqlStorage, table1_1, List(TokenRange.All)) with TableContinuousFeeder
     feeder1.init(new TaskContext())
     val records = Iterator.continually({
       feeder1.next()
@@ -148,7 +148,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     feeder1.ack(records.last)
 
     // Create another feeder instance with a copy of the context, should resume from the previous feeder context
-    val feeder2 = new TableAllLatestFeeder("test", mysqlStorage, table1_1, List(TokenRange.All))
+    val feeder2 = new TableAllLatestFeeder("test", mysqlStorage, table1_1, List(TokenRange.All)) with TableContinuousFeeder
     val context2 = new TaskContext()
     context2.updateFromJson(feeder1.context.toJson)
     feeder2.init(context2)
@@ -175,23 +175,19 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     val ranges = List(TokenRange(1000000001L, 2000000000L), TokenRange(3000000001L, 4000000000L))
     val expectedKeys = keys.filter(k => ranges.exists(_.contains(k._1))).toList
 
-    val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1, ranges)
+    val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1, ranges, loadLimit = 3) with TableContinuousFeeder
     val records = Iterator.continually({
       feeder.next()
     }).take(100).flatten.toList
 
-    // Verify all records tokens are from the expected ranges
-    records.foreach(record => {
-        val actualToken = record(Token).toString.toLong
-        ranges.exists(_.contains(actualToken)) should be(true)
-    })
+    val expectedTokens = Stream.continually(expectedKeys.map(_._1)).flatten
+    val actualTokens = records.map(_(Token).toString.toLong)
 
-    // unflattened records =
-    //  None (loadMore), range1_records..., None (eor), None (loadMore), range2_records..., None (eor), None (loadMore), range1_records... ...
-    records.size should be(71) // Trust me, the count should be 71
+    actualTokens.size should be > 50
+    actualTokens should be(expectedTokens.take(actualTokens.size).toList)
   }
 
-  test("should not return data beyong current consistent timestamp") {
+  test("should not return data beyond current consistent timestamp") {
     exec(t => {
       t.from("mysql").from("table1").set("key1", Map("k" -> "v"))
     }, commit = true, onTimestamp = 0L)
@@ -202,7 +198,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
 
     currentConsistentTimestamp = 50L
 
-    val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1, List(TokenRange.All))
+    val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1, List(TokenRange.All)) with TableContinuousFeeder
     val records = Iterator.continually({
       feeder.next()
     }).take(100).flatten.toList
