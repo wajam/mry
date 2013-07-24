@@ -9,11 +9,11 @@ import com.wajam.nrv.service.TokenRange
  * Fetches all current defined (not null) data on a table.
  * When it finished, it loops over and starts again with the oldest current data.
  */
-class TableContinuousFeeder(name: String, storage: MysqlStorage, table: Table, tokenRanges: Seq[TokenRange],
+class TableAllLatestFeeder(name: String, storage: MysqlStorage, table: Table, tokenRanges: Seq[TokenRange],
                             rowsToFetch: Int = 1000)
   extends CachedDataFeeder(name) with Logging {
 
-  import TableContinuousFeeder._
+  import TableAllLatestFeeder._
 
   var context: TaskContext = null
   var lastRecord: Option[Record] = None
@@ -111,7 +111,7 @@ class TableContinuousFeeder(name: String, storage: MysqlStorage, table: Table, t
   def kill() {}
 }
 
-object TableContinuousFeeder {
+object TableAllLatestFeeder {
   val Keys = "keys"
   val Token = "token"
   val Value = "value"
