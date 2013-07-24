@@ -23,28 +23,17 @@ trait TableContinuousFeeder extends CachedDataFeeder with ResumableRecordDataFee
   def loadMore() = {
     try {
       val loadRange = lastRecord match {
-        case Some(record) => {
-          println("1) lastRecord=%s, curRange=%s, newRange=%s".format(lastRecord, currentRange,
-            tokenRanges.find(_.contains(token(record))).getOrElse(tokenRanges.head)))
-          tokenRanges.find(_.contains(token(record))).getOrElse(tokenRanges.head)
-        }
+        case Some(record) => tokenRanges.find(_.contains(token(record))).getOrElse(tokenRanges.head)
         case None => {
           currentRange match {
-            case Some(range) => {
-              println("2) lastRecord=%s, curRange=%s, newRange=%s".format(lastRecord, currentRange,
-                range.nextRange(tokenRanges).getOrElse(tokenRanges.head)))
-              range.nextRange(tokenRanges).getOrElse(tokenRanges.head)
-            }
-            case None => {
-              println("3) lastRecord=%s, curRange=%s, newRange=%s".format(lastRecord, currentRange, tokenRanges.head))
-              tokenRanges.head
-            }
+            case Some(range) => range.nextRange(tokenRanges).getOrElse(tokenRanges.head)
+            case None => tokenRanges.head
           }
         }
       }
       currentRange = Some(loadRange)
 
-      // The loadRecords method may returns the "from" record, we remove it first. TODO: should this be done in loadRecords?
+      // The loadRecords method may returns the "from" record, we remove it first.
       val records = lastRecord match {
         case Some(record) => loadRecords(loadRange, lastRecord).filterNot(_ == record)
         case None => loadRecords(loadRange, lastRecord)
