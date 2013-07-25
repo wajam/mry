@@ -329,7 +329,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
             if (trx != null)
               trx.rollback()
           } catch {
-            case _ =>
+            case _: Exception =>
           }
 
           error("Caught an exception while truncating records storage (tk={}, ts={})", token, timestamp, e)
@@ -839,7 +839,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
               if (trx != null)
                 trx.rollback()
             } catch {
-              case _ =>
+              case _: Exception =>
             }
 
             error("Caught an exception in {} garbage collector!", table.uniqueName, e)
