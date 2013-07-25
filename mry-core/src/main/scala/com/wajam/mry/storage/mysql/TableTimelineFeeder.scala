@@ -11,9 +11,9 @@ import com.wajam.nrv.service.TokenRange
 /**
  * Table mutation timeline task feeder
  */
-class TableTimelineFeeder(name: String, storage: MysqlStorage, table: Table, tokenRanges: List[TokenRange],
+class TableTimelineFeeder(val name: String, storage: MysqlStorage, table: Table, tokenRanges: List[TokenRange],
                           val batchSize: Int = 100)
-  extends CachedDataFeeder(name) with CurrentTime with Logging {
+  extends CachedDataFeeder with CurrentTime with Logging {
 
   private val contextTimestampGauge = metrics.gauge("context-timestamp", name) {
     val contexts = TimelineFeederContextCache.contexts(name)
