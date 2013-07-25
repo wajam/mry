@@ -21,9 +21,11 @@ trait ResumableRecordDataFeeder extends RecordDataFeeder {
 
   def loadRecords(range: TokenRange, fromRecord: Option[DataRecord]): Iterable[DataRecord]
 
+  def toContextData(data: Map[String, Any]): Map[String, Any] = data
+
   def ack(data: Map[String, Any]) {
     // Update context with the latest acknowledged record data
-    context.data = data.map(entry => entry match {
+    context.data = toContextData(data).map(entry => entry match {
       case (k, v: String) => (k, v)
       case (k, v: Seq[Any]) => (k, v.map(_.toString))
       case (k, v) => (k, v.toString)

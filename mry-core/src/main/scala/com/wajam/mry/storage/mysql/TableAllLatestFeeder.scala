@@ -55,10 +55,7 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
       Timestamp -> record.timestamp)
   }
 
-  override def ack(data: Map[String, Any]) {
-    // Exclude value from context
-    super.ack(data - Value)
-  }
+  override def toContextData(data: Map[String, Any]): Map[String, Any] = data - Value
 }
 
 object TableAllLatestFeeder {
