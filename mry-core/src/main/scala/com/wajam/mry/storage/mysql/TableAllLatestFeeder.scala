@@ -3,6 +3,7 @@ package com.wajam.mry.storage.mysql
 import com.wajam.nrv.Logging
 import com.wajam.spnl.feeder.CachedDataFeeder
 import com.wajam.nrv.service.TokenRange
+import com.wajam.mry.execution.{NullValue, Value}
 
 /**
  * Fetches all current defined (not null) data on a table.
@@ -30,12 +31,12 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
     if (data.contains(Keys) && data.contains(Token) && data.contains(Timestamp))
     {
       try {
-        val record = new Record(table)
-        record.token = data(Token).toString.toLong
-        record.timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data(Timestamp).toString.toLong)
+        val token = data(Token).toString.toLong
+        val timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data(Timestamp).toString.toLong)
         val keys = data(Keys).asInstanceOf[Seq[String]]
-        record.accessPath = new AccessPath(keys.map(new AccessKey(_)))
-        Some(record)
+        val accessPath = new AccessPath(keys.map(new AccessKey(_)))
+        val value = data.get(Value).getOrElse(NullValue).asInstanceOf[Value]
+        Some(new Record(table, value, token, accessPath, timestamp = timestamp))
       } catch {
         case e: Exception => {
           warn("Error creating Record for table {} from task context data {}: ", table.depthName("_"), data, e)
