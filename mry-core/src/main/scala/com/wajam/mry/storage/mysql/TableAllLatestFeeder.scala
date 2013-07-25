@@ -6,7 +6,6 @@ import com.wajam.nrv.service.TokenRange
 
 /**
  * Fetches all current defined (not null) data on a table.
- * When it finished, it loops over and starts again with the oldest current data.
  */
 abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, table: Table,
                                     val tokenRanges: Seq[TokenRange], loadLimit: Int = 1000)
