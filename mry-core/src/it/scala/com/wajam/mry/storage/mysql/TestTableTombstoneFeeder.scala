@@ -28,7 +28,7 @@ class TestTableTombstoneFeeder extends TestMysqlBase {
     val expectedData = Map(KEYS -> Seq("k1", "k2"), TOKEN -> 101L, TIMESTAMP -> Timestamp(12L))
     val record = feeder.toRecord(expectedData)
     record should not be(None)
-    feeder.toData(record.get) should be(expectedData)
+    feeder.fromRecord(record.get) should be(expectedData)
   }
 
   test("should load tombstone records") {

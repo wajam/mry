@@ -33,7 +33,7 @@ class TestTableContinuousFeeder extends FunSuite {
 
     def toRecord(data: Map[String, Any]) = data.get("token").map(_.toString.toLong)
 
-    def toData(record: Long) = Map("token" -> record)
+    def fromRecord(record: Long) = Map("token" -> record)
   }
 
   test("feeder should loop when loaded all data - large load limit") {
@@ -92,7 +92,7 @@ class TestTableContinuousFeeder extends FunSuite {
     val ranges = Seq(TokenRange(2, 5), TokenRange(10, 12))
     val feeder = new ContinuousTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext())
-    feeder.ack(feeder.toData(11L))
+    feeder.ack(feeder.fromRecord(11L))
     feeder.toRecord(feeder.context.data) should be (Some(11L))
   }
 }

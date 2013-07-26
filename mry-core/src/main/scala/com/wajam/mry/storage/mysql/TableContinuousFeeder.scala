@@ -29,17 +29,17 @@ trait TableContinuousFeeder extends CachedDataFeeder with ResumableRecordDataFee
 
   def loadMore() = {
     try {
-      val (loadRange, fromRecord) = getLoadPosition
+      val (loadRange, startRecord) = getLoadPosition
 
       // Filter out the "from" records in case it is returned by the load method
-      val records = fromRecord match {
-        case Some(record) => loadRecords(loadRange, fromRecord).filterNot(_ == record)
-        case None => loadRecords(loadRange, fromRecord)
+      val records = startRecord match {
+        case Some(record) => loadRecords(loadRange, startRecord).filterNot(_ == record)
+        case None => loadRecords(loadRange, startRecord)
       }
       currentRange = Some(loadRange)
       lastRecord = records.lastOption
 
-      records.map(toData).toList
+      records.map(fromRecord).toList
     } catch {
       case e: Exception => {
         error("An exception occured while loading more elements for {}", name, e)

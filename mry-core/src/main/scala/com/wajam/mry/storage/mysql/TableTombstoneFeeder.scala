@@ -30,12 +30,7 @@ abstract class TableTombstoneFeeder(val name: String, storage: MysqlStorage, tab
     if (data.contains(Keys) && data.contains(Token) && data.contains(Timestamp))
     {
       try {
-        val token = data(Token).toString.toLong
-        val timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data(Timestamp).toString.toLong)
-        val keys = data(Keys).asInstanceOf[Seq[String]]
-        val accessPath = new AccessPath(keys.map(new AccessKey(_)))
-        Some(new TombstoneRecord(table, token, accessPath, timestamp)
-        )
+        toTombstoneRecord(table, data)
       } catch {
         case e: Exception => {
           warn("Error creating record for table {} from task context data {}: ", table.depthName("_"), data, e)
@@ -47,7 +42,7 @@ abstract class TableTombstoneFeeder(val name: String, storage: MysqlStorage, tab
     }
   }
 
-  def toData(record: TombstoneRecord): Map[String, Any] = {
+  def fromRecord(record: TombstoneRecord): Map[String, Any] = {
     Map(Keys -> record.accessPath.keys, Token -> record.token, Timestamp -> record.timestamp)
   }
 }
@@ -56,4 +51,16 @@ object TableTombstoneFeeder {
   val Keys = "keys"
   val Token = "token"
   val Timestamp = "timestamp"
+
+  def toTombstoneRecord(table: Table, data: Map[String, Any]): Option[TombstoneRecord] = {
+    if (data.contains(Keys) && data.contains(Token) && data.contains(Timestamp)) {
+      val token = data(Token).toString.toLong
+      val timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data(Timestamp).toString.toLong)
+      val keys = data(Keys).asInstanceOf[Seq[String]]
+      val accessPath = new AccessPath(keys.map(new AccessKey(_)))
+      Some(new TombstoneRecord(table, token, accessPath, timestamp))
+    } else {
+      None
+    }
+  }
 }
