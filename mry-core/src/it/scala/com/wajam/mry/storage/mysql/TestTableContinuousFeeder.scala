@@ -4,7 +4,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers._
-import com.wajam.nrv.service.TokenRange
+import com.wajam.nrv.service.{TokenRangeSeq, TokenRange}
 import com.wajam.spnl.TaskContext
 import org.mockito.Mockito._
 
@@ -15,7 +15,7 @@ class TestTableContinuousFeeder extends FunSuite {
    * Test feeder which use token as record. When loading records, it simply enumerates all the tokens in the
    * specified token range.
    */
-  class ContinuousTokenFeeder(val tokenRanges: Seq[TokenRange], limit: Int)
+  class ContinuousTokenFeeder(val tokenRanges: TokenRangeSeq, limit: Int)
     extends ResumableRecordDataFeeder with TableContinuousFeeder {
 
     type DataRecord = Long

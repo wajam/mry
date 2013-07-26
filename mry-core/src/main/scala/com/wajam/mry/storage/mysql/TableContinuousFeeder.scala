@@ -1,6 +1,6 @@
 package com.wajam.mry.storage.mysql
 
-import com.wajam.nrv.service.TokenRange
+import com.wajam.nrv.service.{TokenRangeSeq, TokenRange}
 import com.wajam.spnl.feeder.CachedDataFeeder
 import com.wajam.nrv.Logging
 import com.wajam.spnl.TaskContext
@@ -18,7 +18,7 @@ trait TableContinuousFeeder extends CachedDataFeeder with ResumableRecordDataFee
   private var lastRecord: Option[DataRecord] = None
   private var currentRange: Option[TokenRange] = None
 
-  def tokenRanges: Seq[TokenRange]
+  def tokenRanges: TokenRangeSeq
 
   def context: TaskContext = currentContext
 
@@ -50,10 +50,10 @@ trait TableContinuousFeeder extends CachedDataFeeder with ResumableRecordDataFee
 
   private def getLoadPosition: (TokenRange, Option[DataRecord]) = {
     val loadRange = lastRecord match {
-      case Some(record) => tokenRanges.find(_.contains(token(record)))
+      case Some(record) => tokenRanges.find(token(record))
       case None => {
         currentRange match {
-          case Some(range) => range.nextRange(tokenRanges)
+          case Some(range) => tokenRanges.next(range)
           case None => None
         }
       }

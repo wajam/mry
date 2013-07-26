@@ -2,14 +2,14 @@ package com.wajam.mry.storage.mysql
 
 import com.wajam.nrv.Logging
 import com.wajam.spnl.feeder.CachedDataFeeder
-import com.wajam.nrv.service.TokenRange
+import com.wajam.nrv.service.{TokenRangeSeq, TokenRange}
 import com.wajam.mry.execution.{NullValue, Value}
 
 /**
  * Fetches all current defined (not null) data on a table.
  */
 abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, table: Table,
-                                    val tokenRanges: Seq[TokenRange], loadLimit: Int = 1000)
+                                    val tokenRanges: TokenRangeSeq, loadLimit: Int = 1000)
   extends ResumableRecordDataFeeder with Logging {
 
   import TableAllLatestFeeder._

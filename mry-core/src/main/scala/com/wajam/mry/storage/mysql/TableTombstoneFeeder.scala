@@ -2,13 +2,13 @@ package com.wajam.mry.storage.mysql
 
 import com.wajam.nrv.utils.CurrentTime
 import com.wajam.nrv.Logging
-import com.wajam.nrv.service.TokenRange
+import com.wajam.nrv.service.{TokenRangeSeq, TokenRange}
 
 /**
  * Fetches tombstone records (i.e. with null value) from specified table.
  */
 abstract class TableTombstoneFeeder(val name: String, storage: MysqlStorage, table: Table,
-                                    val tokenRanges: Seq[TokenRange], minTombstoneAgeMs: Long, loadLimit: Int = 50)
+                                    val tokenRanges: TokenRangeSeq, minTombstoneAgeMs: Long, loadLimit: Int = 50)
   extends ResumableRecordDataFeeder with CurrentTime with Logging {
 
   import TableTombstoneFeeder._
