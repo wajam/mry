@@ -611,6 +611,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *    AND tk <= 4525886270
      *    AND ts <= 13631089220001
      *    AND d IS NULL
+     *    ORDER BY tk, k1
      *    LIMIT 0, 100;
      */
     val sql =
@@ -621,6 +622,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
          AND tk <= %4$d
          AND ts <= %5$d
          AND d IS NULL
+         ORDER BY tk, %1$s
          LIMIT 0, %6$d;
       """.format(projKeys, fullTableName, recordPosition._1, range.end, maxTimestamp.value, count)
 
