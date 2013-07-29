@@ -10,7 +10,7 @@ trait RecordDataFeeder extends Feeder {
 
   def toRecord(data: Map[String, Any]): Option[DataRecord]
 
-  def toData(record: DataRecord): Map[String, Any]
+  def fromRecord(record: DataRecord): Map[String, Any]
 }
 
 trait ResumableRecordDataFeeder extends RecordDataFeeder {
