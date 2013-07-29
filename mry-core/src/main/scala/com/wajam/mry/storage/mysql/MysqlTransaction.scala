@@ -582,10 +582,13 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
   /**
    * Returns tombstone records from the specified table within the specified token range and older than the specified
-   * maxTimestamp. Does not returns more records than the specified count. Can resume from an optional record if the
+   * minTombstoneAge. Does not returns more records than the specified count. Can resume from an optional record if the
    * max was reach in a previous call.
+   *
+   * @param minTombstoneAge Only tomsbstone older or equals than the current consistent timestamp minus minTombstoneAge
+   *                        are returned by this method.
    */
-  def getTombstoneRecords(table: Table, count: Long, range: TokenRange, maxTimestamp: Timestamp,
+  def getTombstoneRecords(table: Table, count: Long, range: TokenRange, minTombstoneAge: Long,
                           optFromRecord: Option[TombstoneRecord] = None): Seq[TombstoneRecord] = {
     val fullTableName = table.depthName("_")
     val tableDepth = table.depth
@@ -597,6 +600,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
       }
       case None => ("tk >= %d".format(range.start), Seq())
     }
+    val maxTimestamp: Timestamp = storage.getCurrentConsistentTimestamp(Seq(range)).value - minTombstoneAge
 
     /*
      * Generated SQL looks like:

@@ -1440,23 +1440,25 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
     }, commit = true, onTimestamp = Timestamp(300))
 
     val context = new ExecutionContext(storages)
+    mysqlStorage.setCurrentConsistentTimestamp((range) => Timestamp(300))
+
     val all = mysqlStorage.createStorageTransaction(context).getTombstoneRecords(table1_1, count = 10,
-      TokenRange.All, maxTimestamp = 500, None)
+      TokenRange.All, minTombstoneAge = 0, None)
     all.size should be(5)
     all.map(_.accessPath.keys.last).toSet should be(Set("key2.1a", "key2.1b", "key2.1c", "key2.1d", "key3.1"))
 
     val key2All = mysqlStorage.createStorageTransaction(context).getTombstoneRecords(table1_1, count = 10,
-      TokenRange.All, maxTimestamp = 200, None)
+      TokenRange.All, minTombstoneAge = 100, None)
     key2All.size should be(4)
     key2All.map(_.accessPath.keys.last) should be(Seq("key2.1a", "key2.1b", "key2.1c", "key2.1d"))
 
     val key2First2 = mysqlStorage.createStorageTransaction(context).getTombstoneRecords(table1_1, count = 2,
-      TokenRange.All, maxTimestamp = 200, None)
+      TokenRange.All, minTombstoneAge = 100, None)
     key2First2.size should be(2)
     key2First2.map(_.accessPath.keys.last) should be(Seq("key2.1a", "key2.1b"))
 
     val key2Reminder = mysqlStorage.createStorageTransaction(context).getTombstoneRecords(table1_1, count = 10,
-      TokenRange.All, maxTimestamp = 200, Some(key2First2.last))
+      TokenRange.All, minTombstoneAge = 100, Some(key2First2.last))
     key2Reminder.size should be(3)
     key2Reminder.map(_.accessPath.keys.last) should be(Seq("key2.1b", "key2.1c", "key2.1d"))
   }
@@ -1498,13 +1500,14 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
     }, commit = true, onTimestamp = Timestamp(400))
 
     val context = new ExecutionContext(storages)
+    mysqlStorage.setCurrentConsistentTimestamp((range) => Timestamp(400))
     val allBefore = mysqlStorage.createStorageTransaction(context).getTombstoneRecords(table1_1, count = 10,
-      TokenRange.All, maxTimestamp = 500, None)
+      TokenRange.All, minTombstoneAge = 0, None)
     allBefore.size should be(5)
     allBefore.map(_.accessPath.keys.last).toSet should be(Set("key2.1a", "key2.1b", "key2.1c", "key2.1d", "key3.1"))
 
     val key2All = mysqlStorage.createStorageTransaction(context).getTombstoneRecords(table1_1, count = 10,
-      TokenRange.All, Timestamp(200), None)
+      TokenRange.All, minTombstoneAge = 200, None)
     key2All.size should be(4)
     key2All.map(_.accessPath.keys.last) should be(Seq("key2.1a", "key2.1b", "key2.1c", "key2.1d"))
 
@@ -1516,7 +1519,7 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
     }
 
     val key2AfterHeadDelete = mysqlStorage.createStorageTransaction(context).getTombstoneRecords(table1_1, count = 10,
-      TokenRange.All, Timestamp(200), None)
+      TokenRange.All, minTombstoneAge = 200, None)
     key2AfterHeadDelete.size should be(3)
     key2AfterHeadDelete.map(_.accessPath.keys.last) should be(Seq("key2.1b", "key2.1c", "key2.1d"))
 
@@ -1529,7 +1532,7 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
     }
 
     val allAfter = mysqlStorage.createStorageTransaction(context).getTombstoneRecords(table1_1, count = 10,
-      TokenRange.All, maxTimestamp = 500, None)
+      TokenRange.All, minTombstoneAge = 0, None)
     allAfter.size should be(0)
 
     val Seq(value3) = exec(t => {

@@ -12,7 +12,7 @@ import com.wajam.spnl.TaskContext
  */
 trait TableContinuousFeeder extends CachedDataFeeder with ResumableRecordDataFeeder with Logging {
 
-  private lazy val completedMeter = metrics.meter("completed", name)
+  private[mysql] lazy val completedCount = metrics.counter("completed-count", name)
 
   private var currentContext: TaskContext = null
   private var lastRecord: Option[DataRecord] = None
@@ -62,7 +62,7 @@ trait TableContinuousFeeder extends CachedDataFeeder with ResumableRecordDataFee
     loadRange match {
       case Some(range) => (range, lastRecord)
       case None => {
-        completedMeter.mark()
+        completedCount += 1
         (tokenRanges.head, None)
       }
     }

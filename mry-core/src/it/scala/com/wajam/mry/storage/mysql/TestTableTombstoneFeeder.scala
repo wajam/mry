@@ -3,9 +3,7 @@ package com.wajam.mry.storage.mysql
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import com.wajam.nrv.utils.timestamp.Timestamp
-import com.wajam.mry.execution.ExecutionContext
 import com.wajam.mry.execution.Implicits._
-import com.wajam.mry.execution._
 import com.wajam.nrv.service.TokenRange
 import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.nrv.utils.ControlableCurrentTime
@@ -25,9 +23,9 @@ class TestTableTombstoneFeeder extends TestMysqlBase {
     import TableTombstoneFeeder.{Keys => KEYS, Token => TOKEN, Timestamp => TIMESTAMP}
 
     val feeder = new TableTombstoneFeeder("test", mysqlStorage, table1_1, Seq(TokenRange.All), 0) with TableContinuousFeeder
-    val expectedData = Map(KEYS -> Seq("k1", "k2"), TOKEN -> 101L, TIMESTAMP -> Timestamp(12L))
+    val expectedData = Map(KEYS -> Seq("k1", "k2"), TOKEN -> "101", TIMESTAMP -> Timestamp(12L))
     val record = feeder.toRecord(expectedData)
-    record should not be(None)
+    record should not be None
     feeder.fromRecord(record.get) should be(expectedData)
   }
 
@@ -58,23 +56,27 @@ class TestTableTombstoneFeeder extends TestMysqlBase {
       table.delete("key3")
     }, commit = true, onTimestamp = Timestamp(300))
 
-    val feeder = new TableTombstoneFeeder("test", mysqlStorage, table1_1, Seq(TokenRange.All),
-      minTombstoneAgeMs = 1000) with TableContinuousFeeder with ControlableCurrentTime
 
-    feeder.currentTime = 1500
+    var currentConsistentTimestamp = Timestamp(1500)
+    mysqlStorage.setCurrentConsistentTimestamp((range) => currentConsistentTimestamp)
+
+    val feeder = new TableTombstoneFeeder("test", mysqlStorage, table1_1, Seq(TokenRange.All),
+      minTombstoneAge = 1000) with TableContinuousFeeder with ControlableCurrentTime
+
     val all = feeder.loadRecords(TokenRange.All, None)
     all.size should be(5)
     all.map(_.accessPath.keys.last).toSet should be(Set("key2.1a", "key2.1b", "key2.1c", "key2.1d", "key3.1"))
 
-    feeder.currentTime = 1200 // Read up to timestamp 200 (i.e. currentTime - minTombstoneAgeMs)
+    // Read up to timestamp 200 i.e. currentConsistentTimestamp - minTombstoneAge (1200 - 1000)
+    currentConsistentTimestamp = Timestamp(1200)
+
     val key2All = feeder.loadRecords(TokenRange.All, None)
     key2All.size should be(4)
     key2All.map(_.accessPath.keys.last) should be(Seq("key2.1a", "key2.1b", "key2.1c", "key2.1d"))
 
     val limitedFeeder = new TableTombstoneFeeder("test", mysqlStorage, table1_1, Seq(TokenRange.All),
-      minTombstoneAgeMs = 1000, loadLimit = 3) with TableContinuousFeeder with ControlableCurrentTime
+      minTombstoneAge = 1000, loadLimit = 3) with TableContinuousFeeder with ControlableCurrentTime
 
-    limitedFeeder.currentTime = 1200
     val key2First3 = limitedFeeder.loadRecords(TokenRange.All, None)
     key2First3.size should be(3)
     key2First3.map(_.accessPath.keys.last) should be(Seq("key2.1a", "key2.1b", "key2.1c"))
