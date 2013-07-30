@@ -580,6 +580,107 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     }
   }
 
+  /**
+   * Returns tombstone records from the specified table within the specified token range and older than the specified
+   * minTombstoneAge. Does not returns more records than the specified count. Can resume from an optional record if the
+   * max was reach in a previous call.
+   *
+   * @param minTombstoneAge Only tomsbstone older or equals than the current consistent timestamp minus minTombstoneAge
+   *                        are returned by this method.
+   */
+  def getTombstoneRecords(table: Table, count: Long, range: TokenRange, minTombstoneAge: Long,
+                          optFromRecord: Option[TombstoneRecord] = None): Seq[TombstoneRecord] = {
+    val fullTableName = table.depthName("_")
+    val tableDepth = table.depth
+    val projKeys = (for (i <- 1 to tableDepth) yield "k%1$d".format(i)).mkString(",")
+    val recordPosition: (String, Seq[Any]) = optFromRecord match {
+      case Some(fromRecord) => {
+        val keys = Seq.range(0, fromRecord.accessPath.parts.size).map(i => "k%d".format(i + 1)).zip(fromRecord.accessPath.parts.map(_.key))
+        this.genWhereHigherEqualTuple((Seq(("tk", scala.math.max(range.start, fromRecord.token))) ++ keys).toMap)
+      }
+      case None => ("tk >= %d".format(range.start), Seq())
+    }
+    val maxTimestamp: Timestamp = storage.getCurrentConsistentTimestamp(Seq(range)).value - minTombstoneAge
+
+    /*
+     * Generated SQL looks like:
+     *
+     *    SELECT tk, ts, k1
+     *    FROM `table1_data`
+     *    WHERE (((tk > 4025886270)) OR ((tk = 4025886270) AND (k1 > 'key15')))
+     *    AND tk <= 4525886270
+     *    AND ts <= 13631089220001
+     *    AND d IS NULL
+     *    ORDER BY tk, k1
+     *    LIMIT 0, 100;
+     */
+    val sql =
+      """
+         SELECT tk, ts, %1$s
+         FROM `%2$s_data`
+         WHERE (%3$s)
+         AND tk <= %4$d
+         AND ts <= %5$d
+         AND d IS NULL
+         ORDER BY tk, %1$s
+         LIMIT 0, %6$d;
+      """.format(projKeys, fullTableName, recordPosition._1, range.end, maxTimestamp.value, count)
+
+    val ret = ArrayBuffer[TombstoneRecord]()
+    metrics.tableMetricGetTombstoneRecords(table).time {
+      var results: SqlResults = null
+      try {
+        results = storage.executeSql(connection, update = false, sql, recordPosition._2: _*)
+
+        while (results.resultset.next()) {
+          ret += TombstoneRecord(results.resultset, table, tableDepth)
+        }
+      } finally {
+        if (results != null)
+          results.close()
+      }
+    }
+    ret
+  }
+
+  /**
+   * Delete the specified tombstone record and all its preceding records i.e. older record with exact same keys.
+   * Returns the number of records deleted.
+   */
+  def deleteTombstoneAndOlder(record: TombstoneRecord) = {
+    val fullTableName = record.table.depthName("_")
+    val whereKeys = (for (i <- 1 to record.accessPath.parts.length) yield "k%d = ?".format(i)).mkString(" AND ")
+    val params = Seq(record.token) ++ record.accessPath.keys ++ Seq(record.timestamp.value)
+
+    /*
+     * Generated SQL looks like:
+     *
+     *     DELETE FROM `table_index`
+     *     WHERE tk = ? AND k1 = ? AND k2 = ? AND k3 = ? AND ts <= ?;
+     */
+    val indexSql = """
+                DELETE FROM `%1$s_index`
+                WHERE tk = ? AND %2$s AND ts <= ?;
+                   """.format(fullTableName, whereKeys)
+
+    /*
+     * Generated SQL looks like:
+     *
+     *     DELETE FROM `table_data`
+     *     WHERE tk = ? AND k1 = ? AND k2 = ? AND k3 = ? AND ts <= ?;
+     */
+    val dataSql = """
+                DELETE FROM `%1$s_data`
+                WHERE tk = ? AND %2$s AND ts <= ?;
+                  """.format(fullTableName, whereKeys)
+
+
+    metrics.tableMetricDeleteTombstone(record.table).time {
+      storage.executeSqlUpdate(connection, indexSql, params: _*)
+      storage.executeSqlUpdate(connection, dataSql, params: _*)
+    }
+  }
+
   def getLastTimestamp(table: Table, ranges: Seq[TokenRange]): Option[Timestamp] = {
     getFirstTableTimestamp(table, ranges, sortAscending = false)
   }
@@ -742,6 +843,8 @@ object MysqlTransaction {
     val tableMetricGetLastTimestamp = generateTablesTimers("mysql-getlastts")
     val tableMetricGetTransactionSummaryRecords = generateTablesTimers("mysql-gettxsummaryrecords")
     val tableMetricGetTransactionRecords = generateTablesTimers("mysql-gettxrecords")
+    lazy val tableMetricGetTombstoneRecords = generateTablesTimers("mysql-get-tombstone-records")
+    lazy val tableMetricDeleteTombstone = generateTablesTimers("mysql-delete-tombstone")
 
     private def generateTablesTimers(timerName: String) = storage.model.allHierarchyTables.map(table =>
       (table, tracedTimer(timerName, table.uniqueName))).toMap
@@ -904,6 +1007,17 @@ object TransactionSummaryRecord {
     val timestamp = Timestamp(resultset.getLong(2))
     val recordsCount = resultset.getInt(3)
     TransactionSummaryRecord(table, token, timestamp, recordsCount)
+  }
+}
+
+case class TombstoneRecord(table: Table, token: Long, accessPath: AccessPath, timestamp: Timestamp)
+
+object TombstoneRecord {
+  def apply(resultset: ResultSet, table: Table, depth: Int): TombstoneRecord = {
+    val token = resultset.getLong(1)
+    val timestamp = Timestamp(resultset.getLong(2))
+    val accessPath = new AccessPath(for (i <- 0 until depth) yield new AccessKey(resultset.getString(3 + i)))
+    TombstoneRecord(table, token, accessPath, timestamp)
   }
 }
 

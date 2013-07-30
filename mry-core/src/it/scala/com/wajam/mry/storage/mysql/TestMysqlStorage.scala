@@ -7,7 +7,6 @@ import com.wajam.mry.execution._
 import com.wajam.mry.storage.StorageException
 import collection.mutable
 import util.Random
-import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.mry.storage.mysql.TimelineSelectMode.AtTimestamp
 import com.wajam.nrv.service.TokenRange
 import com.wajam.nrv.utils.TimestampIdGenerator
@@ -1232,7 +1231,7 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
     }
 
     // Generate test data in two tables: table1 and table2
-    val data = 0.until(40).map(i => Data("key%d".format(i), (if (i%2 == 0) "table1" else "table2")))
+    val data = 0.until(40).map(i => Data("key%d".format(i), (if (i % 2 == 0) "table1" else "table2")))
     data.foreach(d => {
       exec(t => {
         val storage = t.from("mysql")
@@ -1396,7 +1395,7 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
     // Create and apply a mutation group which deletes the intermediate record (i.e. with a parent and a child)
     val ts2 = Timestamp(2)
     val grp2 = storage.MutationGroup(tk1, ts2, List(
-      Record(table1_1_r1.table, table1_1_r1.token, ts2, NullValue, table1_1_r1.accessPath.keys : _*)))
+      Record(table1_1_r1.table, table1_1_r1.token, ts2, NullValue, table1_1_r1.accessPath.keys: _*)))
     exec(grp2.applyTo(_), commit = true, onTimestamp = ts2)
 
     // Ensure mutations beeing applied
@@ -1411,5 +1410,137 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
     v1 should be(table1_r1.value)
     v1_1 should be(NullValue) // Deleted
     v1_2 should be(table1_1_r2.value)
+  }
+
+  test("should get tombstone records") {
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", Map("k" -> "value1"))
+      table.set("key2", Map("k" -> "value2"))
+      table.set("key3", Map("k" -> "value3"))
+      table.get("key1").from("table1_1").set("key1.1", Map("k" -> "value1.1"))
+      table.get("key2").from("table1_1").set("key2.1a", Map("k" -> "value2.1a"))
+      table.get("key2").from("table1_1").set("key2.1b", Map("k" -> "value2.1b"))
+      table.get("key2").from("table1_1").set("key2.1c", Map("k" -> "value2.1c"))
+      table.get("key2").from("table1_1").set("key2.1d", Map("k" -> "value2.1d"))
+      table.get("key3").from("table1_1").set("key3.1", Map("k" -> "value3.1"))
+    }, commit = true, onTimestamp = Timestamp(100))
+
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.delete("key2")
+    }, commit = true, onTimestamp = Timestamp(200))
+
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.delete("key3")
+    }, commit = true, onTimestamp = Timestamp(300))
+
+    val context = new ExecutionContext(storages)
+    mysqlStorage.setCurrentConsistentTimestamp((range) => Timestamp(300))
+
+    val all = mysqlStorage.createStorageTransaction(context).getTombstoneRecords(table1_1, count = 10,
+      TokenRange.All, minTombstoneAge = 0, None)
+    all.size should be(5)
+    all.map(_.accessPath.keys.last).toSet should be(Set("key2.1a", "key2.1b", "key2.1c", "key2.1d", "key3.1"))
+
+    val key2All = mysqlStorage.createStorageTransaction(context).getTombstoneRecords(table1_1, count = 10,
+      TokenRange.All, minTombstoneAge = 100, None)
+    key2All.size should be(4)
+    key2All.map(_.accessPath.keys.last) should be(Seq("key2.1a", "key2.1b", "key2.1c", "key2.1d"))
+
+    val key2First2 = mysqlStorage.createStorageTransaction(context).getTombstoneRecords(table1_1, count = 2,
+      TokenRange.All, minTombstoneAge = 100, None)
+    key2First2.size should be(2)
+    key2First2.map(_.accessPath.keys.last) should be(Seq("key2.1a", "key2.1b"))
+
+    val key2Reminder = mysqlStorage.createStorageTransaction(context).getTombstoneRecords(table1_1, count = 10,
+      TokenRange.All, minTombstoneAge = 100, Some(key2First2.last))
+    key2Reminder.size should be(3)
+    key2Reminder.map(_.accessPath.keys.last) should be(Seq("key2.1b", "key2.1c", "key2.1d"))
+  }
+
+  test("should delete tombstones and ancestors records") {
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.set("key1", Map("k" -> "value1"))
+      table.set("key2", Map("k" -> "value2"))
+      table.set("key3", Map("k" -> "value3"))
+      table.get("key1").from("table1_1").set("key1.1", Map("k" -> "value1.1"))
+      table.get("key2").from("table1_1").set("key2.1a", Map("k" -> "value2.1a"))
+      table.get("key2").from("table1_1").set("key2.1b", Map("k" -> "value2.1b"))
+      table.get("key2").from("table1_1").set("key2.1c", Map("k" -> "value2.1c"))
+      table.get("key2").from("table1_1").set("key2.1d", Map("k" -> "value2.1d"))
+      table.get("key3").from("table1_1").set("key3.1", Map("k" -> "value3.1"))
+    }, commit = true, onTimestamp = Timestamp(100))
+
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.get("key2").from("table1_1").delete("key2.1a")
+      table.get("key2").from("table1_1").delete("key2.1b")
+      table.get("key2").from("table1_1").delete("key2.1c")
+      table.get("key2").from("table1_1").delete("key2.1d")
+    }, commit = true, onTimestamp = Timestamp(200))
+
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.get("key3").from("table1_1").delete("key3.1")
+    }, commit = true, onTimestamp = Timestamp(300))
+
+    exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      table.get("key3").from("table1_1").set("key3.1", Map("k" -> "value3.1bis"))
+    }, commit = true, onTimestamp = Timestamp(400))
+
+    val context = new ExecutionContext(storages)
+    mysqlStorage.setCurrentConsistentTimestamp((range) => Timestamp(400))
+    val allBefore = mysqlStorage.createStorageTransaction(context).getTombstoneRecords(table1_1, count = 10,
+      TokenRange.All, minTombstoneAge = 0, None)
+    allBefore.size should be(5)
+    allBefore.map(_.accessPath.keys.last).toSet should be(Set("key2.1a", "key2.1b", "key2.1c", "key2.1d", "key3.1"))
+
+    val key2All = mysqlStorage.createStorageTransaction(context).getTombstoneRecords(table1_1, count = 10,
+      TokenRange.All, minTombstoneAge = 200, None)
+    key2All.size should be(4)
+    key2All.map(_.accessPath.keys.last) should be(Seq("key2.1a", "key2.1b", "key2.1c", "key2.1d"))
+
+    // Delete first key2 tombstone
+    {
+      val transaction = mysqlStorage.createStorageTransaction(context)
+      transaction.deleteTombstoneAndOlder(key2All.head)
+      transaction.commit()
+    }
+
+    val key2AfterHeadDelete = mysqlStorage.createStorageTransaction(context).getTombstoneRecords(table1_1, count = 10,
+      TokenRange.All, minTombstoneAge = 200, None)
+    key2AfterHeadDelete.size should be(3)
+    key2AfterHeadDelete.map(_.accessPath.keys.last) should be(Seq("key2.1b", "key2.1c", "key2.1d"))
+
+    // Delete all tombstones
+    allBefore.foreach {
+      record =>
+        val transaction = mysqlStorage.createStorageTransaction(context)
+        transaction.deleteTombstoneAndOlder(record)
+        transaction.commit()
+    }
+
+    val allAfter = mysqlStorage.createStorageTransaction(context).getTombstoneRecords(table1_1, count = 10,
+      TokenRange.All, minTombstoneAge = 0, None)
+    allAfter.size should be(0)
+
+    val Seq(value3) = exec(t => {
+      val storage = t.from("mysql")
+      val table = storage.from("table1")
+      val value3 = table.get("key3").from("table1_1").get("key3.1")
+      t.returns(value3)
+    }, commit = true)
+    assert(value3.asInstanceOf[MapValue]("key3.1").equalsValue("value3.1bis"))
   }
 }

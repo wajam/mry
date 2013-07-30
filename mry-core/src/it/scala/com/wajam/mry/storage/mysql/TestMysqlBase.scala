@@ -27,7 +27,7 @@ abstract class TestMysqlBase extends FunSuite with BeforeAndAfterEach {
     val storage = new MysqlStorage(
       MysqlStorageConfiguration("mysql", "localhost", "mry", "mry", "mry", gcTokenStep = TokenRange.MaxToken),
       garbageCollection = false)
-    storages = Map(("mysql" -> storage))
+    storages = Map("mysql" -> storage)
     storage.setCurrentConsistentTimestamp((_) => currentConsistentTimestamp)
 
     storage.nuke()

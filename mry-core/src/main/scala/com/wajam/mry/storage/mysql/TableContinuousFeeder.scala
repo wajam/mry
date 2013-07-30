@@ -1,6 +1,6 @@
 package com.wajam.mry.storage.mysql
 
-import com.wajam.nrv.service.TokenRange
+import com.wajam.nrv.service.{TokenRangeSeq, TokenRange}
 import com.wajam.spnl.feeder.CachedDataFeeder
 import com.wajam.nrv.Logging
 import com.wajam.spnl.TaskContext
@@ -12,13 +12,13 @@ import com.wajam.spnl.TaskContext
  */
 trait TableContinuousFeeder extends CachedDataFeeder with ResumableRecordDataFeeder with Logging {
 
-  private lazy val completedMeter = metrics.meter("completed", name)
+  private[mysql] lazy val completedCount = metrics.counter("completed-count", name)
 
   private var currentContext: TaskContext = null
   private var lastRecord: Option[DataRecord] = None
   private var currentRange: Option[TokenRange] = None
 
-  def tokenRanges: Seq[TokenRange]
+  def tokenRanges: TokenRangeSeq
 
   def context: TaskContext = currentContext
 
@@ -29,17 +29,17 @@ trait TableContinuousFeeder extends CachedDataFeeder with ResumableRecordDataFee
 
   def loadMore() = {
     try {
-      val (loadRange, fromRecord) = getLoadPosition
+      val (loadRange, startRecord) = getLoadPosition
 
       // Filter out the "from" records in case it is returned by the load method
-      val records = fromRecord match {
-        case Some(record) => loadRecords(loadRange, fromRecord).filterNot(_ == record)
-        case None => loadRecords(loadRange, fromRecord)
+      val records = startRecord match {
+        case Some(record) => loadRecords(loadRange, startRecord).filterNot(_ == record)
+        case None => loadRecords(loadRange, startRecord)
       }
       currentRange = Some(loadRange)
       lastRecord = records.lastOption
 
-      records.map(toData).toList
+      records.map(fromRecord).toList
     } catch {
       case e: Exception => {
         error("An exception occured while loading more elements for {}", name, e)
@@ -50,10 +50,10 @@ trait TableContinuousFeeder extends CachedDataFeeder with ResumableRecordDataFee
 
   private def getLoadPosition: (TokenRange, Option[DataRecord]) = {
     val loadRange = lastRecord match {
-      case Some(record) => tokenRanges.find(_.contains(token(record)))
+      case Some(record) => tokenRanges.find(token(record))
       case None => {
         currentRange match {
-          case Some(range) => range.nextRange(tokenRanges)
+          case Some(range) => tokenRanges.next(range)
           case None => None
         }
       }
@@ -62,7 +62,7 @@ trait TableContinuousFeeder extends CachedDataFeeder with ResumableRecordDataFee
     loadRange match {
       case Some(range) => (range, lastRecord)
       case None => {
-        completedMeter.mark()
+        completedCount += 1
         (tokenRanges.head, None)
       }
     }
