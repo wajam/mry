@@ -29,7 +29,8 @@ object MryBuild extends Build {
     "mysql" % "mysql-connector-java" % "5.1.6",
     "org.scalatest" %% "scalatest" % "1.9.1" % "test,it",
     "junit" % "junit" % "4.10" % "test,it",
-    "org.mockito" % "mockito-core" % "1.9.0" % "test,it"
+    "org.mockito" % "mockito-core" % "1.9.0" % "test,it",
+    "com.github.nscala-time" %% "nscala-time" % "0.4.0"
   )
 
   val defaultSettings = Defaults.defaultSettings ++ Defaults.itSettings ++ Seq(
