@@ -1,4 +1,4 @@
-package com.wajam.mry.entities
+package com.wajam.mry.entity
 
 import scala.collection.mutable
 import com.wajam.mry.execution._

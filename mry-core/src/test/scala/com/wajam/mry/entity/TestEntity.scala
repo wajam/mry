@@ -1,4 +1,4 @@
-package com.wajam.mry.entities
+package com.wajam.mry.entity
 
 import com.wajam.mry.execution.{Value, ListValue, StringValue, MapValue}
 import org.scalatest.FunSuite
@@ -9,7 +9,7 @@ import org.scalatest.junit.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class TestEntity extends FunSuite with ShouldMatchers {
 
-  import com.wajam.mry.entities.TestEntity.TestObject
+  import com.wajam.mry.entity.TestEntity.TestObject
 
   test("No opt fields set") {
     val fromModel = new TestObject {
