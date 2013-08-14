@@ -3,8 +3,8 @@ package com.wajam.mry.entity
 import com.wajam.mry.execution._
 
 trait FieldTypeHandler[T] {
-  def init(v: Field[T]) {
-  }
+  def getDefault(v: Field[T]): Option[T] = None
+
 
   def toMry(v: T): Value
 
@@ -74,9 +74,8 @@ object FieldTypeHandler {
 
 
 class OptionalFieldTypeHandler[T](implicit h: FieldTypeHandler[T]) extends FieldTypeHandler[Option[T]] {
-  override def init(v: Field[Option[T]]) {
-    v.withDefault(None)
-  }
+  override def getDefault(v: Field[Option[T]]): Option[Option[T]] = Some(None)
+
 
   def toMry(v: Option[T]): Value = v match {
     case Some(s) => h.toMry(s)

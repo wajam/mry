@@ -1,37 +1,31 @@
 package com.wajam.mry.entity
 
-import scala.collection.mutable
+import scala.collection.mutable.{HashMap => MutableHashMap}
 import com.wajam.mry.execution._
 import com.wajam.mry.execution.Implicits._
 
 trait MryConvertible {
+
   def toMry: Value
 
   def fromMry(value: Value): this.type
 }
 
 trait FieldLike extends MryConvertible {
-  def init() {
+
+  def validate(): Option[String] = {
+    None
   }
 
-  val name: String
+  def name: String
 }
 
+case class Field[T](private val collection: FieldCollection, name: String)(implicit m: FieldTypeHandler[T]) extends FieldLike {
 
-object Field {
-  def apply[T](collection: FieldCollection, name: String)(implicit m: FieldTypeHandler[T]) = new Field(collection, name)(m)
-
-  def unapply[T](s: Field[T]) = Some(s.name, s.get)
-}
-
-
-class Field[T](collection: FieldCollection, val name: String)(implicit m: FieldTypeHandler[T]) extends FieldLike {
-  protected var value: Option[T] = None
-
-  protected var default: Option[T] = None
+  private var value: Option[T] = None
+  private val default: Option[T] = m.getDefault(this)
 
   collection.registerField(this)
-  m.init(this)
 
   def toMry: Value = {
     m.toMry(get)
@@ -47,7 +41,7 @@ class Field[T](collection: FieldCollection, val name: String)(implicit m: FieldT
     case Some(v) => v
     case None => default match {
       case Some(d) => d
-      case None => throw new RuntimeException("Field %s is not initialized and doesn't have a default value".format(name))
+      case None => throw new RuntimeException(s"Field $name is not initialized and doesn't have a default value")
     }
   }
 
@@ -55,38 +49,25 @@ class Field[T](collection: FieldCollection, val name: String)(implicit m: FieldT
     value = Some(v)
   }
 
-  def withDefault(default: T) = {
-    this.default = Some(default)
-    this
-  }
-
   def isInitialized = value.isDefined
 
-  override def init() {
+  override def validate() = {
     (value, default) match {
-      case (Some(_), _) => // everything is good
-      case (None, Some(_)) => // everything is good
-      case (None, None) => throw new RuntimeException("Field %s is not initialized".format(name))
+      case (Some(_), _) => None // everything is good
+      case (None, Some(_)) => None // everything is good
+      case (None, None) => Some(s"Field $name is not initialized")
     }
   }
 
-  override def toString = name + "=" + get
+  override def toString = s"$name=$get"
 }
 
-
-object ListField {
-
-  def apply[T](collection: FieldCollection, name: String)(implicit m: FieldTypeHandler[T]) =
-    new ListField[T](collection, name)(m)
-}
-
-
-class ListField[T](collection: FieldCollection, val name: String)(implicit m: FieldTypeHandler[T])
+case class ListField[T](private val collection: FieldCollection, name: String)(implicit m: FieldTypeHandler[T])
   extends FieldLike {
 
   collection.registerField(this)
 
-  protected var _list = Seq[T]()
+  private var _list = Seq[T]()
 
   def list = _list
 
@@ -110,38 +91,39 @@ class ListField[T](collection: FieldCollection, val name: String)(implicit m: Fi
 
   def toMry = list.map(m.toMry)
 
-  override def toString() = list.mkString(name + "[", ",", "]")
+  override def toString() = list.mkString(s"$name[", ",", "]")
 }
 
 
 trait FieldCollection
   extends MryConvertible {
 
-  protected val fields = mutable.HashMap[String, FieldLike]()
-  protected var initialized = false
+  private val fields = MutableHashMap[String, FieldLike]()
 
   def registerField(field: FieldLike) {
-    this.fields += field.name -> field
+    fields += field.name -> field
   }
 
   override def toString = fields.values.mkString("{", ",", "}")
 
-  def init() {
-    if (!initialized) {
-      this.fields.values.foreach(_.init())
-      initialized = true
-    }
+  def validate(): Option[String] = {
+    this.fields.values.map(_.validate()).collect({
+      case Some(error) => error
+    }).headOption
   }
 
   def toMry: Value = {
-    this.init()
-    fields.flatMap {
-      case (name, field) =>
-        field.toMry match {
-          case n: NullValue => None
-          case o: Value => Some(name -> o)
-        }
-    }.toMap
+
+    this.validate() match {
+      case Some(error) => throw new RuntimeException(error)
+      case None => fields.flatMap {
+        case (name, field) =>
+          field.toMry match {
+            case _: NullValue => None
+            case o: Value => Some(name -> o)
+          }
+      }.toMap
+    }
   }
 
   def fromMry(value: Value): this.type = {
@@ -150,35 +132,30 @@ trait FieldCollection
         mv.mapValue.foreach {
           case (fieldName, fieldValue) =>
             fields.get(fieldName) match {
-              case Some(f) => f.fromMry(fieldValue)
-              case None => println("Field %s doesn't exist!".format(fieldName))
+              case Some(f: FieldLike) => f.fromMry(fieldValue)
+              case _ => //println("Field %s doesn't exist!".format(fieldName)) // Side-effecting LIKE A BOSS
             }
         }
 
       case _ => throw new scala.IllegalArgumentException("Expected a MapValue, got %s".format(value))
     }
-
-    this.init()
+    this.validate()
     this
   }
 }
 
-
-class OptionalFieldsGroup(collection: FieldCollection, val name: String)
+case class OptionalFieldsGroup(collection: FieldCollection, name: String)
   extends FieldLike
   with FieldCollection {
 
   collection.registerField(this)
 
-  var isDefined: Boolean = false
+  def isDefined = defined
+  private var defined = false
 
-  def define(f: => Unit) {
-    f
-    isDefined = true
-  }
-
-  def reset() {
-    isDefined = false
+  def define() {
+    if (defined) throw new RuntimeException("Already defined")
+    else defined = true
   }
 
   def map[A](f: this.type => A): Option[A] = {
@@ -197,9 +174,9 @@ class OptionalFieldsGroup(collection: FieldCollection, val name: String)
 
   override def fromMry(value: Value) = {
     value match {
-      case mv: MapValue =>
+      case MapValue(_) =>
         super.fromMry(value)
-        this.isDefined = true
+        this.define()
       case _ => // it's not loaded
     }
     this
@@ -212,17 +189,17 @@ class OptionalFieldsGroup(collection: FieldCollection, val name: String)
       NullValue
   }
 
-  override def init() {
-    if (isDefined)
-      super.init()
+  override def validate() = {
+    if (isDefined) super.validate()
+    else None
   }
 
-  override def toString: String = name + "=" + (if (isDefined) super.toString else "undefined")
+  override def toString: String = s"$name=${if (isDefined) super.toString else "undefined"}"
 }
 
 
 abstract class Entity extends FieldCollection {
-  val modelName: String
+  def modelName: String
 
   def key: String
 
@@ -235,5 +212,4 @@ abstract class Entity extends FieldCollection {
     case _ => false
   }
 }
-
 

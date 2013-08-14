@@ -20,10 +20,10 @@ class TestEntity extends FunSuite with ShouldMatchers {
 
     val toModel = (new TestObject).fromMry(fromModel.toMry)
     val map = toModel.toMry.asInstanceOf[MapValue]
-    map.mapValue.keys should not contain("geo")
-    map.mapValue.keys should not contain("description")
+    map.mapValue.keys should not contain ("geo")
+    map.mapValue.keys should not contain ("description")
 
-    map.mapValue("tags").asInstanceOf[ListValue].listValue should be ('empty)
+    map.mapValue("tags").asInstanceOf[ListValue].listValue should be('empty)
   }
 
   test("geo set") {
@@ -32,22 +32,21 @@ class TestEntity extends FunSuite with ShouldMatchers {
       url.set("http://www.something.com")
       title.set("title")
 
-      geo.define {
-        geo.latitude.set(44.1)
-        geo.longitude.set(23.11)
-      }
+      geo.latitude.set(44.1)
+      geo.longitude.set(23.11)
+      geo.define()
     }
 
     val toModel = (new TestObject).fromMry(fromModel.toMry)
     val map = toModel.toMry.asInstanceOf[MapValue]
     map.mapValue.keys should contain("geo")
-    map.mapValue.keys should not contain("description")
+    map.mapValue.keys should not contain ("description")
 
     val geoMap = map.mapValue("geo").asInstanceOf[MapValue]
     geoMap.mapValue.keys should contain("latitude")
     geoMap.mapValue.keys should contain("longitude")
 
-    map.mapValue("tags").asInstanceOf[ListValue].listValue should be ('empty)
+    map.mapValue("tags").asInstanceOf[ListValue].listValue should be('empty)
   }
 
   test("description set") {
@@ -62,13 +61,13 @@ class TestEntity extends FunSuite with ShouldMatchers {
 
     val toModel = (new TestObject).fromMry(fromModel.toMry)
     val map = toModel.toMry.asInstanceOf[MapValue]
-    map.mapValue.keys should not contain("geo")
+    map.mapValue.keys should not contain ("geo")
     map.mapValue.keys should contain("description")
 
     val StringValue(description) = map.mapValue("description")
     description should equal("test")
 
-    map.mapValue("tags").asInstanceOf[ListValue].listValue should be ('empty)
+    map.mapValue("tags").asInstanceOf[ListValue].listValue should be('empty)
   }
 
   test("tags set") {
@@ -82,8 +81,8 @@ class TestEntity extends FunSuite with ShouldMatchers {
 
     val toModel = (new TestObject).fromMry(fromModel.toMry)
     val map = toModel.toMry.asInstanceOf[MapValue]
-    map.mapValue.keys should not contain("geo")
-    map.mapValue.keys should not contain("description")
+    map.mapValue.keys should not contain ("geo")
+    map.mapValue.keys should not contain ("description")
 
 
     map.mapValue("tags").asInstanceOf[ListValue].listValue.size should equal(2)
@@ -96,7 +95,7 @@ class TestEntity extends FunSuite with ShouldMatchers {
       "title" -> "asdf",
       "url" -> "asdf",
       "description" -> "Some description",
-      "tags" -> Seq("asd","fgh"),
+      "tags" -> Seq("asd", "fgh"),
       "geo" -> MapValue(Map[String, Value](
         "latitude" -> 45.5175d,
         "longitude" -> -73.5805d
@@ -109,7 +108,7 @@ class TestEntity extends FunSuite with ShouldMatchers {
     fromMry.url.get should equal("asdf")
     fromMry.description.get should be('defined)
     fromMry.description.get.get should equal("Some description")
-    fromMry.tags.list should equal(Seq("asd","fgh"))
+    fromMry.tags.list should equal(Seq("asd", "fgh"))
 
     val geoMap = fromMry.toMry.asInstanceOf[MapValue].mapValue("geo").asInstanceOf[MapValue]
     geoMap.mapValue.keys should contain("latitude")
@@ -118,9 +117,10 @@ class TestEntity extends FunSuite with ShouldMatchers {
 }
 
 object TestEntity {
-  class TestObject extends Entity {
-    val modelName = "FolloweeObject"
 
+  class TestObject extends Entity {
+
+    val modelName = "TestObject"
     val id = Field[Long](this, "id")
 
     val url = Field[String](this, "url")
@@ -136,4 +136,5 @@ object TestEntity {
     def key = id.get.toString
 
   }
+
 }
