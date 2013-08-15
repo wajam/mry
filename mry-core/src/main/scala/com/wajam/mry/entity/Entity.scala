@@ -41,7 +41,7 @@ case class Field[T](private val collection: FieldCollection, name: String)(impli
     case Some(v) => v
     case None => default match {
       case Some(d) => d
-      case None => throw new RuntimeException(s"Field $name is not initialized and doesn't have a default value")
+      case None => throw new RuntimeException("Field %s is not initialized and doesn't have a default value".format(name))
     }
   }
 
@@ -55,11 +55,11 @@ case class Field[T](private val collection: FieldCollection, name: String)(impli
     (value, default) match {
       case (Some(_), _) => None // everything is good
       case (None, Some(_)) => None // everything is good
-      case (None, None) => Some(s"Field $name is not initialized")
+      case (None, None) => Some("Field %s is not initialized".format(name))
     }
   }
 
-  override def toString = s"$name=$get"
+  override def toString = name + "=" + get
 }
 
 case class ListField[T](private val collection: FieldCollection, name: String)(implicit m: FieldTypeHandler[T])
@@ -91,7 +91,7 @@ case class ListField[T](private val collection: FieldCollection, name: String)(i
 
   def toMry = list.map(m.toMry)
 
-  override def toString() = list.mkString(s"$name[", ",", "]")
+  override def toString() = list.mkString(name + "[", ",", "]")
 }
 
 
@@ -151,6 +151,7 @@ case class OptionalFieldsGroup(collection: FieldCollection, name: String)
   collection.registerField(this)
 
   def isDefined = defined
+
   private var defined = false
 
   def define() {
@@ -194,7 +195,7 @@ case class OptionalFieldsGroup(collection: FieldCollection, name: String)
     else None
   }
 
-  override def toString: String = s"$name=${if (isDefined) super.toString else "undefined"}"
+  override def toString: String = name + "=" + (if (isDefined) super.toString else "undefined")
 }
 
 
