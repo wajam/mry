@@ -25,7 +25,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
 
   def createClusterInstance(size: Int, i: Int, manager: ClusterManager): TestingClusterInstance = {
 
-    val tracer = new Tracer(new ScribeTraceRecorder("127.0.0.1", 1463, 1))
+    val tracer = new Tracer(new ScribeTraceRecorder("127.0.0.1", 1463))
     val node = new LocalNode("127.0.0.1", Map("nrv" -> (50000 + 10 * i), "mry" -> (50001 + 10 * i), "scn" -> (50002 + 10 * i)))
     val cluster = new Cluster(node, manager /*, new ActionSupportOptions(tracer = Option(tracer))*/)
 
