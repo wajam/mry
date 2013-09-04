@@ -18,17 +18,15 @@ trait OperationSource extends ContentEquals  {
     }
   }
 
-  def param[T: ClassManifest](param: Object): T = {
+  def param[T](param: Object): T = {
     this.param[T](Seq(param), 0)
   }
 
-  def param[T: ClassManifest](params: Seq[Object], position: Int): T = {
+  def param[T](params: Seq[Object], position: Int): T = {
     if (params.size <= position)
       throw new InvalidParameter("Expected parameter at position %d".format(position))
 
     val param = params(position).value
-    if (!param.isInstanceOf[T])
-      throw new InvalidParameter("Expected parameter at position %d to be of instance %s".format(position, classManifest[T].erasure.getName))
 
     param.asInstanceOf[T]
   }
