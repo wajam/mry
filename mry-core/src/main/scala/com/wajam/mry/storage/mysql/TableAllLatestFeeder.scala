@@ -4,6 +4,7 @@ import com.wajam.nrv.Logging
 import com.wajam.spnl.feeder.CachedDataFeeder
 import com.wajam.nrv.service.{TokenRangeSeq, TokenRange}
 import com.wajam.mry.execution.{NullValue, Value}
+import scala.annotation.tailrec
 
 /**
  * Fetches all current defined (not null) data on a table.
@@ -17,11 +18,27 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
   type DataRecord = Record
 
   def loadRecords(range: TokenRange, fromRecord: Option[Record]) = {
-    val transaction = storage.createStorageTransaction
+    implicit val transaction = storage.createStorageTransaction
     try {
-      transaction.getAllLatest(table, loadLimit, range, fromRecord).toList
+      val records = transaction.getAllLatest(table, loadLimit, range, fromRecord).toList
+      if (records.nonEmpty) {
+        records
+      } else {
+        loadFirstNonDeletedRecords(range, fromRecord)
+      }
     } finally {
       transaction.commit()
+    }
+  }
+
+  @tailrec
+  private def loadFirstNonDeletedRecords(range: TokenRange, fromRecord: Option[Record])(
+                                         implicit transaction: MysqlTransaction): Option[Record] = {
+    val records = transaction.getAllLatest(table, loadLimit, range, fromRecord, includeDeleted = true).toList
+    records.collectFirst{case record if record.value != NullValue => record} match {
+      case record@Some(_) => record
+      case None if records.isEmpty => None
+      case None => loadFirstNonDeletedRecords(range, records.lastOption)
     }
   }
 
