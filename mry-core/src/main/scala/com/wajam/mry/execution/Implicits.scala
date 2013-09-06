@@ -1,5 +1,7 @@
 package com.wajam.mry.execution
 
+import scala.language.implicitConversions
+
 /**
  * Implicits that can be used to help converting values from scala types to
  * mry types
@@ -69,8 +71,8 @@ object Implicits {
       case v: Long => v
       case v: Boolean => v
       case v: Double => v
-      case v: Map[String, Any] => v
-      case v: Seq[Any] => v
+      case v: Map[_, _] => v.asInstanceOf[Map[String, Any]]
+      case v: Seq[_] => v
       case v: Value => v
     }
   }
