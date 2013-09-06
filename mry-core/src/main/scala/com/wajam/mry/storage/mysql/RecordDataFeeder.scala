@@ -19,7 +19,7 @@ trait ResumableRecordDataFeeder extends RecordDataFeeder {
 
   def token(record: DataRecord): Long
 
-  def loadRecords(range: TokenRange, fromRecord: Option[DataRecord]): Iterable[DataRecord]
+  def loadRecords(range: TokenRange, startAfterRecord: Option[DataRecord]): Iterable[DataRecord]
 
   def toContextData(data: Map[String, Any]): Map[String, Any] = data
 

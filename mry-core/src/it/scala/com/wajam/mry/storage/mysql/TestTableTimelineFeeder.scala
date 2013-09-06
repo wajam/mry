@@ -41,9 +41,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
 
     val feeder = new TableTimelineFeeder("test", mysqlStorage, table1, List(TokenRange.All), batchSize)
     feeder.init(new TaskContext())
-    val records = Iterator.continually({
-      feeder.next()
-    }).take(100).flatten.toList.map(_("new_timestamp").toString.toLong)
+    val records = feeder.take(100).flatten.toList.map(_("new_timestamp").toString.toLong)
 
     records.size should be(70)
     records should be(records.sorted)
@@ -74,9 +72,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
 
     val feeder = new TableTimelineFeeder("test", mysqlStorage, table1, List(TokenRange.All), batchSize)
     feeder.init(new TaskContext())
-    val records = Iterator.continually({
-      feeder.next()
-    }).take(100).flatten.toList.map(_("new_timestamp").toString.toLong)
+    val records = feeder.take(100).flatten.toList.map(_("new_timestamp").toString.toLong)
 
     records.size should be(20)
     records should be(records.sorted)
@@ -97,9 +93,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
 
     val feeder = new TableTimelineFeeder("test", mysqlStorage, table1, ranges, batchSize)
     feeder.init(new TaskContext())
-    val records = Iterator.continually({
-      feeder.next()
-    }).take(100).flatten.toList
+    val records = feeder.take(100).flatten.toList
 
     records.size should be > 0
     records.size should be < 40
@@ -125,9 +119,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
     // Load all existing records
     val feeder1 = new TableTimelineFeeder("test", mysqlStorage, table1, List(TokenRange.All))
     feeder1.init(new TaskContext())
-    var records1 = Iterator.continually({
-      feeder1.next()
-    }).take(100).flatten.toList
+    var records1 = feeder1.take(100).flatten.toList
     records1.size should be(5)
 
     // Acknowledge the first record
@@ -224,9 +216,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
 
     val feeder = new TableTimelineFeeder("test", mysqlStorage, table1, List(TokenRange.All))
     feeder.init(new TaskContext())
-    val records = Iterator.continually({
-      feeder.next()
-    }).take(100).flatten.toList
+    val records = feeder.take(100).flatten.toList
 
     records.size should be > 0
     val strKeys = records.map(_("keys").asInstanceOf[Seq[String]](0))

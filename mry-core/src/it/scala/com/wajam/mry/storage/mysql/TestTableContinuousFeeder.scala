@@ -26,11 +26,11 @@ class TestTableContinuousFeeder extends FunSuite {
 
     def token(record: Long) = record
 
-    def loadRecords(range: TokenRange, fromRecord: Option[Long]) = {
-      firstRangeLoadCount += (if (range == tokenRanges.head && fromRecord.isEmpty) 1 else 0)
+    def loadRecords(range: TokenRange, startAfterRecord: Option[Long]) = {
+      firstRangeLoadCount += (if (range == tokenRanges.head && startAfterRecord.isEmpty) 1 else 0)
 
-      (fromRecord match {
-        case Some(start) => start.to(range.end)
+      (startAfterRecord match {
+        case Some(start) => (start + 1).to(range.end)
         case None => range.start.to(range.end)
       }).take(limit)
     }
@@ -47,7 +47,7 @@ class TestTableContinuousFeeder extends FunSuite {
     feeder.completedCount.clear()
     feeder.completedCount.count should be(0)
 
-    val records = Iterator.continually(feeder.next()).take(50).flatten.toList
+    val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12, 2))
     feeder.completedCount.count should be(feeder.firstRangeLoadCount)
   }
@@ -59,7 +59,7 @@ class TestTableContinuousFeeder extends FunSuite {
     feeder.completedCount.clear()
     feeder.completedCount.count should be(0)
 
-    val records = Iterator.continually(feeder.next()).take(50).flatten.toList
+    val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12, 2))
     feeder.completedCount.count should be(feeder.firstRangeLoadCount)
   }
@@ -68,7 +68,7 @@ class TestTableContinuousFeeder extends FunSuite {
     val ranges = Seq(TokenRange(2, 5), TokenRange(10, 12))
     val feeder = new ContinuousTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext(Map("token" -> 11)))
-    val records = Iterator.continually(feeder.next()).take(50).flatten.toList
+    val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(12, 2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12))
   }
 
@@ -76,7 +76,7 @@ class TestTableContinuousFeeder extends FunSuite {
     val ranges = Seq(TokenRange(2, 5), TokenRange(10, 12))
     val feeder = new ContinuousTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext(Map("token" -> 8)))
-    val records = Iterator.continually(feeder.next()).take(50).flatten.toList
+    val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12, 2))
   }
 
@@ -84,7 +84,7 @@ class TestTableContinuousFeeder extends FunSuite {
     val ranges = Seq(TokenRange(2, 5), TokenRange(10, 12))
     val feeder = new ContinuousTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext())
-    val records = Iterator.continually(feeder.next()).take(50).flatten.toList
+    val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12, 2))
   }
 
@@ -94,11 +94,11 @@ class TestTableContinuousFeeder extends FunSuite {
     val spyFeeder = spy(feeder)
 
     when(spyFeeder.loadRecords(TokenRange(10, 12), Some(11L))).thenThrow(new RuntimeException())
-    val recordsWithError = Iterator.continually(spyFeeder.next()).take(50).flatten.toList
+    val recordsWithError = spyFeeder.take(50).flatten.toList
     recordsWithError.flatMap(feeder.toRecord) should be(List(2, 3, 4, 5, 10, 11))
 
     reset(spyFeeder)
-    val records = Iterator.continually(spyFeeder.next()).take(50).flatten.toList
+    val records = spyFeeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(12, 2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12))
   }
 

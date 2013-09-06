@@ -17,14 +17,19 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
 
   type DataRecord = Record
 
-  def loadRecords(range: TokenRange, fromRecord: Option[Record]) = {
+  def loadRecords(range: TokenRange, startAfterRecord: Option[Record]) = {
     implicit val transaction = storage.createStorageTransaction
     try {
-      val records = transaction.getAllLatest(table, loadLimit, range, fromRecord).toList
-      if (records.nonEmpty) {
-        records
+      val records = transaction.getAllLatest(table, loadLimit, range, startAfterRecord)
+      val filteredRecords = startAfterRecord match {
+        case Some(startRecord) => records.filter(_ != startRecord).toList
+        case None => records.toList
+      }
+      if (filteredRecords.nonEmpty) {
+        println(s"loadRecords: OK, $filteredRecords")
+        filteredRecords
       } else {
-        loadFirstNonDeletedRecords(range, fromRecord)
+        loadFirstNonDeletedRecords(range, startAfterRecord)
       }
     } finally {
       transaction.commit()
@@ -32,13 +37,18 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
   }
 
   @tailrec
-  private def loadFirstNonDeletedRecords(range: TokenRange, fromRecord: Option[Record])(
+  private def loadFirstNonDeletedRecords(range: TokenRange, startAfterRecord: Option[Record])(
                                          implicit transaction: MysqlTransaction): Option[Record] = {
-    val records = transaction.getAllLatest(table, loadLimit, range, fromRecord, includeDeleted = true).toList
-    records.collectFirst{case record if record.value != NullValue => record} match {
+    val records = transaction.getAllLatest(table, loadLimit, range, startAfterRecord, includeDeleted = true)
+    val filteredRecords = startAfterRecord match {
+      case Some(startRecord) => records.filter(_ != startRecord).toList
+      case None => records.toList
+    }
+    println(s"loadFirstNonDeletedRecords: $filteredRecords")
+    filteredRecords.collectFirst{case record if record.value != NullValue => record} match {
       case record@Some(_) => record
-      case None if records.isEmpty => None
-      case None => loadFirstNonDeletedRecords(range, records.lastOption)
+      case None if filteredRecords.isEmpty => None
+      case None => loadFirstNonDeletedRecords(range, filteredRecords.lastOption)
     }
   }
 
