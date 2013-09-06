@@ -14,6 +14,7 @@ import com.wajam.nrv.service.Switchboard
 import com.wajam.nrv.zookeeper.cluster.ZookeeperClusterManager
 import com.wajam.nrv.zookeeper.ZookeeperClient
 import com.wajam.nrv.consistency.ConsistencyMasterSlave
+import scala.language.reflectiveCalls
 
 /**
  * MySQL storage benchmarking tool

@@ -10,7 +10,9 @@ class MryCodec extends Codec {
 
     val transport = entity match {
       case request: Transaction => Transport(Some(request), None)
-      case response: Seq[Value] if response.forall(_.isInstanceOf[Value]) => Transport(None, Some(response))
+      case response: Seq[_] if response.forall(_.isInstanceOf[Value]) => {
+        Transport(None, Some(response.asInstanceOf[Seq[Value]]))
+      }
       case null => Transport(None, None)
       case _ => throw new RuntimeException("Unsupported type for this codec: Class: %s; ToString: %s".format(entity.getClass.toString, entity.toString))
     }
