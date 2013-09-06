@@ -26,7 +26,6 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
         case None => records.toList
       }
       if (filteredRecords.nonEmpty) {
-        println(s"loadRecords: OK, $filteredRecords")
         filteredRecords
       } else {
         loadFirstNonDeletedRecords(range, startAfterRecord)
@@ -44,7 +43,6 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
       case Some(startRecord) => records.filter(_ != startRecord).toList
       case None => records.toList
     }
-    println(s"loadFirstNonDeletedRecords: $filteredRecords")
     filteredRecords.collectFirst{case record if record.value != NullValue => record} match {
       case record@Some(_) => record
       case None if filteredRecords.isEmpty => None

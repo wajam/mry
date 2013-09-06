@@ -211,7 +211,6 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     }
 
     def delete(record: Record) {
-//      println(s"delete: record=$record")
       val transaction = mysqlStorage.createStorageTransaction
       try {
         transaction.set(table1_1_1, record.token, record.timestamp, record.accessPath, None)
@@ -245,7 +244,6 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     // Verify each non deleted record is read more than once (i.e. continuous started over)
     val afterRecords = feeder.take(100).flatten.map(feeder.toRecord(_).get).toList.groupBy(r => r)
     afterRecords.keySet should be(survivors.flatMap(_._2).toSet)
-//    afterRecords.map(_._1).foreach(r => survivors(r.token).contains(r) should be(true))
     afterRecords.foreach(_._2.size should be > 1)
   }
 }
