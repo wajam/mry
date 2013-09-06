@@ -1104,15 +1104,17 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
       val t1 = t.from("mysql").from("table1")
       deletedKeys.foreach(tup => t1.delete(tup._2))
       createdKeys.foreach(tup => t1.set(tup._2, Map(tup._2 -> tup._2)))
-    }, commit = true)
+    }, commit = true, onTimestamp = createTimestamp(0))
 
     var recordsExcludeDeleted = mysqlStorage.createStorageTransaction(context).getAllLatest(table1, 50).toList
-    recordsExcludeDeleted.size should be(createdKeys.size)
 
     var recordsIncludeDeleted = mysqlStorage.createStorageTransaction(context).getAllLatest(table1, 50, includeDeleted = true).toList
-    recordsIncludeDeleted.size should be(keys.size)
 
     val recordsDeleted = recordsIncludeDeleted.filter(_.value == NullValue)
+    println("%d, %d, %d".format(recordsExcludeDeleted.size, recordsIncludeDeleted.size, recordsDeleted.size))
+
+    recordsExcludeDeleted.size should be(createdKeys.size)
+    recordsIncludeDeleted.size should be(keys.size)
     recordsDeleted.size should be(deletedKeys.size)
   }
 
