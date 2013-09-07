@@ -44,7 +44,7 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
       None
     } else {
       // Returns first non deleted record or continue further
-      records.collectFirst{case record if record.value != NullValue => record} match {
+      records.collectFirst{case record if !record.value.isNull => record} match {
         case record@Some(_) => record
         case None => loadFirstNonDeletedRecords(range, records.lastOption)
       }

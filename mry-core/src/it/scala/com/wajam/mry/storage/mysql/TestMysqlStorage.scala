@@ -1112,7 +1112,7 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
     var recordsIncludeDeleted = mysqlStorage.createStorageTransaction(context).getAllLatest(table1, 50, includeDeleted = true).toList
     recordsIncludeDeleted.size should be(keys.size)
 
-    val recordsDeleted = recordsIncludeDeleted.filter(_.value == NullValue)
+    val recordsDeleted = recordsIncludeDeleted.filter(_.value.isNull)
     recordsDeleted.size should be(deletedKeys.size)
   }
 

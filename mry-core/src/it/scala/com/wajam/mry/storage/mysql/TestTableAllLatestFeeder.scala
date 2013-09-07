@@ -144,7 +144,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     val context2 = new TaskContext()
     context2.updateFromJson(feeder1.context.toJson)
     feeder2.init(context2)
-    var records2 = feeder2.take(10).flatten.toList
+    val records2 = feeder2.take(10).flatten.toList
 
     records2.size should be(9)
     records2.map(_(Token)) should be(keys.slice(records.length, records.length + records2.length).map(_._1.toString))
