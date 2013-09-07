@@ -239,8 +239,6 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     // Purge feeder potentially cached records now deleted
     feeder.take(50).toList
 
-    println(survivors.map(_._1))
-
     // Verify each non deleted record is read more than once (i.e. continuous started over)
     val afterRecords = feeder.take(100).flatten.map(feeder.toRecord(_).get).toList.groupBy(r => r)
     afterRecords.keySet should be(survivors.flatMap(_._2).toSet)

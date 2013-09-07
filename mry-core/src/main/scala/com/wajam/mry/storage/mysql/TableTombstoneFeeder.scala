@@ -17,11 +17,7 @@ abstract class TableTombstoneFeeder(val name: String, storage: MysqlStorage, tab
   def loadRecords(range: TokenRange, startAfterRecord: Option[TombstoneRecord]): Iterable[TombstoneRecord] = {
     val transaction = storage.createStorageTransaction
     try {
-      val records = transaction.getTombstoneRecords(table, loadLimit, range, minTombstoneAge, startAfterRecord)
-      startAfterRecord match {
-        case Some(startRecord) => records.filter(_ != startRecord)
-        case None => records
-      }
+      filterStartRecord(transaction.getTombstoneRecords(table, loadLimit, range, minTombstoneAge, startAfterRecord), startAfterRecord)
     } finally {
       transaction.commit()
     }

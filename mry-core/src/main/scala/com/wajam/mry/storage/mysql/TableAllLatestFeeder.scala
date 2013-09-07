@@ -19,15 +19,15 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
   def loadRecords(range: TokenRange, startAfterRecord: Option[Record]) = {
     implicit val transaction = storage.createStorageTransaction
     try {
-      val records = transaction.getAllLatest(table, loadLimit, range, startAfterRecord)
-      val filteredRecords = startAfterRecord match {
-        case Some(startRecord) => records.filter(_ != startRecord).toList
-        case None => records.toList
-      }
-      if (filteredRecords.nonEmpty) {
-        filteredRecords
-      } else {
+      val records = filterStartRecord(
+        transaction.getAllLatest(table, loadLimit, range, startAfterRecord).toIterable, startAfterRecord).toList
+      if (records.isEmpty) {
+        // No records found! We don't know if we have reach the end of the table or if the number of consecutive
+        // deleted records is larger than the loadLimit. Fallback to a slower but deterministic method.
+        // Load all following records including deleted records until we reach a non deleted record or the end of the table
         loadFirstNonDeletedRecords(range, startAfterRecord)
+      } else {
+        records
       }
     } finally {
       transaction.commit()
@@ -37,15 +37,17 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
   @tailrec
   private def loadFirstNonDeletedRecords(range: TokenRange, startAfterRecord: Option[Record])(
                                          implicit transaction: MysqlTransaction): Option[Record] = {
-    val records = transaction.getAllLatest(table, loadLimit, range, startAfterRecord, includeDeleted = true)
-    val filteredRecords = startAfterRecord match {
-      case Some(startRecord) => records.filter(_ != startRecord).toList
-      case None => records.toList
-    }
-    filteredRecords.collectFirst{case record if record.value != NullValue => record} match {
-      case record@Some(_) => record
-      case None if filteredRecords.isEmpty => None
-      case None => loadFirstNonDeletedRecords(range, filteredRecords.lastOption)
+    val records = filterStartRecord(
+      transaction.getAllLatest(table, loadLimit, range, startAfterRecord, includeDeleted = true).toIterable, startAfterRecord)
+    if (records.isEmpty) {
+      // Stop here, we have reach end of table
+      None
+    } else {
+      // Returns first non deleted record or continue further
+      records.collectFirst{case record if record.value != NullValue => record} match {
+        case record@Some(_) => record
+        case None => loadFirstNonDeletedRecords(range, records.lastOption)
+      }
     }
   }
 

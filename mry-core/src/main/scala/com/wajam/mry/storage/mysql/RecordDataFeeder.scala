@@ -32,4 +32,13 @@ trait ResumableRecordDataFeeder extends RecordDataFeeder {
     })
   }
 
+  /**
+   * Filter out the specified start record from the records collection
+   */
+  protected def filterStartRecord(records: Iterable[DataRecord], startAfterRecord: Option[DataRecord]): Iterable[DataRecord] = {
+    startAfterRecord match {
+      case Some(startRecord) => records.filter(_ != startRecord)
+      case None => records
+    }
+  }
 }
