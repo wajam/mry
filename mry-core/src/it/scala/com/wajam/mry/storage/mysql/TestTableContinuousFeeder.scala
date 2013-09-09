@@ -7,6 +7,7 @@ import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.nrv.service.{TokenRangeSeq, TokenRange}
 import com.wajam.spnl.TaskContext
 import org.mockito.Mockito._
+import com.wajam.mry.storage.mysql.FeederTestHelper._
 
 @RunWith(classOf[JUnitRunner])
 class TestTableContinuousFeeder extends FunSuite {

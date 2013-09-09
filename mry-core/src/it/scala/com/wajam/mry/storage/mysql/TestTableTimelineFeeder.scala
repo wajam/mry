@@ -6,6 +6,7 @@ import com.wajam.spnl.TaskContext
 import com.wajam.nrv.service.TokenRange
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
+import com.wajam.mry.storage.mysql.FeederTestHelper._
 
 @RunWith(classOf[JUnitRunner])
 class TestTableTimelineFeeder extends TestMysqlBase {

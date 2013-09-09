@@ -8,8 +8,7 @@ import com.wajam.spnl.TaskContext
 import com.wajam.mry.storage.mysql.TableAllLatestFeeder._
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import com.wajam.mry.storage.StorageException
-import scala.collection.immutable.Iterable
+import com.wajam.mry.storage.mysql.FeederTestHelper._
 
 @RunWith(classOf[JUnitRunner])
 class TestTableAllLatestFeeder extends TestMysqlBase {
