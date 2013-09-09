@@ -1,14 +1,13 @@
 package com.wajam.mry
 
-import execution.{StringValue, IntValue, ListValue, Value}
+import execution.{StringValue, IntValue, ListValue}
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import com.wajam.nrv.cluster._
 import com.wajam.mry.execution.Implicits._
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
-import storage.{Storage, MemoryStorage}
+import storage.MemoryStorage
 import com.wajam.nrv.service.Resolver
-import com.wajam.nrv.utils.{Future, Promise}
 import com.wajam.nrv.tracing.Tracer
 import java.util.UUID
 import org.scalatest.matchers.ShouldMatchers._
@@ -18,7 +17,13 @@ import org.mockito.Mockito._
 import org.mockito.Matchers._
 import org.mockito.stubbing.Answer
 import org.mockito.invocation.InvocationOnMock
+import scala.concurrent.Await
+import scala.concurrent.duration._
 import com.wajam.nrv.TimeoutException
+
+//import com.wajam.nrv.utils.SameThreadExecutionContext
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @RunWith(classOf[JUnitRunner])
 class TestDatabase extends FunSuite with BeforeAndAfterAll {
@@ -46,18 +51,16 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
     for (i <- 0 to 100) {
       val key = UUID.randomUUID().toString
 
-      val p = Promise[Seq[Value]]
-
       db.execute(b => {
         b.from("memory").set(key, "value%s".format(key))
       })
 
-      db.execute(b => {
+      val f = db.execute(b => {
         val context = b.from("context")
         b.returns(b.from("memory").get(key), context.get("tokens"), context.get("local_node"))
-      }, p.complete(_, _))
+      })
 
-      Future.blocking(p.future map {
+      Await.result(f map {
         case ret =>
           assert(ret != null)
           assert(ret.size == 3)
@@ -72,7 +75,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
           val members = db.resolveMembers(expectedToken, 1)
 
           members.map(_.node.uniqueKey) should contain(ret(2).asInstanceOf[StringValue].strValue)
-      }, 30000)
+      }, 30.seconds)
     }
   }
 
@@ -98,13 +101,11 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
       instance.cluster.start()
 
       // Set a first value
-      val set1 = Promise[Seq[Value]]
-      db.execute(b => {
+      val set1 = db.execute(b => {
         b.from("memory").set("key", "value1")
         b.returns(b.from("memory").get("key"))
-      }, set1.complete(_, _))
-      Future.blocking(set1.future, 5000)
-      val Some(Right(Seq(set1Value))) = set1.future.value
+      })
+      val Seq(set1Value) = Await.result(set1, 5.seconds)
       assert(set1Value.equalsValue("value1"))
 
       // Add a artificial delay greater than the service response timeout to storage execution.
@@ -117,24 +118,22 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
       })
 
       // Set a second value with the delay. Should timeout and the second value should not be set to the storage
-      val set2 = Promise[Seq[Value]]
-      db.execute(b => {
+      val set2 = db.execute(b => {
         b.from("memory").set("key", "value2")
         b.returns(b.from("memory").get("key"))
-      }, set2.complete(_, _))
+      })
       evaluating {
-        Future.blocking(set2.future, 5000)
+        Await.result(set2, 5.seconds)
+
       } should produce[TimeoutException]
 
       // Remove the delay and fetch the current storage value. Should be the inital value since the second
       // transaction should had rolledback
       reset(spyStorage)
-      val get = Promise[Seq[Value]]
-      db.execute(b => {
+      val get = db.execute(b => {
         b.returns(b.from("memory").get("key"))
-      }, get.complete(_, _))
-      Future.blocking(get.future, 5000)
-      val Some(Right(Seq(set2Value))) = get.future.value
+      })
+      val Seq(set2Value) = Await.result(get, 5.seconds)
       assert(set2Value.equalsValue("value1"))
     } finally {
       instance.cluster.stop()

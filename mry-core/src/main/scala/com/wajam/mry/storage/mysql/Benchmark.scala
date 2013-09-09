@@ -6,15 +6,13 @@ import org.rogach.scallop.ScallopConf
 import org.rogach.scallop.exceptions.Help
 import com.wajam.mry.Database
 import com.wajam.nrv.cluster.{StaticClusterManager, LocalNode, Cluster}
-import com.wajam.scn.{Scn, ScnConfig}
-import com.wajam.scn.storage.StorageType
-import com.wajam.scn.client.{ScnClientConfig, ScnClient}
-import com.wajam.nrv.utils.Future
 import com.wajam.nrv.service.Switchboard
 import com.wajam.nrv.zookeeper.cluster.ZookeeperClusterManager
 import com.wajam.nrv.zookeeper.ZookeeperClient
-import com.wajam.nrv.consistency.ConsistencyMasterSlave
+import scala.concurrent.{Future, Await}
+import scala.concurrent.duration.Duration
 import scala.language.reflectiveCalls
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * MySQL storage benchmarking tool
@@ -157,10 +155,10 @@ object Benchmark extends App with Instrumented {
     Iterator.range(0, count).foreach(i => {
       inserts.time {
         try {
-          Future.blocking(db.execute(b => {
+          Await.result(db.execute(b => {
             val data = rand.rand.nextString(rand.rand.nextInt(2048))
             b.from("mysql").from("table1").set("key%d".format(rand.nextKey()), Map("k" -> data))
-          }))
+          }), Duration.Inf)
         } catch {
           case e: Exception => e.printStackTrace()
         }
@@ -174,9 +172,9 @@ object Benchmark extends App with Instrumented {
       try {
         gets.time {
           try {
-            Future.blocking(db.execute(b => {
+            Await.result(db.execute(b => {
               b.ret(b.from("mysql").from("table1").get("key%d".format(rand.nextKey())))
-            }))
+            }), Duration.Inf)
           } catch {
             case e: Exception => e.printStackTrace()
           }
