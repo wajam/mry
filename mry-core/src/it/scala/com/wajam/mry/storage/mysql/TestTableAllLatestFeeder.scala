@@ -234,14 +234,14 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
 
     // Delete all records for every 1 token out of 2
     val (deleted, survivors) = allRecords.groupBy(_.token).partition(_._1 % 2 == 0)
-    deleted.flatMap(_._2).foreach(delete)
+    deleted.values.flatten.foreach(delete)
 
     // Purge feeder potentially cached records now deleted
     feeder.take(50).toList
 
     // Verify each non deleted record is read more than once (i.e. continuous started over)
     val afterRecords = feeder.take(100).flatten.map(feeder.toRecord(_).get).toList.groupBy(r => r)
-    afterRecords.keySet should be(survivors.flatMap(_._2).toSet)
-    afterRecords.foreach(_._2.size should be > 1)
+    afterRecords.keySet should be(survivors.values.flatten.toSet)
+    afterRecords.values.forall(_.size > 1) should be(true)
   }
 }
