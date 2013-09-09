@@ -17,7 +17,7 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
   type DataRecord = Record
 
   def loadRecords(range: TokenRange, startAfterRecord: Option[Record]) = {
-    implicit val transaction = storage.createStorageTransaction
+    val transaction = storage.createStorageTransaction
     try {
       val records = filterStartRecord(
         transaction.getAllLatest(table, loadLimit, range, startAfterRecord).toIterable, startAfterRecord).toList
@@ -25,7 +25,7 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
         // No records found! We don't know if we have reach the end of the table or if the number of consecutive
         // deleted records is larger than the loadLimit. Fallback to a slower but deterministic method.
         // Load all following records including deleted records until we reach a non deleted record or the end of the table
-        loadFirstNonDeletedRecords(range, startAfterRecord)
+        loadFirstNonDeletedRecords(range, startAfterRecord, transaction)
       } else {
         records
       }
@@ -35,8 +35,8 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
   }
 
   @tailrec
-  private def loadFirstNonDeletedRecords(range: TokenRange, startAfterRecord: Option[Record])(
-                                         implicit transaction: MysqlTransaction): Option[Record] = {
+  private def loadFirstNonDeletedRecords(range: TokenRange, startAfterRecord: Option[Record],
+                                         transaction: MysqlTransaction): Option[Record] = {
     val records = filterStartRecord(
       transaction.getAllLatest(table, loadLimit, range, startAfterRecord, includeDeleted = true).toIterable, startAfterRecord)
     if (records.isEmpty) {
@@ -46,7 +46,7 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
       // Returns first non deleted record or continue further
       records.collectFirst{case record if !record.value.isNull => record} match {
         case record@Some(_) => record
-        case None => loadFirstNonDeletedRecords(range, records.lastOption)
+        case None => loadFirstNonDeletedRecords(range, records.lastOption, transaction)
       }
     }
   }
