@@ -1090,6 +1090,32 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
     recordsKey should be(keys.map(_._2).slice(19, 39).toList)
   }
 
+  test("getAllLatest should support deleted records") {
+    val context = new ExecutionContext(storages)
+    val keys = Seq.range(0, 40).map(i => {
+      val key = "key%d".format(i)
+      (context.getToken(key), key)
+    }).sorted
+
+    val deletedKeys = keys.filter(_._1 % 2 == 0)
+    val createdKeys = keys.filter(_._1 % 2 != 0)
+
+    exec(t => {
+      val t1 = t.from("mysql").from("table1")
+      deletedKeys.foreach(tup => t1.delete(tup._2))
+      createdKeys.foreach(tup => t1.set(tup._2, Map(tup._2 -> tup._2)))
+    }, commit = true, onTimestamp = createTimestamp(0))
+
+    var recordsExcludeDeleted = mysqlStorage.createStorageTransaction(context).getAllLatest(table1, 50).toList
+    recordsExcludeDeleted.size should be(createdKeys.size)
+
+    var recordsIncludeDeleted = mysqlStorage.createStorageTransaction(context).getAllLatest(table1, 50, includeDeleted = true).toList
+    recordsIncludeDeleted.size should be(keys.size)
+
+    val recordsDeleted = recordsIncludeDeleted.filter(_.value.isNull)
+    recordsDeleted.size should be(deletedKeys.size)
+  }
+
   test("getAllLatest with token range") {
     val context = new ExecutionContext(storages)
     val keys = Seq.range(0, 40).map(i => {

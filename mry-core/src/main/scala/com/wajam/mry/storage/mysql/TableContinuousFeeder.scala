@@ -32,10 +32,8 @@ trait TableContinuousFeeder extends CachedDataFeeder with ResumableRecordDataFee
       val (loadRange, startRecord) = getLoadPosition
 
       // Filter out the "from" records in case it is returned by the load method
-      val records = startRecord match {
-        case Some(record) => loadRecords(loadRange, startRecord).filterNot(_ == record)
-        case None => loadRecords(loadRange, startRecord)
-      }
+      val records = filterStartRecord(loadRecords(loadRange, startRecord), startRecord)
+
       currentRange = Some(loadRange)
       lastRecord = records.lastOption
 

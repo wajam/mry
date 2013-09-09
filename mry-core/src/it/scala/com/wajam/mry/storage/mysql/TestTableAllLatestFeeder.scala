@@ -8,11 +8,12 @@ import com.wajam.spnl.TaskContext
 import com.wajam.mry.storage.mysql.TableAllLatestFeeder._
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
+import com.wajam.mry.storage.mysql.FeederTestHelper._
 
 @RunWith(classOf[JUnitRunner])
 class TestTableAllLatestFeeder extends TestMysqlBase {
 
-  test("continuous feeder should feed in loop a table and in token+key order") {
+  test("feeder should feed in loop a table and in token+key order") {
     val context = new ExecutionContext(storages)
     val keys = List.range(0, 20).map(i => {
       val key = "key%d".format(i)
@@ -26,9 +27,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
 
 
     val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1, TokenRange.All) with TableContinuousFeeder
-    val records = Iterator.continually({
-      feeder.next()
-    }).take(100).flatten.toList
+    val records = feeder.take(100).flatten.toList
 
     // 91 = 100 - (5 loadMore + 4 end of records)
     records.size should be(91)
@@ -60,9 +59,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     feederContext.data += (Keys -> Seq(keys(5)._2))
     feederContext.data += (Timestamp -> createTimestamp(5))
     feeder.init(feederContext)
-    val records = Iterator.continually({
-      feeder.next()
-    }).take(10).flatten.toList
+    val records = feeder.take(10).flatten.toList
 
     records(0)(Token) should be(keys(6)._1.toString)
   }
@@ -88,9 +85,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     feederContext.data += (Keys -> Seq(keys(5)._2))
     feederContext.data += (Timestamp -> "abc") // Invalid timestamp
     feeder.init(feederContext)
-    val records = Iterator.continually({
-      feeder.next()
-    }).take(10).flatten.toList
+    val records = feeder.take(10).flatten.toList
 
     records(0)(Token) should be(keys(0)._1.toString)
   }
@@ -112,9 +107,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     // Should load records from start
     val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1, TokenRange.All) with TableContinuousFeeder
     feeder.init(new TaskContext())
-    val records = Iterator.continually({
-      feeder.next()
-    }).take(10).flatten.toList
+    val records = feeder.take(10).flatten.toList
 
     records(0)(Token) should be(keys(0)._1.toString)
   }
@@ -137,9 +130,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     // Load some records
     val feeder1 = new TableAllLatestFeeder("test", mysqlStorage, table1_1, TokenRange.All) with TableContinuousFeeder
     feeder1.init(new TaskContext())
-    val records = Iterator.continually({
-      feeder1.next()
-    }).take(10).flatten.toList
+    val records = feeder1.take(10).flatten.toList
 
     records.size should be(9)
     records.map(_(Token)) should be(keys.slice(0, records.length).map(_._1.toString))
@@ -152,15 +143,13 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     val context2 = new TaskContext()
     context2.updateFromJson(feeder1.context.toJson)
     feeder2.init(context2)
-    var records2 = Iterator.continually({
-      feeder2.next()
-    }).take(10).flatten.toList
+    val records2 = feeder2.take(10).flatten.toList
 
     records2.size should be(9)
     records2.map(_(Token)) should be(keys.slice(records.length, records.length + records2.length).map(_._1.toString))
   }
 
-  test("continuous feeder should feed in loop a table and in token+key order for ranges") {
+  test("feeder should iterate a table and in token+key order for ranges") {
     val context = new ExecutionContext(storages)
     val keys = List.range(0, 20).map(i => {
       val key = "key%d".format(i)
@@ -176,9 +165,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     val expectedKeys = keys.filter(k => ranges.exists(_.contains(k._1))).toList
 
     val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1, ranges, loadLimit = 3) with TableContinuousFeeder
-    val records = Iterator.continually({
-      feeder.next()
-    }).take(100).flatten.toList
+    val records = feeder.take(100).flatten.toList
 
     val expectedTokens = Stream.continually(expectedKeys.map(_._1)).flatten
     val actualTokens = records.map(_(Token).toString.toLong)
@@ -199,14 +186,61 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     currentConsistentTimestamp = 50L
 
     val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1, TokenRange.All) with TableContinuousFeeder
-    val records = Iterator.continually({
-      feeder.next()
-    }).take(100).flatten.toList
+    val records = feeder.take(100).flatten.toList
 
     records.size should be > 0
     val strKeys = records.map(_(Keys).asInstanceOf[Seq[String]](0))
     strKeys.count(_ == "key1") should be(records.size)
     strKeys.count(_ == "key2") should be(0)
+  }
 
+  test("should not stop prematurely when iterating over many consecutive deleted records") {
+
+    def create(index: Int, count: Int) {
+      exec(t => {
+        val storage = t.from("mysql")
+        val table = storage.from("table1")
+        table.set(s"key$index", Map("k" -> s"value$index"))
+        table.get(s"key$index").from("table1_1").set(s"key$index.1", Map("k" -> s"value$index.1"))
+        table.get(s"key$index").from("table1_1").set(s"key$index.2", Map("k" -> s"value$index.2"))
+        for (i <- 1 to count) {
+          table.get(s"key$index").from("table1_1").get(s"key$index.1").from("table1_1_1").set(s"key$index.$index.$i", Map("k" -> s"value3.$index.$i"))
+        }
+      }, commit = true)
+    }
+
+    def delete(record: Record) {
+      val transaction = mysqlStorage.createStorageTransaction
+      try {
+        transaction.set(table1_1_1, record.token, record.timestamp, record.accessPath, None)
+      } finally {
+        transaction.commit()
+      }
+    }
+
+    create(1, count = 6)
+    create(2, count = 6)
+    create(3, count = 6)
+    create(4, count = 6)
+    create(5, count = 6)
+    create(6, count = 6)
+    create(7, count = 6)
+    create(8, count = 6)
+    create(9, count = 6)
+
+    val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1_1_1, TokenRange.All, loadLimit = 3) with TableContinuousFeeder
+    val allRecords = feeder.take(100).flatten.map(feeder.toRecord(_).get).toList
+
+    // Delete all records for every 1 token out of 2
+    val (deleted, survivors) = allRecords.groupBy(_.token).partition(_._1 % 2 == 0)
+    deleted.values.flatten.foreach(delete)
+
+    // Purge feeder potentially cached records now deleted
+    feeder.take(50).toList
+
+    // Verify each non deleted record is read more than once (i.e. continuous started over)
+    val afterRecords = feeder.take(100).flatten.map(feeder.toRecord(_).get).toList.groupBy(r => r)
+    afterRecords.keySet should be(survivors.values.flatten.toSet)
+    afterRecords.values.forall(_.size > 1) should be(true)
   }
 }

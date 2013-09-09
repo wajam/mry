@@ -82,8 +82,8 @@ class TestTableTombstoneFeeder extends TestMysqlBase {
     key2First3.map(_.accessPath.keys.last) should be(Seq("key2.1a", "key2.1b", "key2.1c"))
 
     val key2Reminder = limitedFeeder.loadRecords(TokenRange.All, Some(key2First3.last))
-    key2Reminder.size should be(2)
-    key2Reminder.map(_.accessPath.keys.last) should be(Seq("key2.1c", "key2.1d"))
+    key2Reminder.size should be(1)
+    key2Reminder.map(_.accessPath.keys.last) should be(Seq("key2.1d"))
   }
 
 }

@@ -19,7 +19,7 @@ trait ResumableRecordDataFeeder extends RecordDataFeeder {
 
   def token(record: DataRecord): Long
 
-  def loadRecords(range: TokenRange, fromRecord: Option[DataRecord]): Iterable[DataRecord]
+  def loadRecords(range: TokenRange, startAfterRecord: Option[DataRecord]): Iterable[DataRecord]
 
   def toContextData(data: Map[String, Any]): Map[String, Any] = data
 
@@ -32,4 +32,13 @@ trait ResumableRecordDataFeeder extends RecordDataFeeder {
     })
   }
 
+  /**
+   * Filter out the specified start record from the records collection
+   */
+  protected def filterStartRecord(records: Iterable[DataRecord], startAfterRecord: Option[DataRecord]): Iterable[DataRecord] = {
+    startAfterRecord match {
+      case Some(startRecord) => records.filter(_ != startRecord)
+      case None => records
+    }
+  }
 }

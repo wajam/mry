@@ -504,7 +504,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
   }
 
   def getAllLatest(table: Table, count: Long, range: TokenRange = TokenRange.All,
-                   optFromRecord: Option[Record] = None): RecordIterator = {
+                   optFromRecord: Option[Record] = None, includeDeleted: Boolean = false): RecordIterator = {
 
     val fullTableName = table.depthName("_")
     val outerProjKeys = (for (i <- 1 to table.depth) yield "o.k%1$d".format(i)).mkString(",")
@@ -524,6 +524,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
       case None => ("i.tk >= %d".format(range.start), Seq())
     }
     val lastConsistentTimestamp = storage.getCurrentConsistentTimestamp(Seq(range))
+    val deletedFilter = if (includeDeleted) "" else "AND o.d IS NOT NULL"
 
     /* Generated SQL looks like:
      *
@@ -559,10 +560,10 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         WHERE o.tk = i.tk
         AND %5$s
         AND o.ts = i.max_ts
-        AND o.d IS NOT NULL
+        %9$s
         ORDER BY i.tk, %1$s
               """.format(outerProjKeys, fullTableName, innerProjKeys, recordPosition._1, outerWhereKeys,
-      count, range.end, lastConsistentTimestamp.value)
+      count, range.end, lastConsistentTimestamp.value, deletedFilter)
 
     var results: SqlResults = null
     try {
