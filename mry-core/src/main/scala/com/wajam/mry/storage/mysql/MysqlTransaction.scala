@@ -13,7 +13,7 @@ import collection.mutable.ArrayBuffer
 /**
  * Mysql storage transaction
  */
-class MysqlTransaction(private val storage: MysqlStorage, private val context: Option[ExecutionContext])
+class MysqlTransaction(protected val storage: MysqlStorage, protected val context: Option[ExecutionContext])
   extends StorageTransaction {
 
   private[mry] val tableMutationsCount = storage.model.allHierarchyTables.map(table => (table, new AtomicInteger(0))).toMap
