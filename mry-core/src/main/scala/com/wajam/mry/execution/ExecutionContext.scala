@@ -4,7 +4,7 @@ import com.wajam.mry.storage.{Storage, StorageTransaction => StorageTransaction}
 import com.wajam.nrv.service.Resolver
 import com.wajam.nrv.Logging
 import com.wajam.nrv.cluster.Cluster
-import com.wajam.nrv.utils.timestamp.Timestamp
+import com.wajam.commons.timestamp.Timestamp
 
 /**
  * Execution context, used to store different information when a transaction

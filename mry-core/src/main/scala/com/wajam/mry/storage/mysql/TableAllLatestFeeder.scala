@@ -58,7 +58,7 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
     {
       try {
         val token = data(Token).toString.toLong
-        val timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data(Timestamp).toString.toLong)
+        val timestamp = com.wajam.commons.timestamp.Timestamp(data(Timestamp).toString.toLong)
         val keys = data(Keys).asInstanceOf[Seq[String]]
         val accessPath = new AccessPath(keys.map(new AccessKey(_)))
         val value = data.get(Value).getOrElse(NullValue).asInstanceOf[Value]

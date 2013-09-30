@@ -1,6 +1,6 @@
 package com.wajam.mry.execution
 
-import com.wajam.nrv.utils.ContentEquals
+import com.wajam.commons.ContentEquals
 
 /**
  * Variable that can points to nothing or to a value

@@ -3,7 +3,7 @@ package com.wajam.mry.storage.mysql
 import com.wajam.mry.execution._
 import com.wajam.mry.storage.Storage
 import org.scalatest.{BeforeAndAfterEach, FunSuite}
-import com.wajam.nrv.utils.timestamp.Timestamp
+import com.wajam.commons.timestamp.Timestamp
 import com.wajam.nrv.service.TokenRange
 
 

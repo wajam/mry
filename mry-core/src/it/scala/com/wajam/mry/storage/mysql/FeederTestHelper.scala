@@ -1,7 +1,7 @@
 package com.wajam.mry.storage.mysql
 
-import com.wajam.nrv.utils.Closable
 import com.wajam.spnl.feeder.Feeder
+import com.wajam.commons.Closable
 
 object FeederTestHelper {
   implicit def feederToIterator(feeder: Feeder): Iterator[Option[Map[String, Any]]] with Closable = {

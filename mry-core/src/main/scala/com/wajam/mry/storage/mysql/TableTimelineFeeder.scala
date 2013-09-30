@@ -4,7 +4,7 @@ import com.wajam.nrv.Logging
 import com.wajam.spnl.feeder.CachedDataFeeder
 import com.wajam.spnl.TaskContext
 import com.wajam.mry.storage.mysql.TimelineSelectMode.{FromTimestamp, AtTimestamp}
-import com.wajam.nrv.utils.timestamp.Timestamp
+import com.wajam.commons.timestamp.Timestamp
 import com.wajam.nrv.service.TokenRange
 
 /**

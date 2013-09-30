@@ -1,9 +1,9 @@
 package com.wajam.mry.storage
 
-import com.wajam.nrv.utils.timestamp.Timestamp
+import com.wajam.commons.timestamp.Timestamp
 import com.wajam.nrv.service.TokenRange
 import com.wajam.mry.execution.{Transaction, Value}
-import com.wajam.nrv.utils.Closable
+import com.wajam.commons.Closable
 
 /**
  * Consistent storage engine

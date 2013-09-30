@@ -12,9 +12,9 @@ import collection.mutable
 import java.util.concurrent.{TimeUnit, ScheduledThreadPoolExecutor}
 import com.wajam.nrv.service.TokenRange
 import com.yammer.metrics.core.Gauge
-import com.wajam.nrv.utils.timestamp.Timestamp
-import com.wajam.nrv.utils.Closable
+import com.wajam.commons.timestamp.Timestamp
 import annotation.tailrec
+import com.wajam.commons.Closable
 
 /**
  * MySQL backed storage

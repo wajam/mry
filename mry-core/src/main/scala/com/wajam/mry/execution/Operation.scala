@@ -1,6 +1,6 @@
 package com.wajam.mry.execution
 
-import com.wajam.nrv.utils.ContentEquals
+import com.wajam.commons.ContentEquals
 
 /**
  * Represents an operation executed within a transaction

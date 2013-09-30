@@ -3,12 +3,12 @@ package com.wajam.mry
 import api.TransactionPrinter
 import com.wajam.nrv.consistency.ConsistentStore
 import com.wajam.nrv.data.{MessageType, InMessage, Message}
-import com.wajam.nrv.utils.timestamp.Timestamp
+import com.wajam.commons.timestamp.Timestamp
 import com.wajam.nrv.service.{ActionMethod, TokenRange}
 import execution.{ExecutionContext, Transaction}
 import com.wajam.mry.storage.{Storage, ConsistentStorage}
-import com.wajam.nrv.utils.Closable
 import com.yammer.metrics.scala.Instrumented
+import com.wajam.commons.Closable
 
 /**
  * Consistent MRY database

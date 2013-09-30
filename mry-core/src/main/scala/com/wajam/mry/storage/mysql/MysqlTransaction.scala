@@ -6,7 +6,7 @@ import com.wajam.mry.execution._
 import com.wajam.mry.api.ProtocolTranslator
 import com.wajam.nrv.tracing.Traced
 import java.util.concurrent.atomic.AtomicInteger
-import com.wajam.nrv.utils.timestamp.Timestamp
+import com.wajam.commons.timestamp.Timestamp
 import com.wajam.nrv.service.TokenRange
 import collection.mutable.ArrayBuffer
 
