@@ -9,10 +9,10 @@ import collection.mutable
 import util.Random
 import com.wajam.mry.storage.mysql.TimelineSelectMode.AtTimestamp
 import com.wajam.nrv.service.TokenRange
-import com.wajam.nrv.utils.TimestampIdGenerator
-import com.wajam.nrv.utils.timestamp.Timestamp
 import org.mockito.Mockito._
 import org.scalatest.matchers.ShouldMatchers
+import com.wajam.nrv.utils.TimestampIdGenerator
+import com.wajam.nrv.utils.timestamp.Timestamp
 
 /**
  * Test MySQL storage
