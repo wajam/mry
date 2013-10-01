@@ -54,7 +54,7 @@ object TableTombstoneFeeder {
   def toTombstoneRecord(table: Table, data: Map[String, Any]): Option[TombstoneRecord] = {
     if (data.contains(Keys) && data.contains(Token) && data.contains(Timestamp)) {
       val token = data(Token).toString.toLong
-      val timestamp = com.wajam.commons.timestamp.Timestamp(data(Timestamp).toString.toLong)
+      val timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data(Timestamp).toString.toLong)
       val keys = data(Keys).asInstanceOf[Seq[String]]
       val accessPath = new AccessPath(keys.map(new AccessKey(_)))
       Some(new TombstoneRecord(table, token, accessPath, timestamp))

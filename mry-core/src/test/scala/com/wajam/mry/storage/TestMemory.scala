@@ -5,7 +5,7 @@ import com.wajam.mry.execution.Implicits._
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import com.wajam.mry.execution.{NullValue, Transaction, ExecutionContext}
-import com.wajam.commons.timestamp.Timestamp
+import com.wajam.nrv.utils.timestamp.Timestamp
 
 @RunWith(classOf[JUnitRunner])
 class TestMemory extends FunSuite {

@@ -10,7 +10,8 @@ import com.wajam.nrv.tracing.Traced
 import com.wajam.nrv.data.InMessage
 import scala.concurrent.{Future, Promise}
 import java.util.concurrent.TimeUnit
-import com.wajam.commons.{CurrentTime, SynchronizedIdGenerator, TimestampIdGenerator}
+import com.wajam.commons.{CurrentTime, SynchronizedIdGenerator}
+import com.wajam.nrv.utils.TimestampIdGenerator
 
 /**
  * MRY database
