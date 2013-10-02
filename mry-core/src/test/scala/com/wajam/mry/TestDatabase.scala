@@ -8,7 +8,7 @@ import com.wajam.mry.execution.Implicits._
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import storage.MemoryStorage
 import com.wajam.nrv.service.Resolver
-import com.wajam.nrv.tracing.Tracer
+import com.wajam.tracing.Tracer
 import java.util.UUID
 import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.nrv.zookeeper.cluster.ZookeeperTestingClusterDriver
@@ -20,9 +20,6 @@ import org.mockito.invocation.InvocationOnMock
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import com.wajam.nrv.TimeoutException
-
-//import com.wajam.nrv.utils.SameThreadExecutionContext
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @RunWith(classOf[JUnitRunner])
