@@ -1,6 +1,6 @@
 package com.wajam.mry.execution
 
-import com.wajam.nrv.utils.ContentEquals
+import com.wajam.commons.ContentEquals
 
 /**
  * Trait that makes an object source of the execution of an operation. All operations

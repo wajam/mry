@@ -8,9 +8,10 @@ import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service._
 import com.wajam.nrv.tracing.Traced
 import com.wajam.nrv.data.InMessage
-import com.wajam.nrv.utils.{SynchronizedIdGenerator, CurrentTime, TimestampIdGenerator}
 import scala.concurrent.{Future, Promise}
 import java.util.concurrent.TimeUnit
+import com.wajam.commons.{CurrentTime, SynchronizedIdGenerator}
+import com.wajam.nrv.utils.TimestampIdGenerator
 
 /**
  * MRY database
