@@ -32,7 +32,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     // 91 = 100 - (5 loadMore + 4 end of records)
     records.size should be(91)
 
-    val strKeys = records.map(_(Keys).asInstanceOf[Seq[String]](0))
+    val strKeys = records.map(_.fields(Keys).asInstanceOf[Seq[String]](0))
     strKeys.count(_ == "key17") should be(5)
     strKeys.count(_ == "key12") should be(5)
     strKeys.count(_ == "key15") should be(4) // last record
@@ -61,7 +61,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     feeder.init(feederContext)
     val records = feeder.take(10).flatten.toList
 
-    records(0)(Token) should be(keys(6)._1.toString)
+    records(0).token should be(keys(6)._1)
   }
 
   test("init with context invalid data") {
@@ -81,13 +81,13 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     // Should load records from start
     val feeder = new TableAllLatestFeeder("test", mysqlStorage, table1, TokenRange.All) with TableContinuousFeeder
     val feederContext = new TaskContext()
-    feederContext.data += (Token -> keys(5))
+    feederContext.data += (Token -> keys(5)._1)
     feederContext.data += (Keys -> Seq(keys(5)._2))
     feederContext.data += (Timestamp -> "abc") // Invalid timestamp
     feeder.init(feederContext)
     val records = feeder.take(10).flatten.toList
 
-    records(0)(Token) should be(keys(0)._1.toString)
+    records(0).token should be(keys(0)._1)
   }
 
   test("init with empty context") {
@@ -109,7 +109,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     feeder.init(new TaskContext())
     val records = feeder.take(10).flatten.toList
 
-    records(0)(Token) should be(keys(0)._1.toString)
+    records(0).token should be(keys(0)._1)
   }
 
   test("save and resume context with multi level table") {
@@ -133,7 +133,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     val records = feeder1.take(10).flatten.toList
 
     records.size should be(9)
-    records.map(_(Token)) should be(keys.slice(0, records.length).map(_._1.toString))
+    records.map(_.token) should be(keys.slice(0, records.length).map(_._1))
 
     // Acknowledge the last records
     feeder1.ack(records.last)
@@ -146,7 +146,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     val records2 = feeder2.take(10).flatten.toList
 
     records2.size should be(9)
-    records2.map(_(Token)) should be(keys.slice(records.length, records.length + records2.length).map(_._1.toString))
+    records2.map(_.token) should be(keys.slice(records.length, records.length + records2.length).map(_._1))
   }
 
   test("feeder should iterate a table and in token+key order for ranges") {
@@ -168,7 +168,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     val records = feeder.take(100).flatten.toList
 
     val expectedTokens = Stream.continually(expectedKeys.map(_._1)).flatten
-    val actualTokens = records.map(_(Token).toString.toLong)
+    val actualTokens = records.map(_.token)
 
     actualTokens.size should be > 50
     actualTokens should be(expectedTokens.take(actualTokens.size).toList)
@@ -189,7 +189,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     val records = feeder.take(100).flatten.toList
 
     records.size should be > 0
-    val strKeys = records.map(_(Keys).asInstanceOf[Seq[String]](0))
+    val strKeys = records.map(_.fields(Keys).asInstanceOf[Seq[String]](0))
     strKeys.count(_ == "key1") should be(records.size)
     strKeys.count(_ == "key2") should be(0)
   }
