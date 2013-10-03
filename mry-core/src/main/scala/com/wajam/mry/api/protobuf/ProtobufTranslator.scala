@@ -115,7 +115,7 @@ private class InternalProtobufTranslator {
 
     val instanceHeapId = currentHeapId
 
-    reverseEncodingHeap = mryData +: reverseEncodingHeap
+    reverseEncodingHeap = mryData :: reverseEncodingHeap
 
     currentHeapId += 1
     instanceHeapId
@@ -151,7 +151,7 @@ private class InternalProtobufTranslator {
           case pMryData if pMryData.hasValue => pMryData.getValue
         }
 
-        reverseDecodingHeap = value +: reverseDecodingHeap
+        reverseDecodingHeap = value :: reverseDecodingHeap
         addr += 1
       }
 
