@@ -4,7 +4,7 @@ import com.wajam.mry.storage.StorageTransaction
 import java.sql.ResultSet
 import com.wajam.mry.execution._
 import com.wajam.mry.api.ProtocolTranslator
-import com.wajam.nrv.tracing.Traced
+import com.wajam.tracing.Traced
 import java.util.concurrent.atomic.AtomicInteger
 import com.wajam.nrv.service.TokenRange
 import collection.mutable.ArrayBuffer
