@@ -68,7 +68,8 @@ private class InternalProtobufTranslator {
   private val pb2obj = new collection.mutable.HashMap[Int, AnyRef] // Encoded HeapId to decoded instance mapping
   private val obj2pb = new collection.mutable.HashMap[AnyRef, Int] // Live instance to encoded HeapId mapping
 
-  private var tempHeap = Seq[AnyRef]()
+  private var reverseEncodingHeap = List[AnyRef]()
+  private var decodingHeap = List[AnyRef]()
 
   private def registerEncodedData(pbHeapId: Int, instance: AnyRef) = {
     obj2pb += instance -> pbHeapId
@@ -114,7 +115,7 @@ private class InternalProtobufTranslator {
 
     val instanceHeapId = currentHeapId
 
-    tempHeap = tempHeap :+ mryData
+    reverseEncodingHeap = mryData :: reverseEncodingHeap
 
     currentHeapId += 1
     instanceHeapId
@@ -123,7 +124,7 @@ private class InternalProtobufTranslator {
   private def encodeHeap(): PHeap.Builder = {
 
     val pEncodingHeap = PHeap.newBuilder()
-    tempHeap.foreach((v) => pEncodingHeap.addValues(buildMryData(v)))
+    reverseEncodingHeap.reverse.foreach((v) => pEncodingHeap.addValues(buildMryData(v)))
     pEncodingHeap
   }
 
@@ -131,12 +132,14 @@ private class InternalProtobufTranslator {
 
     checkHeapId(HeapId)
 
-    tempHeap(HeapId - 1).asInstanceOf[T]
+    decodingHeap(HeapId - 1).asInstanceOf[T]
   }
 
   private def loadHeap(pDecodingHeap: PHeap) = {
 
       var addr = 1
+
+      var reverseDecodingHeap = List[AnyRef]()
 
       for (pMryData <- pDecodingHeap.getValuesList) {
 
@@ -148,15 +151,17 @@ private class InternalProtobufTranslator {
           case pMryData if pMryData.hasValue => pMryData.getValue
         }
 
-        tempHeap = tempHeap :+ value
+        reverseDecodingHeap = value :: reverseDecodingHeap
         addr += 1
-    }
+      }
+
+      decodingHeap = reverseDecodingHeap.reverse
   }
 
   private def decodeBlockFromHeapToPool(block: Block) = {
 
     // Yield map with HeapId
-    val mappedData = Range(1, tempHeap.size + 1).zip(tempHeap)
+    val mappedData = Range(1, decodingHeap.size + 1).zip(decodingHeap)
 
     /* Order here is import. DO ALL values, then ALL variable, then ALL operation */
 
