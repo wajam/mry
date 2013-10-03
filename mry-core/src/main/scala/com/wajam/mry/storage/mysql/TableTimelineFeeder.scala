@@ -83,7 +83,7 @@ class TableTimelineFeeder(val name: String, storage: MysqlStorage, table: Table,
       mutations.map { mr =>
         TaskData(
           token = mr.token,
-          fields = Map(
+          values = Map(
             "keys" -> mr.accessPath.keys,
             "old_timestamp" -> mr.oldTimestamp,
             "old_value" -> mr.oldValue,
@@ -128,8 +128,8 @@ class TableTimelineFeeder(val name: String, storage: MysqlStorage, table: Table,
   }
 
   private def getTimestampKey(data: TaskData) = {
-    val timestamp = data.fields("new_timestamp").asInstanceOf[Timestamp]
-    val keys = data.fields("keys").asInstanceOf[Seq[String]]
+    val timestamp = data.values("new_timestamp").asInstanceOf[Timestamp]
+    val keys = data.values("keys").asInstanceOf[Seq[String]]
     (timestamp, keys)
   }
 }

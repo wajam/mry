@@ -32,7 +32,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     // 91 = 100 - (5 loadMore + 4 end of records)
     records.size should be(91)
 
-    val strKeys = records.map(_.fields(Keys).asInstanceOf[Seq[String]](0))
+    val strKeys = records.map(_.values(Keys).asInstanceOf[Seq[String]](0))
     strKeys.count(_ == "key17") should be(5)
     strKeys.count(_ == "key12") should be(5)
     strKeys.count(_ == "key15") should be(4) // last record
@@ -189,7 +189,7 @@ class TestTableAllLatestFeeder extends TestMysqlBase {
     val records = feeder.take(100).flatten.toList
 
     records.size should be > 0
-    val strKeys = records.map(_.fields(Keys).asInstanceOf[Seq[String]](0))
+    val strKeys = records.map(_.values(Keys).asInstanceOf[Seq[String]](0))
     strKeys.count(_ == "key1") should be(records.size)
     strKeys.count(_ == "key2") should be(0)
   }

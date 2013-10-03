@@ -27,7 +27,7 @@ abstract class TableTombstoneFeeder(val name: String, storage: MysqlStorage, tab
   def token(record: TombstoneRecord) = record.token
 
   def toRecord(data: TaskData): Option[TombstoneRecord] = {
-    if (data.fields.contains(Keys) && data.fields.contains(Timestamp))
+    if (data.values.contains(Keys) && data.values.contains(Timestamp))
     {
       try {
         toTombstoneRecord(table, data)
@@ -43,7 +43,7 @@ abstract class TableTombstoneFeeder(val name: String, storage: MysqlStorage, tab
   }
 
   def fromRecord(record: TombstoneRecord): TaskData = {
-    TaskData(token = record.token, fields = Map(Keys -> record.accessPath.keys, Timestamp -> record.timestamp))
+    TaskData(token = record.token, values = Map(Keys -> record.accessPath.keys, Timestamp -> record.timestamp))
   }
 }
 
@@ -53,10 +53,10 @@ object TableTombstoneFeeder {
   val Timestamp = "timestamp"
 
   def toTombstoneRecord(table: Table, data: TaskData): Option[TombstoneRecord] = {
-    if (data.fields.contains(Keys) && data.fields.contains(Timestamp)) {
+    if (data.values.contains(Keys) && data.values.contains(Timestamp)) {
       val token = data.token
-      val timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data.fields(Timestamp).toString.toLong)
-      val keys = data.fields(Keys).asInstanceOf[Seq[String]]
+      val timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data.values(Timestamp).toString.toLong)
+      val keys = data.values(Keys).asInstanceOf[Seq[String]]
       val accessPath = new AccessPath(keys.map(new AccessKey(_)))
       Some(new TombstoneRecord(table, token, accessPath, timestamp))
     } else {

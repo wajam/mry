@@ -42,7 +42,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
 
     val feeder = new TableTimelineFeeder("test", mysqlStorage, table1, List(TokenRange.All), batchSize)
     feeder.init(new TaskContext())
-    val records = feeder.take(100).flatten.toList.map(_.fields("new_timestamp").toString.toLong)
+    val records = feeder.take(100).flatten.toList.map(_.values("new_timestamp").toString.toLong)
 
     records.size should be(70)
     records should be(records.sorted)
@@ -73,7 +73,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
 
     val feeder = new TableTimelineFeeder("test", mysqlStorage, table1, List(TokenRange.All), batchSize)
     feeder.init(new TaskContext())
-    val records = feeder.take(100).flatten.toList.map(_.fields("new_timestamp").toString.toLong)
+    val records = feeder.take(100).flatten.toList.map(_.values("new_timestamp").toString.toLong)
 
     records.size should be(20)
     records should be(records.sorted)
@@ -98,7 +98,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
 
     records.size should be > 0
     records.size should be < 40
-    val timestamps = records.map(_.fields("new_timestamp").toString.toLong)
+    val timestamps = records.map(_.values("new_timestamp").toString.toLong)
     timestamps should be(timestamps.sorted)
 
     // Verify all records tokens are from the expected ranges
@@ -220,7 +220,7 @@ class TestTableTimelineFeeder extends TestMysqlBase {
     val records = feeder.take(100).flatten.toList
 
     records.size should be > 0
-    val strKeys = records.map(_.fields("keys").asInstanceOf[Seq[String]](0))
+    val strKeys = records.map(_.values("keys").asInstanceOf[Seq[String]](0))
     strKeys.count(_ == "key1") should be(records.size)
     strKeys.count(_ == "key2") should be(0)
 

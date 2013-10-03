@@ -56,14 +56,14 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
   def token(record: Record) = record.token
 
   def toRecord(data: TaskData) = {
-    if (data.fields.contains(Keys) && data.fields.contains(Timestamp))
+    if (data.values.contains(Keys) && data.values.contains(Timestamp))
     {
       try {
         val token = data.token
-        val timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data.fields(Timestamp).toString.toLong)
-        val keys = data.fields(Keys).asInstanceOf[Seq[String]]
+        val timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data.values(Timestamp).toString.toLong)
+        val keys = data.values(Keys).asInstanceOf[Seq[String]]
         val accessPath = new AccessPath(keys.map(new AccessKey(_)))
-        val value = data.fields.get(Value).getOrElse(NullValue).asInstanceOf[Value]
+        val value = data.values.get(Value).getOrElse(NullValue).asInstanceOf[Value]
         Some(new Record(table, value, token, accessPath, timestamp = timestamp))
       } catch {
         case e: Exception => {
@@ -78,12 +78,12 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
 
   def fromRecord(record: Record) = {
     TaskData(token = record.token,
-             fields = Map(Keys -> record.accessPath.keys,
+             values = Map(Keys -> record.accessPath.keys,
                           Value -> record.value,
                           Timestamp -> record.timestamp))
   }
 
-  override def toContextData(data: TaskData): ContextData = data.fields - Value + (Token -> data.token)
+  override def toContextData(data: TaskData): ContextData = data.values - Value + (Token -> data.token)
 }
 
 object TableAllLatestFeeder {
