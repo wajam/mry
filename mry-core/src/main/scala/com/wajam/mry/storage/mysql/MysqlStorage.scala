@@ -1,7 +1,6 @@
 package com.wajam.mry.storage.mysql
 
 import com.mchange.v2.c3p0.ComboPooledDataSource
-import com.wajam.nrv.Logging
 import java.sql.{PreparedStatement, ResultSet, SQLException, Connection}
 import com.wajam.mry.execution._
 import com.wajam.mry.api.protobuf.ProtobufTranslator
@@ -13,7 +12,7 @@ import java.util.concurrent.{TimeUnit, ScheduledThreadPoolExecutor}
 import com.wajam.nrv.service.TokenRange
 import com.yammer.metrics.core.Gauge
 import annotation.tailrec
-import com.wajam.commons.Closable
+import com.wajam.commons.{Logging, Closable}
 import com.wajam.nrv.utils.timestamp.Timestamp
 
 /**
@@ -396,11 +395,17 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
       // Set or delete each record
       val storage = transaction.from("mysql")
+      var deleted = Set[CompositeKey[(String, String)]]()
       for (record <- records.sortBy(_.table.depth)) {
         val tableNames = record.table.path.map(_.name)
         val keys = record.accessPath.keys
         if (record.value.isNull) {
-          storage.from(tableNames).delete(keys)
+          // Delete record only if an ancestor record has not previously been deleted in the same transaction
+          val deleteKey = CompositeKey(record)
+          if (deleteKey.ancestors.forall(!deleted.contains(_))) {
+            storage.from(tableNames).delete(keys)
+            deleted += deleteKey
+          }
         } else {
           storage.from(tableNames).set(keys, record.value)
         }
@@ -419,8 +424,8 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
    * @param endTimestamp end timestamp (inclusive)
    * @param ranges token ranges
    * @param recordsCacheSize maximum number of records cached in this iterator. This is not the mutation group size but
-   *                        the number of records contained in the queued mutation group. A limit of 100 records can be
-   *                        reach by having 4 mutation groups of 25 records.
+   *                         the number of records contained in the queued mutation group. A limit of 100 records can be
+   *                         reach by having 4 mutation groups of 25 records.
    * @param tableSummarySize number of transaction summary records loaded per table per call from database
    * @param tableSummaryThreshold threshold per table below which more transaction summary records are loaded
    */
@@ -454,7 +459,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
     // Transaction summary cached per table.
     private val tablesCache: Seq[TableSummary] = {
       model.allHierarchyTables.map(table => {
-        val initialTimestamp = Timestamp(findInitialTableTimestamp(table) -1)
+        val initialTimestamp = Timestamp(findInitialTableTimestamp(table) - 1)
         loadTableSummary(TableSummary(table, initialTimestamp))
       }).toSeq
     }
