@@ -952,6 +952,33 @@ class MutationRecord {
   }
 }
 
+case class CompositeKey[T](keys: T*)(implicit ord: math.Ordering[T]) extends Comparable[CompositeKey[T]] {
+  def compareTo(that: CompositeKey[T]) = math.Ordering.Iterable[T].compare(keys, that.keys)
+
+  def head = CompositeKey(keys.head)
+
+  def parent = CompositeKey(keys.dropRight(1): _*)
+
+  def ancestors: List[CompositeKey[T]] = {
+    if (keys.size > 1) {
+      parent :: parent.ancestors
+    } else {
+      Nil
+    }
+  }
+}
+
+object CompositeKey {
+  def apply(table: Table, keys: String*): CompositeKey[(String, String)] = {
+    require(table.path.size == keys.size)
+    new CompositeKey(table.path.map(_.name).zip(keys): _*)
+  }
+
+  def apply(record: Record): CompositeKey[(String, String)] = {
+    CompositeKey(record.table, record.accessPath.keys: _*)
+  }
+}
+
 class RecordIterator(storage: MysqlStorage, results: SqlResults, table: Table) extends Traversable[Record] {
   private var hasNext = false
   private var closed = false
