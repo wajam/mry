@@ -1421,7 +1421,9 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
     // Create and apply a mutation group which deletes the intermediate record (i.e. with a parent and a child)
     val ts2 = Timestamp(2)
     val grp2 = storage.MutationGroup(tk1, ts2, List(
-      Record(table1_1_r1.table, table1_1_r1.token, ts2, NullValue, table1_1_r1.accessPath.keys: _*)))
+      Record(table1_1_r1.table, table1_1_r1.token, ts2, NullValue, table1_1_r1.accessPath.keys: _*),
+      Record(table1_1_1_r1.table, table1_1_1_r1.token, ts2, NullValue, table1_1_1_r1.accessPath.keys: _*))
+    )
     exec(grp2.applyTo(_), commit = true, onTimestamp = ts2)
 
     // Ensure mutations beeing applied
@@ -1568,5 +1570,37 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
       t.returns(value3)
     }, commit = true)
     assert(value3.asInstanceOf[MapValue]("key3.1").equalsValue("value3.1bis"))
+  }
+
+  test("test composite key") {
+    CompositeKey("abc", "0", "1", "2").compareTo(CompositeKey("abc", "0", "1", "2")) should be(0)
+    CompositeKey("abc", "0", "1", "2").compareTo(CompositeKey("abc", "0", "1", "1")) should be > 0
+    CompositeKey("abc", "0", "1", "2").compareTo(CompositeKey("abc", "0", "1")) should be > 0
+    CompositeKey("abc", "0", "1", "2").compareTo(CompositeKey("abc", "0", "1", "3")) should be < 0
+    CompositeKey("abc", "0", "1", "2").compareTo(CompositeKey("abc", "0", "1", "2", "3")) should be < 0
+    CompositeKey("abc", "0", "1", "2").compareTo(CompositeKey("abc", "0", "1", "1", "1")) should be > 0
+
+    CompositeKey("abc", "0", "1", "2", "3").head should be(CompositeKey("abc"))
+    CompositeKey("abc", "0", "1", "2", "3").parent should be(CompositeKey("abc", "0", "1", "2"))
+
+    CompositeKey(table1_1_1, "0", "1", "2").head should be(CompositeKey(table1, "0"))
+    CompositeKey(table1_1_1, "0", "1", "2").parent should be(CompositeKey(table1_1, "0", "1"))
+  }
+
+  test("test composite key subset") {
+    import collection.JavaConversions._
+    import java.util
+    
+    val set = new util.TreeSet(
+      List(CompositeKey(table2_1, "2", "1"), CompositeKey(table1, "9"), CompositeKey(table1, "0")))
+    set.toList should be(List(CompositeKey(table1, "0"), CompositeKey(table1, "9"), CompositeKey(table2_1, "2", "1")))
+
+    val k1 = CompositeKey(table1_1_1, "0", "1", "2")
+    set.subSet(k1.head, true, k1.parent, true).toList should be(List(CompositeKey(table1, "0")))
+
+    val k2 = CompositeKey(table2_1_1, "2", "1", "0")
+    set.subSet(k2.head, true, k2.parent, true).toList should be(List(CompositeKey(table2_1, "2", "1")))
+
+    set.subSet(CompositeKey(table1_1, "3", "5"), true, CompositeKey(table1_1, "5", "3"), true).toList should be(Nil)
   }
 }
