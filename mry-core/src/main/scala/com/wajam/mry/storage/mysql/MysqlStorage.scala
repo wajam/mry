@@ -392,20 +392,19 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
      */
     def applyTo(transaction: Transaction) {
       import com.wajam.mry.execution.Implicits._
-      import java.util
 
       // Set or delete each record
       val storage = transaction.from("mysql")
-      val deleted: util.NavigableSet[CompositeKey[(String, String)]] = new util.TreeSet()
+      var deleted = Set[CompositeKey[(String, String)]]()
       for (record <- records.sortBy(_.table.depth)) {
         val tableNames = record.table.path.map(_.name)
         val keys = record.accessPath.keys
         if (record.value.isNull) {
-          // Delete record only if parent record not previously deleted in the same transaction
+          // Delete record only if an ancestor record has not previously been deleted in the same transaction
           val deleteKey = CompositeKey(record)
-          if (keys.size == 1 || deleted.subSet(deleteKey.head, true, deleteKey.parent, true).isEmpty) {
+          if (deleteKey.ancestors.forall(!deleted.contains(_))) {
             storage.from(tableNames).delete(keys)
-            deleted.add(deleteKey)
+            deleted += deleteKey
           }
         } else {
           storage.from(tableNames).set(keys, record.value)

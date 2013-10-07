@@ -1582,9 +1582,14 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
 
     CompositeKey("abc", "0", "1", "2", "3").head should be(CompositeKey("abc"))
     CompositeKey("abc", "0", "1", "2", "3").parent should be(CompositeKey("abc", "0", "1", "2"))
+    CompositeKey("abc", "0").ancestors should be(List(CompositeKey("abc")))
+    CompositeKey("abc").ancestors should be(Nil)
+    CompositeKey(Seq[String]():_*).ancestors should be(Nil)
 
     CompositeKey(table1_1_1, "0", "1", "2").head should be(CompositeKey(table1, "0"))
     CompositeKey(table1_1_1, "0", "1", "2").parent should be(CompositeKey(table1_1, "0", "1"))
+    CompositeKey(table1_1_1, "0", "1", "2").ancestors should be(List(CompositeKey(table1_1, "0", "1"), CompositeKey(table1, "0")))
+    CompositeKey(table1, "0").ancestors should be(Nil)
   }
 
   test("test composite key subset") {
@@ -1592,11 +1597,14 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
     import java.util
     
     val set = new util.TreeSet(
-      List(CompositeKey(table2_1, "2", "1"), CompositeKey(table1, "9"), CompositeKey(table1, "0")))
-    set.toList should be(List(CompositeKey(table1, "0"), CompositeKey(table1, "9"), CompositeKey(table2_1, "2", "1")))
+      List(CompositeKey(table2_1, "2", "1"), CompositeKey(table1, "9"),
+        CompositeKey(table1, "0"), CompositeKey(table1_1, "0", "0")))
+    set.toList should be(List(
+      CompositeKey(table1, "0"), CompositeKey(table1_1, "0", "0"),
+      CompositeKey(table1, "9"), CompositeKey(table2_1, "2", "1")))
 
     val k1 = CompositeKey(table1_1_1, "0", "1", "2")
-    set.subSet(k1.head, true, k1.parent, true).toList should be(List(CompositeKey(table1, "0")))
+    set.subSet(k1.head, true, k1.parent, true).toList should be(List(CompositeKey(table1, "0"), CompositeKey(table1_1, "0", "0")))
 
     val k2 = CompositeKey(table2_1_1, "2", "1", "0")
     set.subSet(k2.head, true, k2.parent, true).toList should be(List(CompositeKey(table2_1, "2", "1")))

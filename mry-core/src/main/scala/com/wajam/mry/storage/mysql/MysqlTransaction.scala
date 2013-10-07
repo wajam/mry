@@ -958,6 +958,14 @@ case class CompositeKey[T](keys: T*)(implicit ord: math.Ordering[T]) extends Com
   def head = CompositeKey(keys.head)
 
   def parent = CompositeKey(keys.dropRight(1): _*)
+
+  def ancestors: List[CompositeKey[T]] = {
+    if (keys.size > 1) {
+      parent :: parent.ancestors
+    } else {
+      Nil
+    }
+  }
 }
 
 object CompositeKey {
