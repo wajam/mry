@@ -2,7 +2,7 @@ package com.wajam.mry.execution
 
 import com.wajam.mry.storage.{Storage, StorageTransaction => StorageTransaction}
 import com.wajam.nrv.service.Resolver
-import com.wajam.nrv.Logging
+import com.wajam.commons.Logging
 import com.wajam.nrv.cluster.Cluster
 import com.wajam.nrv.utils.timestamp.Timestamp
 

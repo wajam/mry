@@ -1,6 +1,6 @@
 package com.wajam.mry.storage.mysql
 
-import com.wajam.nrv.Logging
+import com.wajam.commons.Logging
 import com.wajam.nrv.service.{TokenRangeSeq, TokenRange}
 import com.wajam.mry.execution.{NullValue, Value}
 import scala.annotation.tailrec
