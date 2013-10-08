@@ -260,9 +260,9 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
       case TimelineSelectMode.FromTimestamp => Seq(
         """
               AND ai.ts >= %1$d AND ai.ts <= %3$d
-              ORDER BY ai.ts ASC
+              ORDER BY ai.ts, ai.tk, %4$s ASC
               LIMIT 0, %2$d
-        """.format(timestamp.value, count, lastConsistentTimestamp.value)
+        """.format(timestamp.value, count, lastConsistentTimestamp.value, projInnerKeys)
       )
       case TimelineSelectMode.AtTimestamp => Seq("AND ai.ts = %1$d".format(timestamp.value))
     })).mkString
@@ -282,7 +282,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *       ))
      *       WHERE ((ai.tk >= 3221225461 AND ai.tk <= 3310703945))
      *       AND ai.ts >= 13667145296450014 AND ai.ts <= 13667318799830001
-     *       ORDER BY ai.ts ASC
+     *       ORDER BY ai.ts, ai.tk, ai.k1,ai.k2,ai.k3 ASC
      *       LIMIT 0, 100
      *     ) AS q1
      *     JOIN `table1_data` AS ad ON (q1.k1 = ad.k1 AND q1.k2 = ad.k2 AND q1.k3 = ad.k3 AND q1.tk = ad.tk AND q1.new_ts = ad.ts)
