@@ -2,6 +2,7 @@ package com.wajam.mry.storage.mysql
 
 import com.wajam.nrv.Logging
 import com.wajam.nrv.service.{TokenRangeSeq, TokenRange}
+import com.wajam.spnl.TaskData
 
 /**
  * Fetches tombstone records (i.e. with null value) from specified table.
@@ -25,8 +26,8 @@ abstract class TableTombstoneFeeder(val name: String, storage: MysqlStorage, tab
 
   def token(record: TombstoneRecord) = record.token
 
-  def toRecord(data: Map[String, Any]): Option[TombstoneRecord] = {
-    if (data.contains(Keys) && data.contains(Token) && data.contains(Timestamp))
+  def toRecord(data: TaskData): Option[TombstoneRecord] = {
+    if (data.values.contains(Keys) && data.values.contains(Timestamp))
     {
       try {
         toTombstoneRecord(table, data)
@@ -41,8 +42,8 @@ abstract class TableTombstoneFeeder(val name: String, storage: MysqlStorage, tab
     }
   }
 
-  def fromRecord(record: TombstoneRecord): Map[String, Any] = {
-    Map(Keys -> record.accessPath.keys, Token -> record.token.toString, Timestamp -> record.timestamp)
+  def fromRecord(record: TombstoneRecord): TaskData = {
+    TaskData(token = record.token, values = Map(Keys -> record.accessPath.keys, Timestamp -> record.timestamp))
   }
 }
 
@@ -51,11 +52,11 @@ object TableTombstoneFeeder {
   val Token = "token"
   val Timestamp = "timestamp"
 
-  def toTombstoneRecord(table: Table, data: Map[String, Any]): Option[TombstoneRecord] = {
-    if (data.contains(Keys) && data.contains(Token) && data.contains(Timestamp)) {
-      val token = data(Token).toString.toLong
-      val timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data(Timestamp).toString.toLong)
-      val keys = data(Keys).asInstanceOf[Seq[String]]
+  def toTombstoneRecord(table: Table, data: TaskData): Option[TombstoneRecord] = {
+    if (data.values.contains(Keys) && data.values.contains(Timestamp)) {
+      val token = data.token
+      val timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data.values(Timestamp).toString.toLong)
+      val keys = data.values(Keys).asInstanceOf[Seq[String]]
       val accessPath = new AccessPath(keys.map(new AccessKey(_)))
       Some(new TombstoneRecord(table, token, accessPath, timestamp))
     } else {
