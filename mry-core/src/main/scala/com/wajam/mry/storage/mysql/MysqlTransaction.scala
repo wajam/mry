@@ -287,7 +287,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *     ) AS q1
      *     JOIN `table1_data` AS ad ON (q1.k1 = ad.k1 AND q1.k2 = ad.k2 AND q1.k3 = ad.k3 AND q1.tk = ad.tk AND q1.new_ts = ad.ts)
      *     LEFT JOIN `table1_data` AS bd ON (q1.k1 = bd.k1 AND q1.k2 = bd.k2 AND q1.k3 = bd.k3 AND q1.tk = bd.tk AND q1.old_ts = bd.ts)
-     *     ORDER BY ad.ts ASC;
+     *     ORDER BY ad.ts, q1.tk, q1.k1, q1.k2, q1.k3 ASC;
      */
     val sql = """
                 SELECT q1.tk, ad.ts, ad.ec, ad.d, bd.ts, bd.ec, bd.d, %1$s
@@ -304,7 +304,7 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
                 ) AS q1
                 JOIN `%2$s_data` AS ad ON (%3$s AND q1.tk = ad.tk AND q1.new_ts = ad.ts)
                 LEFT JOIN `%2$s_data` AS bd ON (%6$s AND q1.tk = bd.tk AND q1.old_ts = bd.ts)
-                ORDER BY ad.ts ASC;
+                ORDER BY ad.ts, q1.tk, %1$s ASC;
               """.format(projOuterKeys, fullTableName, whereKeys1, whereKeys2, whereKeys3, whereKeys4, innerWhere, projInnerKeys)
 
     val ret = ArrayBuffer[MutationRecord]()
