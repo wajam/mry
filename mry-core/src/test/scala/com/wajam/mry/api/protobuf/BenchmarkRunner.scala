@@ -6,7 +6,7 @@ import com.wajam.mry.execution.Implicits._
 
 object BenchmarkRunner extends App {
 
-  val repetition = Seq(10, 100, 1000, 2500, 5000, 10000, 50000, 100000)
+  val repetition = Seq(10, 100, 1000, 10000, 100000)
 
   private def randomTransaction(opCount: Int) = {
     val t = new Transaction
@@ -25,6 +25,10 @@ object BenchmarkRunner extends App {
     method()
 
     val endTime = System.currentTimeMillis()
+
+    // GC and wait to clear up the air
+    System.gc()
+    Thread.sleep(500)
 
     endTime - startTime
   }
@@ -93,7 +97,10 @@ object BenchmarkRunner extends App {
   val repeat = 1
 
   repetition.foreach { value =>
-    runTests(value)
+
+    (1 to 10).foreach { i =>
+      runTests(value)
+    }
   }
 
 }

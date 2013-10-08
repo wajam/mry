@@ -5,6 +5,7 @@ import scala.collection.JavaConversions._
 import com.wajam.mry.execution._
 import com.wajam.mry.api.protobuf.MryProtobuf._
 import com.wajam.mry.api.Transport
+import java.util
 
 /**
  * Protocol buffers translator
@@ -60,16 +61,31 @@ class ProtobufTranslator extends ProtocolTranslator {
  * Allow stateful and threadsafe operation for ProtobufTranslator by instancing this class at every call.
  * It also keep ProtobufTranslator class more readable and more relevant to it's parent interface.
  *
+ * Note on implementation: The message is structured somewhat like a computer heap. All the data is stored without so
+ * much structure in a list at the beginning of the message (the heap), its position in that list is data's address.
+ * Then the Transaction reference the encoded data via its address, and the object structure is only a tree
+ * of pointers, all the data being in the heap. This simplify the .proto file, make it easier to have proper inheritance,
+ * allows objects to be encoded and decoded which less restriction on the order of the processing, and finally it allows
+ * pointer reference (ex: A, B pointing to C, would still point to the C' after decoding, instead of pointing to C'1
+ * and C'2 that would have the same data but would not be the same instance.
  */
 private class InternalProtobufTranslator {
+
+
+  // TODO: This implementation is inefficient (while good enough) for large number of operation (ex: n >= 10000).
+  // It copies everything from the original Transaction to temporary lists, and do a lot of map, zip and iteration over
+  // it, and then copies it again to the ProtocolBuffer structure. Using iterator instead of temporary lists,
+  // would save that copying in some cases. All of this is linear time however, so it's an optimization, not a priority.
+  // However, there is a few transaction, if any, of that size and it's still manageable, it just not optimal.
+  // Also, the current implementation is probably more readable.
 
   private var currentHeapId = 1 // I don't think will have more than 2^31 object, skip 0, since 0==unassigned
 
   private val pb2obj = new collection.mutable.HashMap[Int, AnyRef] // Encoded HeapId to decoded instance mapping
-  private val obj2pb = new collection.mutable.HashMap[AnyRef, Int] // Live instance to encoded HeapId mapping
+  private val obj2pb = new util.IdentityHashMap[AnyRef, Int] // Live instance to encoded HeapId mapping.
 
   // Used by encoding and decoding as temporary storage for encoded/decoded object
-  private var tempHeap = new collection.mutable.ListBuffer[AnyRef]
+  private var tempHeap = new collection.mutable.ArrayBuffer[AnyRef]
 
   private def registerEncodedData(pbHeapId: Int, instance: AnyRef) = {
     obj2pb += instance -> pbHeapId
@@ -81,8 +97,7 @@ private class InternalProtobufTranslator {
 
   private def getHeapIpForEncodedData(instance: AnyRef): Int = {
 
-    // Compare by memory HeapId
-    obj2pb.find(instance eq _._1).get._2
+    obj2pb(instance)
   }
 
   private def getEntityFromDecodedData[T](HeapId: Int): T = {
@@ -298,7 +313,12 @@ private class InternalProtobufTranslator {
     varId.zipWithIndex.foreach((v) => registerEncodedData(v._1, block.variables(v._2)))
     pBlock.addAllVariableHeapIds(varId.map(_.asInstanceOf[java.lang.Integer]))
 
-    pBlock.addAllOperationHeapIds(block.operations.map(encodePOperation(_)).map(addToHeap(_)).map(_.asInstanceOf[java.lang.Integer]))
+    def addOperation(op: Operation) = {
+      val pOp = encodePOperation(op)
+      addToHeap(pOp).asInstanceOf[java.lang.Integer]
+    }
+
+    pBlock.addAllOperationHeapIds(block.operations.map(addOperation))
     pBlock.setVarSeq(block.varSeq)
 
     pBlock
