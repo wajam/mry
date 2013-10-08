@@ -83,6 +83,7 @@ class TableTimelineFeeder(val name: String, storage: MysqlStorage, table: Table,
       mutations.map { mr =>
         TaskData(
           token = mr.token,
+          id = mr.newTimestamp.value,
           values = Map(
             "keys" -> mr.accessPath.keys,
             "old_timestamp" -> mr.oldTimestamp,

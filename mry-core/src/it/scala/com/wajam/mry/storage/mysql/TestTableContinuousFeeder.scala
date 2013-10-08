@@ -39,7 +39,7 @@ class TestTableContinuousFeeder extends FunSuite {
 
     def toRecord(data: TaskData) = Some(data.token)
 
-    def fromRecord(record: Long) = TaskData(token = record)
+    def fromRecord(record: Long) = TaskData(token = record, id = 0)
   }
 
   test("feeder should loop when loaded all data - large load limit") {

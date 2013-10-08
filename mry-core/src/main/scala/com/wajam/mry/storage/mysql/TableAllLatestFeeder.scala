@@ -78,6 +78,7 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
 
   def fromRecord(record: Record) = {
     TaskData(token = record.token,
+             id = record.timestamp.value,
              values = Map(Keys -> record.accessPath.keys,
                           Value -> record.value,
                           Timestamp -> record.timestamp))

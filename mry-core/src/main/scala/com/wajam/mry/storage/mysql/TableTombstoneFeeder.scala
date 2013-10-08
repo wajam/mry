@@ -43,7 +43,7 @@ abstract class TableTombstoneFeeder(val name: String, storage: MysqlStorage, tab
   }
 
   def fromRecord(record: TombstoneRecord): TaskData = {
-    TaskData(token = record.token, values = Map(Keys -> record.accessPath.keys, Timestamp -> record.timestamp))
+    TaskData(token = record.token, id = record.timestamp.value, values = Map(Keys -> record.accessPath.keys, Timestamp -> record.timestamp))
   }
 }
 

@@ -22,9 +22,9 @@ trait ResumableRecordDataFeeder extends RecordDataFeeder {
 
   def loadRecords(range: TokenRange, startAfterRecord: Option[DataRecord]): Iterable[DataRecord]
 
-  def toContextData(data: TaskData): ContextData = data.values + ("token" -> data.token)
+  def toContextData(data: TaskData): ContextData = data.values + ("token" -> data.token) + ("id" -> data.id)
 
-  def fromContextData(data: ContextData): TaskData = TaskData(data("token").toString.toLong, values = data - "token")
+  def fromContextData(data: ContextData): TaskData = TaskData(data("token").toString.toLong, id = data("id").toString.toLong, values = data - "token")
 
   def ack(data: TaskData) {
     // Update context with the latest acknowledged record data

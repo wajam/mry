@@ -24,7 +24,7 @@ class TestTableTombstoneFeeder extends TestMysqlBase {
     import TableTombstoneFeeder.{Keys => KEYS, Token => TOKEN, Timestamp => TIMESTAMP}
 
     val feeder = new TableTombstoneFeeder("test", mysqlStorage, table1_1, Seq(TokenRange.All), 0) with TableContinuousFeeder
-    val expectedData = TaskData(token = 101, values = Map(KEYS -> Seq("k1", "k2"), TIMESTAMP -> Timestamp(12L)))
+    val expectedData = TaskData(token = 101, id = 0, values = Map(KEYS -> Seq("k1", "k2"), TIMESTAMP -> Timestamp(12L)))
     val record = feeder.toRecord(expectedData)
     record should not be None
     feeder.fromRecord(record.get) should be(expectedData)
