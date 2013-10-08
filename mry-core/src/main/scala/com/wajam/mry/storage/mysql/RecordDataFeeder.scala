@@ -2,15 +2,16 @@ package com.wajam.mry.storage.mysql
 
 import com.wajam.nrv.service.TokenRange
 import com.wajam.spnl.feeder.Feeder
-import com.wajam.spnl.TaskContext
+import com.wajam.spnl.{TaskData, TaskContext}
+import com.wajam.spnl.TaskContext.ContextData
 
 trait RecordDataFeeder extends Feeder {
 
   type DataRecord
 
-  def toRecord(data: Map[String, Any]): Option[DataRecord]
+  def toRecord(data: TaskData): Option[DataRecord]
 
-  def fromRecord(record: DataRecord): Map[String, Any]
+  def fromRecord(record: DataRecord): TaskData
 }
 
 trait ResumableRecordDataFeeder extends RecordDataFeeder {
@@ -21,9 +22,11 @@ trait ResumableRecordDataFeeder extends RecordDataFeeder {
 
   def loadRecords(range: TokenRange, startAfterRecord: Option[DataRecord]): Iterable[DataRecord]
 
-  def toContextData(data: Map[String, Any]): Map[String, Any] = data
+  def toContextData(data: TaskData): ContextData = data.values + ("token" -> data.token)
 
-  def ack(data: Map[String, Any]) {
+  def fromContextData(data: ContextData): TaskData = TaskData(data("token").toString.toLong, values = data - "token")
+
+  def ack(data: TaskData) {
     // Update context with the latest acknowledged record data
     context.data = toContextData(data).map(entry => entry match {
       case (k, v: String) => (k, v)
