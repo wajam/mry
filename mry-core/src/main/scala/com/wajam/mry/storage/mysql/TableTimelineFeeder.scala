@@ -1,6 +1,6 @@
 package com.wajam.mry.storage.mysql
 
-import com.wajam.nrv.Logging
+import com.wajam.commons.Logging
 import com.wajam.spnl.feeder.CachedDataFeeder
 import com.wajam.spnl.{TaskData, TaskContext}
 import com.wajam.mry.storage.mysql.TimelineSelectMode.{FromTimestamp, AtTimestamp}
