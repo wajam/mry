@@ -71,7 +71,6 @@ class ProtobufTranslator extends ProtocolTranslator {
  */
 private class InternalProtobufTranslator {
 
-
   // TODO: This implementation is inefficient (while good enough) for large number of operation (ex: n >= 10000).
   // It copies everything from the original Transaction to temporary lists, and do a lot of map, zip and iteration over
   // it, and then copies it again to the ProtocolBuffer structure. Using iterator instead of temporary lists,
@@ -86,7 +85,7 @@ private class InternalProtobufTranslator {
   private val obj2pb = new util.IdentityHashMap[AnyRef, Int] // Live instance to encoded HeapId mapping.
 
   // Used by encoding and decoding as temporary storage for encoded/decoded object
-  private var tempHeap = new collection.mutable.ArrayBuffer[AnyRef]
+  private val tempHeap = new collection.mutable.ArrayBuffer[AnyRef]
 
   private def registerEncodedData(pbHeapId: Int, instance: AnyRef) = {
     obj2pb += instance -> pbHeapId
@@ -363,7 +362,7 @@ private class InternalProtobufTranslator {
     pOperation.setSourceHeapId(getHeapIpForEncodedData(operation.source))
 
     val withFrom = (from: Seq[Variable]) =>
-    // Variable are already listed in the parent block, so don't duplicate
+      // Variable are already listed in the parent block, so don't duplicate
       pOperation.addAllVariableHeapIds(from.map(getHeapIpForEncodedData(_).asInstanceOf[java.lang.Integer]))
 
     val withIntoAndSeqObject = (into: Variable, objects: Seq[Object]) =>
