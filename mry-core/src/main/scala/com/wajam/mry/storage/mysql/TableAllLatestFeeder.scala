@@ -5,7 +5,7 @@ import com.wajam.nrv.service.{TokenRangeSeq, TokenRange}
 import com.wajam.mry.execution.{NullValue, Value}
 import scala.annotation.tailrec
 import com.wajam.spnl.TaskContext.ContextData
-import com.wajam.spnl.TaskData
+import com.wajam.spnl.feeder.Feeder.FeederData
 
 /**
  * Fetches all current defined (not null) data on a table.
@@ -55,15 +55,15 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
 
   def token(record: Record) = record.token
 
-  def toRecord(data: TaskData) = {
-    if (data.values.contains(Keys) && data.values.contains(Timestamp))
+  def toRecord(data: FeederData) = {
+    if (data.contains(Keys) && data.contains(Token) && data.contains(Timestamp))
     {
       try {
-        val token = data.token
-        val timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data.values(Timestamp).toString.toLong)
-        val keys = data.values(Keys).asInstanceOf[Seq[String]]
+        val token = data(Token).toString.toLong
+        val timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data(Timestamp).toString.toLong)
+        val keys = data(Keys).asInstanceOf[Seq[String]]
         val accessPath = new AccessPath(keys.map(new AccessKey(_)))
-        val value = data.values.get(Value).getOrElse(NullValue).asInstanceOf[Value]
+        val value = data.get(Value).getOrElse(NullValue).asInstanceOf[Value]
         Some(new Record(table, value, token, accessPath, timestamp = timestamp))
       } catch {
         case e: Exception => {
@@ -77,14 +77,13 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
   }
 
   def fromRecord(record: Record) = {
-    TaskData(token = record.token,
-             id = record.timestamp.value,
-             values = Map(Keys -> record.accessPath.keys,
-                          Value -> record.value,
-                          Timestamp -> record.timestamp))
+    Map(Keys -> record.accessPath.keys,
+        Token -> record.token.toString,
+        Value -> record.value,
+        Timestamp -> record.timestamp)
   }
 
-  override def toContextData(data: TaskData): ContextData = data.values - Value + (Token -> data.token)
+  override def toContextData(data: FeederData): ContextData = data - Value
 }
 
 object TableAllLatestFeeder {

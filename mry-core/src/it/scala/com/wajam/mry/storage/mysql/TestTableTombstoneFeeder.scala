@@ -2,12 +2,11 @@ package com.wajam.mry.storage.mysql
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.mry.execution.Implicits._
 import com.wajam.nrv.service.TokenRange
-import com.wajam.nrv.utils.timestamp.Timestamp
+import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.commons.ControlableCurrentTime
-import com.wajam.spnl.TaskData
+import com.wajam.nrv.utils.timestamp.Timestamp
 
 @RunWith(classOf[JUnitRunner])
 class TestTableTombstoneFeeder extends TestMysqlBase {
@@ -24,7 +23,7 @@ class TestTableTombstoneFeeder extends TestMysqlBase {
     import TableTombstoneFeeder.{Keys => KEYS, Token => TOKEN, Timestamp => TIMESTAMP}
 
     val feeder = new TableTombstoneFeeder("test", mysqlStorage, table1_1, Seq(TokenRange.All), 0) with TableContinuousFeeder
-    val expectedData = TaskData(token = 101, id = 0, values = Map(KEYS -> Seq("k1", "k2"), TIMESTAMP -> Timestamp(12L)))
+    val expectedData = Map(KEYS -> Seq("k1", "k2"), TOKEN -> "101", TIMESTAMP -> Timestamp(12L))
     val record = feeder.toRecord(expectedData)
     record should not be None
     feeder.fromRecord(record.get) should be(expectedData)
