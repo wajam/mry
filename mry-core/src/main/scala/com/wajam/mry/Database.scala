@@ -3,7 +3,8 @@ package com.wajam.mry
 import api.MryCodec
 import execution._
 import storage.Storage
-import com.wajam.nrv.{TimeoutException, Logging}
+import com.wajam.commons.Logging
+import com.wajam.nrv.TimeoutException
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service._
 import com.wajam.tracing.Traced
@@ -23,7 +24,7 @@ class Database(serviceName: String = "database")
 
   var storages = Map[String, Storage]()
 
-  private var timestampGenerator = new TimestampIdGenerator with SynchronizedIdGenerator[Long]
+  private val timestampGenerator = new TimestampIdGenerator with SynchronizedIdGenerator[Long]
 
   // Set specific resolver and data codec
   applySupportOptions(new ActionSupportOptions(resolver = Some(Database.TOKEN_RESOLVER), nrvCodec = Some(new MryCodec)))

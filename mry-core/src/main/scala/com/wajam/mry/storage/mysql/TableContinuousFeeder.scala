@@ -2,7 +2,7 @@ package com.wajam.mry.storage.mysql
 
 import com.wajam.nrv.service.{TokenRangeSeq, TokenRange}
 import com.wajam.spnl.feeder.CachedDataFeeder
-import com.wajam.nrv.Logging
+import com.wajam.commons.Logging
 import com.wajam.spnl.TaskContext
 
 /**
