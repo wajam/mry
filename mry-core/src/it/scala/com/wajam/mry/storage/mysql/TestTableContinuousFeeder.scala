@@ -5,10 +5,10 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers._
 import com.wajam.nrv.service.{TokenRangeSeq, TokenRange}
-import com.wajam.spnl.{TaskData, TaskContext}
+import com.wajam.spnl.TaskContext
 import org.mockito.Mockito._
 import com.wajam.mry.storage.mysql.FeederTestHelper._
-import com.wajam.spnl.TaskContext.ContextData
+import com.wajam.spnl.feeder.Feeder.FeederData
 
 @RunWith(classOf[JUnitRunner])
 class TestTableContinuousFeeder extends FunSuite {
@@ -37,9 +37,9 @@ class TestTableContinuousFeeder extends FunSuite {
       }).take(limit)
     }
 
-    def toRecord(data: TaskData) = Some(data.token)
+    def toRecord(data: FeederData) = data.get("token").map(_.toString.toLong)
 
-    def fromRecord(record: Long) = TaskData(token = record)
+    def fromRecord(record: Long) = Map("token" -> record)
   }
 
   test("feeder should loop when loaded all data - large load limit") {
@@ -50,7 +50,7 @@ class TestTableContinuousFeeder extends FunSuite {
     feeder.completedCount.count should be(0)
 
     val records = feeder.take(50).flatten.toList
-    records.map(_.token).take(15) should be(List(2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12, 2))
+    records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12, 2))
     feeder.completedCount.count should be(feeder.firstRangeLoadCount)
   }
 
@@ -62,7 +62,7 @@ class TestTableContinuousFeeder extends FunSuite {
     feeder.completedCount.count should be(0)
 
     val records = feeder.take(50).flatten.toList
-    records.map(_.token).take(15) should be(List(2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12, 2))
+    records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12, 2))
     feeder.completedCount.count should be(feeder.firstRangeLoadCount)
   }
 
@@ -71,7 +71,7 @@ class TestTableContinuousFeeder extends FunSuite {
     val feeder = new ContinuousTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext(Map("token" -> 11)))
     val records = feeder.take(50).flatten.toList
-    records.map(_.token).take(15) should be(List(12, 2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12))
+    records.flatMap(feeder.toRecord).take(15) should be(List(12, 2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12))
   }
 
   test("should start from beginning when out of range context position") {
@@ -79,7 +79,7 @@ class TestTableContinuousFeeder extends FunSuite {
     val feeder = new ContinuousTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext(Map("token" -> 8)))
     val records = feeder.take(50).flatten.toList
-    records.map(_.token).take(15) should be(List(2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12, 2))
+    records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12, 2))
   }
 
   test("should start from beginning when context is empty") {
@@ -87,7 +87,7 @@ class TestTableContinuousFeeder extends FunSuite {
     val feeder = new ContinuousTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext())
     val records = feeder.take(50).flatten.toList
-    records.map(_.token).take(15) should be(List(2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12, 2))
+    records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12, 2))
   }
 
   test("should resume from same position if load fail") {
@@ -97,11 +97,11 @@ class TestTableContinuousFeeder extends FunSuite {
 
     when(spyFeeder.loadRecords(TokenRange(10, 12), Some(11L))).thenThrow(new RuntimeException())
     val recordsWithError = spyFeeder.take(50).flatten.toList
-    recordsWithError.map(_.token) should be(List(2, 3, 4, 5, 10, 11))
+    recordsWithError.flatMap(feeder.toRecord) should be(List(2, 3, 4, 5, 10, 11))
 
     reset(spyFeeder)
     val records = spyFeeder.take(50).flatten.toList
-    records.map(_.token).take(15) should be(List(12, 2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12))
+    records.flatMap(feeder.toRecord).take(15) should be(List(12, 2, 3, 4, 5, 10, 11, 12, 2, 3, 4, 5, 10, 11, 12))
   }
 
   test("should save last ack position in context") {
@@ -109,6 +109,6 @@ class TestTableContinuousFeeder extends FunSuite {
     val feeder = new ContinuousTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext())
     feeder.ack(feeder.fromRecord(11L))
-    feeder.toRecord(feeder.fromContextData(feeder.context.data)) should be(Some(11L))
+    feeder.toRecord(feeder.context.data) should be(Some(11L))
   }
 }

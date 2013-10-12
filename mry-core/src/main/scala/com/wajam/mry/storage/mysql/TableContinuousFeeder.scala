@@ -24,7 +24,7 @@ trait TableContinuousFeeder extends CachedDataFeeder with ResumableRecordDataFee
 
   def init(context: TaskContext) {
     currentContext = context
-    if(!context.data.isEmpty) lastRecord = toRecord(fromContextData(context.data))
+    lastRecord = toRecord(context.data)
   }
 
   def loadMore() = {
