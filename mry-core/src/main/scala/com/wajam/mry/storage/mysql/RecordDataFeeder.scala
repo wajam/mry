@@ -4,6 +4,7 @@ import com.wajam.nrv.service.TokenRange
 import com.wajam.spnl.feeder.Feeder
 import com.wajam.spnl.TaskContext
 import com.wajam.spnl.feeder.Feeder.FeederData
+import com.wajam.spnl.TaskContext.ContextData
 
 trait RecordDataFeeder extends Feeder {
 
@@ -11,7 +12,7 @@ trait RecordDataFeeder extends Feeder {
 
   def toRecord(data: FeederData): Option[DataRecord]
 
-  def fromRecord(record: DataRecord): Map[String, Any]
+  def fromRecord(record: DataRecord): FeederData
 }
 
 trait ResumableRecordDataFeeder extends RecordDataFeeder {
@@ -22,9 +23,9 @@ trait ResumableRecordDataFeeder extends RecordDataFeeder {
 
   def loadRecords(range: TokenRange, startAfterRecord: Option[DataRecord]): Iterable[DataRecord]
 
-  def toContextData(data: FeederData): Map[String, Any] = data
+  def toContextData(data: FeederData): ContextData = data
 
-  def ack(data: Map[String, Any]) {
+  def ack(data: FeederData) {
     // Update context with the latest acknowledged record data
     context.data = toContextData(data).map(entry => entry match {
       case (k, v: String) => (k, v)
