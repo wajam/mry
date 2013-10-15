@@ -34,7 +34,6 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
     val token = Resolver.MAX_TOKEN / size * i
 
     val db = new Database("mry")
-    db.applySupport(responseTimeout = Some(2000L))
     cluster.registerService(db)
     db.registerStorage(spy(new MemoryStorage("memory")))
 
