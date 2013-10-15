@@ -85,7 +85,7 @@ private class InternalProtobufTranslator {
   private val obj2pb = new util.IdentityHashMap[AnyRef, Int] // Live instance to encoded HeapId mapping.
 
   // Used by encoding and decoding as temporary storage for encoded/decoded object
-  private val tempHeap = new collection.mutable.ArrayBuffer[AnyRef]
+  private val tempHeap = new collection.mutable.ListBuffer[AnyRef]
 
   private def registerEncodedData(pbHeapId: Int, instance: AnyRef) = {
     obj2pb += instance -> pbHeapId
