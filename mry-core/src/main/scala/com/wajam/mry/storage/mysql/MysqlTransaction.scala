@@ -169,6 +169,9 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
                   optCount: Option[Long] = None): RecordIterator = {
     assert(accessPath.length >= 1)
 
+    val innerLimitMagnitude = 100
+    val mysqlTheoricalMaxNbOfRows = "18446744073709551615"
+
     val keysValue = accessPath.keys
     val fullTableName = table.depthName("_")
     val outerProjKeys = (for (i <- 1 to table.depth) yield "o.k%1$d".format(i)).mkString(",")
@@ -176,12 +179,21 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     val outerWhereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = o.k%1$d".format(i)).mkString(" AND ")
     val innerWhereKeys = (for (i <- 1 to accessPath.parts.length) yield "i.k%d = ?".format(i)).mkString(" AND ")
 
-    val limitSql = (optOffset, optCount) match {
-      case (Some(offset), Some(count)) => "LIMIT %d, %d".format(offset, count)
-      case (Some(offset), None) => "LIMIT %d".format(offset)
-      case (None, Some(count)) => "LIMIT 0, %d".format(count)
+    val innerLimitSql = optCount match {
+      case Some(count) => f"LIMIT 0, ${(optOffset.map(_.toInt).getOrElse(0) + count.toInt) * innerLimitMagnitude}%d"
+      case _ => ""
+    }
+
+    val outerLimitSql = (optOffset, optCount) match {
+      case (Some(offset), Some(count)) => f" LIMIT $offset%d, $count%d"
+      case (Some(offset), None) =>
+        // MySQL doesn't support limit on offset without a count
+        f" LIMIT $offset%d, $mysqlTheoricalMaxNbOfRows%s"
+      case (None, Some(count)) => f" LIMIT 0, $count%d"
       case (None, None) => ""
     }
+
+    val excludeDeleted = if (includeDeleted) "" else " AND o.d IS NOT NULL "
 
     /* Generated SQL looks like:
      *
@@ -191,14 +203,15 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
      *       FROM `table1_index` AS i
      *       WHERE i.ts <= ? AND i.tk = ? AND i.k1 = ?
      *       GROUP BY i.tk, i.k1
-     *       LIMIT 0,1000
+     *       LIMIT 0,100000
      *   ) AS i
      *   WHERE o.tk = i.tk
      *   AND i.k1 = o.k1
      *   AND o.ts = i.max_ts
      *   AND o.d IS NOT NULL
+     *   LIMIT 0,1000
      */
-    var sql = """
+    val sql = """
         SELECT i.max_ts, i.tk, o.ec, o.d, %1$s
         FROM `%2$s_data` AS o, (
             SELECT i.tk, MAX(i.ts) AS max_ts, %3$s
@@ -209,11 +222,11 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
         ) AS i
         WHERE o.tk = i.tk AND %6$s
         AND o.ts = i.max_ts
-              """.format(outerProjKeys, fullTableName, innerProjKeys, innerWhereKeys, limitSql, outerWhereKeys)
+        %7$s
+        %8$s
+              """.format(outerProjKeys, fullTableName, innerProjKeys, innerWhereKeys, innerLimitSql, outerWhereKeys, excludeDeleted, outerLimitSql)
 
 
-    if (!includeDeleted)
-      sql += " AND o.d IS NOT NULL "
 
     var results: SqlResults = null
     try {
@@ -517,8 +530,10 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
           val keys = Seq.range(0, fromRecord.accessPath.parts.size).map(i => "i.k%d".format(i + 1)).zip(fromRecord.accessPath.parts.map(_.key))
           this.genWhereHigherEqualTuple((Seq(("i.tk", scala.math.max(range.start, fromRecord.token))) ++ keys).toMap)
         } catch {
-          case e: Exception => e.printStackTrace()
-          ("", Seq())
+          case e: Exception => {
+            e.printStackTrace()
+            ("", Seq())
+          }
         }
 
       case None => ("i.tk >= %d".format(range.start), Seq())
