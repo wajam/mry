@@ -48,9 +48,11 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
     for (i <- 0 to 100) {
       val key = UUID.randomUUID().toString
 
-      db.execute(b => {
+      val s = db.execute(b => {
         b.from("memory").set(key, "value%s".format(key))
       })
+
+      Await.result(s, 2 seconds)
 
       val f = db.execute(b => {
         val context = b.from("context")
