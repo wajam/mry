@@ -8,6 +8,7 @@ import com.wajam.mry.execution._
 import org.scalatest.matchers.ShouldMatchers
 import com.wajam.mry.api.Transport
 import com.wajam.mry.execution.Operation._
+import com.wajam.mry.SlowTest
 
 @RunWith(classOf[JUnitRunner])
 class TestProtobufTranslator extends FunSuite with ShouldMatchers {
@@ -190,7 +191,7 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     assert(results == results2)
   }
 
-  ignore("transport encode/decode: with (n > 100K), should terminate and yield the proper size") {
+  test("transport encode/decode: with (n > 100K), should terminate and yield the proper size", SlowTest) {
 
     def randomTransaction(opCount: Int) = {
       val t = new Transaction
@@ -226,14 +227,12 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     }
 
     encodeMs should be <= 10000L // Should actually be around 1500ms
-    println(encodeMs)
     bytes.length should be === 11954748
 
     val decodeMs = timed {
       () =>  { bytes = t.encodeTransaction(trx) }
     }
 
-    println(decodeMs)
     decodeMs should be <= 10000L // Should actually be around 2000ms
   }
 
