@@ -1,6 +1,7 @@
 package com.wajam.mry.api.protobuf
 
 import com.wajam.mry.api.{TranslationException, ProtocolTranslator}
+import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
 import com.wajam.mry.execution._
 import com.wajam.mry.api.protobuf.MryProtobuf._
@@ -82,7 +83,7 @@ private class InternalProtobufTranslator {
 
   private val pb2obj = new collection.mutable.HashMap[Int, AnyRef] // Encoded HeapId to decoded instance mapping
 
-  private val obj2pb = new util.IdentityHashMap[AnyRef, Int] // Live instance to encoded HeapId mapping.
+  private val obj2pb = new util.IdentityHashMap[AnyRef, Int].asScala // Live instance to encoded HeapId mapping.
 
   // Used by encoding and decoding as temporary storage for encoded/decoded object
   private val tempHeap = new collection.mutable.ListBuffer[AnyRef]
