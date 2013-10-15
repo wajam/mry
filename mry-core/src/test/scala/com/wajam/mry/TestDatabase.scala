@@ -34,6 +34,7 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
     val token = Resolver.MAX_TOKEN / size * i
 
     val db = new Database("mry")
+    db.applySupport(responseTimeout = Some(2000L))
     cluster.registerService(db)
     db.registerStorage(spy(new MemoryStorage("memory")))
 
@@ -48,11 +49,9 @@ class TestDatabase extends FunSuite with BeforeAndAfterAll {
     for (i <- 0 to 100) {
       val key = UUID.randomUUID().toString
 
-      val s = db.execute(b => {
+      db.execute(b => {
         b.from("memory").set(key, "value%s".format(key))
       })
-
-      Await.result(s, 2 seconds)
 
       val f = db.execute(b => {
         val context = b.from("context")
