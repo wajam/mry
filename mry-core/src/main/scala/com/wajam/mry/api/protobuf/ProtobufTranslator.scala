@@ -5,7 +5,6 @@ import scala.collection.JavaConversions._
 import com.wajam.mry.execution._
 import com.wajam.mry.api.protobuf.MryProtobuf._
 import com.wajam.mry.api.Transport
-import java.util
 
 /**
  * Protocol buffers translator
@@ -61,31 +60,16 @@ class ProtobufTranslator extends ProtocolTranslator {
  * Allow stateful and threadsafe operation for ProtobufTranslator by instancing this class at every call.
  * It also keep ProtobufTranslator class more readable and more relevant to it's parent interface.
  *
- * Note on implementation: The message is structured somewhat like a computer heap. All the data is stored without so
- * much structure in a list at the beginning of the message (the heap), its position in that list is data's address.
- * Then the Transaction reference the encoded data via its address, and the object structure is only a tree
- * of pointers, all the data being in the heap. This simplify the .proto file, make it easier to have proper inheritance,
- * allows objects to be encoded and decoded which less restriction on the order of the processing, and finally it allows
- * pointer reference (ex: A, B pointing to C, would still point to the C' after decoding, instead of pointing to C'1
- * and C'2 that would have the same data but would not be the same instance.
  */
 private class InternalProtobufTranslator {
-
-  // TODO: This implementation is inefficient (while good enough) for large number of operation (ex: n >= 10000).
-  // It copies everything from the original Transaction to temporary lists, and do a lot of map, zip and iteration over
-  // it, and then copies it again to the ProtocolBuffer structure. Using iterator instead of temporary lists,
-  // would save that copying in some cases. All of this is linear time however, so it's an optimization, not a priority.
-  // However, there is a few transaction, if any, of that size and it's still manageable, it just not optimal.
-  // Also, the current implementation is probably more readable.
 
   private var currentHeapId = 1 // I don't think will have more than 2^31 object, skip 0, since 0==unassigned
 
   private val pb2obj = new collection.mutable.HashMap[Int, AnyRef] // Encoded HeapId to decoded instance mapping
-
-  private val obj2pb = new util.IdentityHashMap[AnyRef, Int] // Live instance to encoded HeapId mapping.
+  private val obj2pb = new collection.mutable.HashMap[AnyRef, Int] // Live instance to encoded HeapId mapping
 
   // Used by encoding and decoding as temporary storage for encoded/decoded object
-  private val tempHeap = new collection.mutable.ListBuffer[AnyRef]
+  private var tempHeap = new collection.mutable.ListBuffer[AnyRef]
 
   private def registerEncodedData(pbHeapId: Int, instance: AnyRef) = {
     obj2pb += instance -> pbHeapId
@@ -97,7 +81,8 @@ private class InternalProtobufTranslator {
 
   private def getHeapIpForEncodedData(instance: AnyRef): Int = {
 
-    obj2pb(instance)
+    // Compare by memory HeapId
+    obj2pb.find(instance eq _._1).get._2
   }
 
   private def getEntityFromDecodedData[T](HeapId: Int): T = {
@@ -192,7 +177,7 @@ private class InternalProtobufTranslator {
     }
   }
 
-  def encodePTransport(transport: Transport): PTransport.Builder = {
+  def encodePTransport(transport: Transport): PTransport.Builder =  {
 
     import PTransport.Type
 
@@ -266,7 +251,7 @@ private class InternalProtobufTranslator {
     }
   }
 
-  private def encodePTransaction(transaction: Transaction): Int = {
+  private def encodePTransaction(transaction: Transaction): Int =  {
 
     val pTransaction = PTransaction.newBuilder()
     val HeapId = addToHeap(pTransaction)
@@ -281,7 +266,7 @@ private class InternalProtobufTranslator {
     HeapId
   }
 
-  private def decodePTransaction(transport: PTransport): Transaction = {
+  private def decodePTransaction(transport: PTransport): Transaction =  {
 
     // Create an transaction instance, and register it in the pool
     val trx = new Transaction()
@@ -305,7 +290,7 @@ private class InternalProtobufTranslator {
     decodePBlock(transaction, pBlock)
   }
 
-  private def encodePBlock(block: Block): PBlock.Builder = {
+  private def encodePBlock(block: Block): PBlock.Builder =  {
     val pBlock = PBlock.newBuilder()
 
     val varId = block.variables.map(encodePVariable(_))
@@ -313,12 +298,7 @@ private class InternalProtobufTranslator {
     varId.zipWithIndex.foreach((v) => registerEncodedData(v._1, block.variables(v._2)))
     pBlock.addAllVariableHeapIds(varId.map(_.asInstanceOf[java.lang.Integer]))
 
-    def addOperation(op: Operation) = {
-      val pOp = encodePOperation(op)
-      addToHeap(pOp).asInstanceOf[java.lang.Integer]
-    }
-
-    pBlock.addAllOperationHeapIds(block.operations.map(addOperation))
+    pBlock.addAllOperationHeapIds(block.operations.map(encodePOperation(_)).map(addToHeap(_)).map(_.asInstanceOf[java.lang.Integer]))
     pBlock.setVarSeq(block.varSeq)
 
     pBlock
@@ -332,7 +312,7 @@ private class InternalProtobufTranslator {
     block.variables ++= pBlock.getVariableHeapIdsList().map(getEntityFromDecodedData[Variable](_))
   }
 
-  private def encodePVariable(variable: Variable): Int = {
+  private def encodePVariable(variable: Variable): Int =  {
     val pVariable = PVariable.newBuilder()
 
     // DO NOT serialize sourceBlock, it will be available at reconstruction
@@ -346,12 +326,12 @@ private class InternalProtobufTranslator {
     addr
   }
 
-  private def decodePVariable(parentBlock: Block, pVariable: PVariable): Variable = {
+  private def decodePVariable(parentBlock: Block, pVariable: PVariable): Variable =  {
     new Variable(parentBlock, pVariable.getId, getEntityFromDecodedData[Value](pVariable.getValueHeapId))
 
   }
 
-  private def encodePOperation(operation: Operation): POperation.Builder = {
+  private def encodePOperation(operation: Operation): POperation.Builder =  {
 
     import POperation.Type
 
@@ -362,7 +342,7 @@ private class InternalProtobufTranslator {
     pOperation.setSourceHeapId(getHeapIpForEncodedData(operation.source))
 
     val withFrom = (from: Seq[Variable]) =>
-      // Variable are already listed in the parent block, so don't duplicate
+    // Variable are already listed in the parent block, so don't duplicate
       pOperation.addAllVariableHeapIds(from.map(getHeapIpForEncodedData(_).asInstanceOf[java.lang.Integer]))
 
     val withIntoAndSeqObject = (into: Variable, objects: Seq[Object]) =>
@@ -384,7 +364,7 @@ private class InternalProtobufTranslator {
       case op: From => withIntoAndSeqObject(op.into, op.keys); pOperation.setType(Type.From)
       case op: Get => withIntoAndSeqObject(op.into, op.keys); pOperation.setType(Type.Get)
       case op: Set => withIntoAndSeqObject(op.into, op.data); pOperation.setType(Type.Set)
-      case op: Delete => withIntoAndSeqObject(op.into, op.data); pOperation.setType(Type.Delete)
+      case op: Delete => withIntoAndSeqObject(op.into, op.data);; pOperation.setType(Type.Delete)
       case op: Limit => withIntoAndSeqObject(op.into, op.keys); pOperation.setType(Type.Limit)
       case op: Projection => withIntoAndSeqObject(op.into, op.keys); pOperation.setType(Type.Projection)
       case op: Filter => withFilter(op); pOperation.setType(Type.Filter)
@@ -409,12 +389,12 @@ private class InternalProtobufTranslator {
 
     pOperation.getType match {
       case Type.Return => new Operation.Return(os, variables)
-      case Type.From => new Operation.From(os, variables(0), objects: _*)
-      case Type.Get => new Operation.Get(os, variables(0), objects: _*)
-      case Type.Set => new Operation.Set(os, variables(0), objects: _*)
-      case Type.Delete => new Operation.Delete(os, variables(0), objects: _*)
-      case Type.Limit => new Operation.Limit(os, variables(0), objects: _*)
-      case Type.Projection => new Operation.Projection(os, variables(0), objects: _*)
+      case Type.From => new Operation.From(os, variables(0), objects:_*)
+      case Type.Get => new Operation.Get(os, variables(0), objects:_*)
+      case Type.Set => new Operation.Set(os, variables(0), objects:_*)
+      case Type.Delete => new Operation.Delete(os, variables(0), objects:_*)
+      case Type.Limit => new Operation.Limit(os, variables(0), objects:_*)
+      case Type.Projection => new Operation.Projection(os, variables(0), objects:_*)
       case Type.Filter => buildFilter()
     }
   }
@@ -513,3 +493,4 @@ private class InternalProtobufTranslator {
     }
   }
 }
+
