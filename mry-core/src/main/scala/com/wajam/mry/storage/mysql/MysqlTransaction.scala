@@ -175,8 +175,8 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
     val fullTableName = table.depthName("_")
     val outerProjKeys = (for (i <- 1 to table.depth) yield "o.k%1$d".format(i)).mkString(",")
     val innerProjKeys = (for (i <- 1 to table.depth) yield "i.k%1$d".format(i)).mkString(",")
-    val outerWhereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = o.k%1$d".format(i)).mkString(" AND ")
-    val innerWhereKeys = (for (i <- 1 to accessPath.parts.length) yield "i.k%1$d = o.k%1$d AND i.k%1$d = ?".format(i)).mkString(" AND ")
+    val joinKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = o.k%1$d".format(i)).mkString(" AND ")
+    val innerWhereKeys = (for (i <- 1 to accessPath.parts.length) yield "i.k%1$d = ?".format(i)).mkString(" AND ")
 
     val innerLimitSql = (optOffset, optCount) match {
       case (Some(offset), Some(count)) => f" LIMIT $offset%d, $count%d"
@@ -192,19 +192,19 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
 
     /* Generated SQL looks like:
      *
-     *   SELECT n.max_ts, n.tk, a.ec,a.d, a.k1,a.k2
-     *   FROM `table1_table1_1_data` AS a, (
+     *   SELECT i.max_ts, i.tk, o.ec,o.d, o.k1,o.k2
+     *   FROM `table1_table1_1_data` AS o, (
      *     SELECT i.tk, MAX(i.ts) AS max_ts, i.k1,i.k2
      *     FROM `table1_table1_1_index` AS i, `table1_table1_1_data` AS o
-     *     WHERE i.tk = ? AND i.k1 = ? AND i.ts <= ?
-     *     AND o.tk = i.tk AND i.k1 = o.k1 AND i.k2 = o.k2 AND i.ts = o.ts
-     *     AND o.d IS NOT NULL
+     *     WHERE i.tk = ? AND i.k1 = o.k1 AND i.k1 = ? AND i.ts <= ?
+     *     AND i.ts = o.ts AND o.tk = i.tk
      *     GROUP BY i.tk, i.k1,i.k2
+     *     HAVING MAX(i.ts) = MAX(IF(o.d IS NOT NULL,i.ts,0))
      *     LIMIT ?
-     *   ) AS n
-     *   WHERE a.tk = n.tk AND n.k1 = a.k1 AND n.k2 = a.k2
-     *   AND a.ts = n.max_ts
-     *   AND a.d IS NOT NULL;
+     *   ) AS i
+     *   WHERE o.tk = i.tk AND i.k1 = o.k1 AND i.k2 = o.k2
+     *   AND o.ts = i.max_ts
+     *   AND o.d IS NOT NULL;
      */
     val sql = """
         SELECT i.max_ts, i.tk, o.ec, o.d, %1$s
@@ -212,15 +212,15 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
             SELECT i.tk, MAX(i.ts) AS max_ts, %3$s
             FROM `%2$s_index` AS i, `%2$s_data` AS o
             WHERE i.tk = ? AND %4$s AND i.ts <= ?
-            AND i.ts = o.ts AND i.tk = o.tk
+            AND i.ts = o.ts AND i.tk = o.tk AND %5$s
             GROUP BY i.tk, %3$s
-            %5$s
             %6$s
+            %7$s
         ) AS i
-        WHERE o.tk = i.tk AND %7$s
+        WHERE o.tk = i.tk AND %5$s
         AND o.ts = i.max_ts
         %8$s
-              """.format(outerProjKeys, fullTableName, innerProjKeys, innerWhereKeys, innerExcludeDeleted, innerLimitSql, outerWhereKeys, outerExcludeDeleted)
+              """.format(outerProjKeys, fullTableName, innerProjKeys, innerWhereKeys, joinKeys, innerExcludeDeleted, innerLimitSql, outerExcludeDeleted)
 
 
 
