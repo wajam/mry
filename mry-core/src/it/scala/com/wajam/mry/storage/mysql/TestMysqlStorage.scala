@@ -1611,4 +1611,26 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
 
     set.subSet(CompositeKey(table1_1, "3", "5"), true, CompositeKey(table1_1, "5", "3"), true).toList should be(Nil)
   }
+
+  test("test limit when first element deleted") {
+    exec(t => {
+      t.from("mysql").from("table1").set("elem1", Map("id" -> "elem1"))
+    }, commit = true)
+
+    exec(t => {
+      val table11 = t.from("mysql").from("table1").get("elem1").from("table1_1")
+      (1 to 10) foreach (id => table11.set(id.toString, Map("id" -> id)))
+    }, commit = true)
+
+    exec(t => {
+      t.from("mysql").from("table1").get("elem1").from("table1_1").delete("1")
+    }, commit = true)
+
+    val Seq(ListValue(limited)) = exec(t => {
+      t.ret(t.from("mysql").from("table1").get("elem1").from("table1_1").get().limit(1))
+    })
+
+    limited should not be ('empty)
+    limited should have size (1)
+  }
 }

@@ -169,51 +169,60 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
                   optCount: Option[Long] = None): RecordIterator = {
     assert(accessPath.length >= 1)
 
+    val mysqlTheoricalMaxNbOfRows = "18446744073709551615"
+
     val keysValue = accessPath.keys
     val fullTableName = table.depthName("_")
     val outerProjKeys = (for (i <- 1 to table.depth) yield "o.k%1$d".format(i)).mkString(",")
     val innerProjKeys = (for (i <- 1 to table.depth) yield "i.k%1$d".format(i)).mkString(",")
-    val outerWhereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = o.k%1$d".format(i)).mkString(" AND ")
-    val innerWhereKeys = (for (i <- 1 to accessPath.parts.length) yield "i.k%d = ?".format(i)).mkString(" AND ")
+    val joinKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = o.k%1$d".format(i)).mkString(" AND ")
+    val innerWhereKeys = (for (i <- 1 to accessPath.parts.length) yield "i.k%1$d = ?".format(i)).mkString(" AND ")
 
-    val limitSql = (optOffset, optCount) match {
-      case (Some(offset), Some(count)) => "LIMIT %d, %d".format(offset, count)
-      case (Some(offset), None) => "LIMIT %d".format(offset)
-      case (None, Some(count)) => "LIMIT 0, %d".format(count)
+    val innerLimitSql = (optOffset, optCount) match {
+      case (Some(offset), Some(count)) => f" LIMIT $offset%d, $count%d"
+      case (Some(offset), None) =>
+        // MySQL doesn't support limit on offset without a count
+        f" LIMIT $offset%d, $mysqlTheoricalMaxNbOfRows%s"
+      case (None, Some(count)) => f" LIMIT 0, $count%d"
       case (None, None) => ""
     }
 
+    val innerExcludeDeleted = if (includeDeleted) "" else " HAVING MAX(i.ts) = MAX(IF(o.d IS NOT NULL,i.ts,0)) "
+    val outerExcludeDeleted = if (includeDeleted) "" else " AND o.d IS NOT NULL "
+
     /* Generated SQL looks like:
      *
-     *   SELECT i.max_ts, i.tk, o.ec, o.d, o.k1
-     *   FROM `table1_data` AS o, (
-     *       SELECT i.tk, MAX(i.ts) AS max_ts, i.k1
-     *       FROM `table1_index` AS i
-     *       WHERE i.ts <= ? AND i.tk = ? AND i.k1 = ?
-     *       GROUP BY i.tk, i.k1
-     *       LIMIT 0,1000
+     *   SELECT i.max_ts, i.tk, o.ec,o.d, o.k1,o.k2
+     *   FROM `table1_table1_1_data` AS o, (
+     *     SELECT i.tk, MAX(i.ts) AS max_ts, i.k1,i.k2
+     *     FROM `table1_table1_1_index` AS i, `table1_table1_1_data` AS o
+     *     WHERE i.tk = ? AND i.k1 = o.k1 AND i.k1 = ? AND i.ts <= ?
+     *     AND i.ts = o.ts AND o.tk = i.tk
+     *     GROUP BY i.tk, i.k1,i.k2
+     *     HAVING MAX(i.ts) = MAX(IF(o.d IS NOT NULL,i.ts,0))
+     *     LIMIT ?
      *   ) AS i
-     *   WHERE o.tk = i.tk
-     *   AND i.k1 = o.k1
+     *   WHERE o.tk = i.tk AND i.k1 = o.k1 AND i.k2 = o.k2
      *   AND o.ts = i.max_ts
-     *   AND o.d IS NOT NULL
+     *   AND o.d IS NOT NULL;
      */
-    var sql = """
+    val sql = """
         SELECT i.max_ts, i.tk, o.ec, o.d, %1$s
         FROM `%2$s_data` AS o, (
             SELECT i.tk, MAX(i.ts) AS max_ts, %3$s
-            FROM `%2$s_index` AS i
+            FROM `%2$s_index` AS i, `%2$s_data` AS o
             WHERE i.tk = ? AND %4$s AND i.ts <= ?
+            AND i.ts = o.ts AND i.tk = o.tk AND %5$s
             GROUP BY i.tk, %3$s
-            %5$s
+            %6$s
+            %7$s
         ) AS i
-        WHERE o.tk = i.tk AND %6$s
+        WHERE o.tk = i.tk AND %5$s
         AND o.ts = i.max_ts
-              """.format(outerProjKeys, fullTableName, innerProjKeys, innerWhereKeys, limitSql, outerWhereKeys)
+        %8$s
+              """.format(outerProjKeys, fullTableName, innerProjKeys, innerWhereKeys, joinKeys, innerExcludeDeleted, innerLimitSql, outerExcludeDeleted)
 
 
-    if (!includeDeleted)
-      sql += " AND o.d IS NOT NULL "
 
     var results: SqlResults = null
     try {
@@ -517,8 +526,10 @@ class MysqlTransaction(private val storage: MysqlStorage, private val context: O
           val keys = Seq.range(0, fromRecord.accessPath.parts.size).map(i => "i.k%d".format(i + 1)).zip(fromRecord.accessPath.parts.map(_.key))
           this.genWhereHigherEqualTuple((Seq(("i.tk", scala.math.max(range.start, fromRecord.token))) ++ keys).toMap)
         } catch {
-          case e: Exception => e.printStackTrace()
-          ("", Seq())
+          case e: Exception => {
+            e.printStackTrace()
+            ("", Seq())
+          }
         }
 
       case None => ("i.tk >= %d".format(range.start), Seq())
