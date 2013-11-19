@@ -150,7 +150,7 @@ class Database(serviceName: String = "database")
       case e: Exception => {
         debug("Got an exception executing transaction", e)
         context.rollback()
-        req.replyWithError(new RemoteException("Exception executing transaction", e))
+        req.replyWithError(e)
       }
     }
   }
