@@ -4,7 +4,7 @@ import api.MryCodec
 import execution._
 import storage.Storage
 import com.wajam.commons.Logging
-import com.wajam.nrv.TimeoutException
+import com.wajam.nrv.{RemoteException, TimeoutException}
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service._
 import com.wajam.tracing.Traced
@@ -142,18 +142,17 @@ class Database(serviceName: String = "database")
       context.commit()
       transaction.reset()
 
+      req.reply(
+        null,
+        data = values
+      )
     } catch {
       case e: Exception => {
         debug("Got an exception executing transaction", e)
         context.rollback()
-        throw e
+        req.replyWithError(new RemoteException("Exception executing transaction", e))
       }
     }
-
-    req.reply(
-      null,
-      data = values
-    )
   }
 }
 
