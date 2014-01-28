@@ -4,7 +4,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import com.wajam.mry.execution.Implicits._
 import com.wajam.nrv.service.TokenRange
-import org.scalatest.matchers.ShouldMatchers._
+import org.scalatest.Matchers._
 import com.wajam.commons.ControlableCurrentTime
 import com.wajam.nrv.utils.timestamp.Timestamp
 

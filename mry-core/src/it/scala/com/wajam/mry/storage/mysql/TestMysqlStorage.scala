@@ -10,7 +10,7 @@ import util.Random
 import com.wajam.mry.storage.mysql.TimelineSelectMode.AtTimestamp
 import com.wajam.nrv.service.TokenRange
 import org.mockito.Mockito._
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{Matchers => ShouldMatchers}
 import com.wajam.nrv.utils.TimestampIdGenerator
 import com.wajam.nrv.utils.timestamp.Timestamp
 

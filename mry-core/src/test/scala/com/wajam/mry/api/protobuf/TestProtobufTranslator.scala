@@ -5,7 +5,7 @@ import com.wajam.mry.execution.Implicits._
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import com.wajam.mry.execution._
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{Matchers => ShouldMatchers}
 import com.wajam.mry.api.Transport
 import com.wajam.mry.execution.Operation._
 
