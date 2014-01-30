@@ -1,7 +1,7 @@
 package com.wajam.mry.storage.mysql
 
 import com.wajam.mry.execution.Implicits._
-import org.scalatest.matchers.ShouldMatchers._
+import org.scalatest.Matchers._
 import com.wajam.spnl.TaskContext
 import com.wajam.nrv.service.TokenRange
 import org.junit.runner.RunWith

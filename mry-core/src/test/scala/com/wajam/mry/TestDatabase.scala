@@ -10,7 +10,7 @@ import storage.MemoryStorage
 import com.wajam.nrv.service.Resolver
 import com.wajam.tracing.Tracer
 import java.util.UUID
-import org.scalatest.matchers.ShouldMatchers._
+import org.scalatest.Matchers._
 import com.wajam.nrv.zookeeper.cluster.ZookeeperTestingClusterDriver
 import com.wajam.nrv.scribe.ScribeTraceRecorder
 import org.mockito.Mockito._

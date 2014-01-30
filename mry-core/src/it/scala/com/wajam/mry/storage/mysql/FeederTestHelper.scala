@@ -3,6 +3,7 @@ package com.wajam.mry.storage.mysql
 import com.wajam.spnl.feeder.Feeder
 import com.wajam.commons.Closable
 import com.wajam.spnl.feeder.Feeder.FeederData
+import scala.language.implicitConversions
 
 object FeederTestHelper {
   implicit def feederToIterator(feeder: Feeder): Iterator[Option[FeederData]] with Closable = {
