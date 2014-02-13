@@ -1633,4 +1633,34 @@ class TestMysqlStorage extends TestMysqlBase with ShouldMatchers {
     limited should not be ('empty)
     limited should have size (1)
   }
+
+  test("should support partial updates") {
+    exec(t => {
+      t.from("mysql").from("table1").set("elem1", Map("id" -> "elem1", "status" -> "new"))
+    }, commit = true)
+
+    exec(t => {
+      t.from("mysql").from("table1").get("elem1").set("status", "updated")
+    }, commit = true)
+
+    val Seq(MapValue(elemUpdated)) = exec(t => {
+      t.ret(t.from("mysql").from("table1").get("elem1"))
+    })
+
+    elemUpdated("status") should be (StringValue("updated"))
+    elemUpdated("id") should be (StringValue("elem1"))
+  }
+
+  test("should support partial updates in same transaction") {
+    val Seq(MapValue(elemUpdated)) = exec(t => {
+      t.from("mysql").from("table1").set("elem1", Map("id" -> "elem1", "status" -> "new"))
+      t.from("mysql").from("table1").get("elem1").set("status", "updated")
+      t.ret(t.from("mysql").from("table1").get("elem1"))
+    }, commit = true)
+
+    elemUpdated("status") should be (StringValue("updated"))
+    elemUpdated("id") should be (StringValue("elem1"))
+  }
+
+
 }

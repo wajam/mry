@@ -52,6 +52,27 @@ class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table
 
     }
   }
+
+  override def execSet(context: ExecutionContext, into: Variable, data: Object*): Unit = {
+    val fieldName = param[StringValue](data, 0).strValue
+    val fieldValue = param[Value](data, 1)
+    val newValue = MapValue(innerValue.asInstanceOf[MapValue].mapValue + (fieldName -> fieldValue))
+
+    val token = context.getToken(accessPath(0).key)
+    context.useToken(token)
+    context.isMutation = true
+
+    if (!context.dryMode && innerValue.isNull) {
+      throw new StorageException("Cannot execute 'set' on an non existing record (table=%s, access_path=%s)".format(table.depthName("_"), accessPath))
+    } else if (!context.dryMode) {
+      val transaction = context.getStorageTransaction(storage).asInstanceOf[MysqlTransaction]
+      transaction.loadLazyValues()
+
+      val record = new Record(table)
+      record.value = newValue
+      transaction.set(table, token, context.timestamp.get, accessPath, Some(record))
+    }
+  }
 }
 
 
