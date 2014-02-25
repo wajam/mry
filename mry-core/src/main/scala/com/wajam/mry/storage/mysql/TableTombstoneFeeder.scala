@@ -1,7 +1,8 @@
 package com.wajam.mry.storage.mysql
 
-import com.wajam.nrv.Logging
+import com.wajam.commons.Logging
 import com.wajam.nrv.service.{TokenRangeSeq, TokenRange}
+import com.wajam.spnl.feeder.Feeder.FeederData
 
 /**
  * Fetches tombstone records (i.e. with null value) from specified table.
@@ -25,7 +26,7 @@ abstract class TableTombstoneFeeder(val name: String, storage: MysqlStorage, tab
 
   def token(record: TombstoneRecord) = record.token
 
-  def toRecord(data: Map[String, Any]): Option[TombstoneRecord] = {
+  def toRecord(data: FeederData): Option[TombstoneRecord] = {
     if (data.contains(Keys) && data.contains(Token) && data.contains(Timestamp))
     {
       try {
@@ -41,7 +42,7 @@ abstract class TableTombstoneFeeder(val name: String, storage: MysqlStorage, tab
     }
   }
 
-  def fromRecord(record: TombstoneRecord): Map[String, Any] = {
+  def fromRecord(record: TombstoneRecord): FeederData = {
     Map(Keys -> record.accessPath.keys, Token -> record.token.toString, Timestamp -> record.timestamp)
   }
 }
@@ -51,7 +52,7 @@ object TableTombstoneFeeder {
   val Token = "token"
   val Timestamp = "timestamp"
 
-  def toTombstoneRecord(table: Table, data: Map[String, Any]): Option[TombstoneRecord] = {
+  def toTombstoneRecord(table: Table, data: FeederData): Option[TombstoneRecord] = {
     if (data.contains(Keys) && data.contains(Token) && data.contains(Timestamp)) {
       val token = data(Token).toString.toLong
       val timestamp = com.wajam.nrv.utils.timestamp.Timestamp(data(Timestamp).toString.toLong)

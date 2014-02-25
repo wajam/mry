@@ -1,7 +1,7 @@
 package com.wajam.mry.storage.mysql
 
 import com.wajam.mry.execution._
-import com.wajam.nrv.Logging
+import com.wajam.commons.Logging
 
 /**
  * MRY value representing multiple values

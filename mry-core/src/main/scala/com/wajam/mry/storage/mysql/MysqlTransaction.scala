@@ -4,11 +4,11 @@ import com.wajam.mry.storage.StorageTransaction
 import java.sql.ResultSet
 import com.wajam.mry.execution._
 import com.wajam.mry.api.ProtocolTranslator
-import com.wajam.nrv.tracing.Traced
+import com.wajam.tracing.Traced
 import java.util.concurrent.atomic.AtomicInteger
-import com.wajam.nrv.utils.timestamp.Timestamp
 import com.wajam.nrv.service.TokenRange
 import collection.mutable.ArrayBuffer
+import com.wajam.nrv.utils.timestamp.Timestamp
 
 /**
  * Mysql storage transaction
@@ -169,51 +169,60 @@ class MysqlTransaction(protected val storage: MysqlStorage, protected val contex
                   optCount: Option[Long] = None): RecordIterator = {
     assert(accessPath.length >= 1)
 
+    val mysqlTheoricalMaxNbOfRows = "18446744073709551615"
+
     val keysValue = accessPath.keys
     val fullTableName = table.depthName("_")
     val outerProjKeys = (for (i <- 1 to table.depth) yield "o.k%1$d".format(i)).mkString(",")
     val innerProjKeys = (for (i <- 1 to table.depth) yield "i.k%1$d".format(i)).mkString(",")
-    val outerWhereKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = o.k%1$d".format(i)).mkString(" AND ")
-    val innerWhereKeys = (for (i <- 1 to accessPath.parts.length) yield "i.k%d = ?".format(i)).mkString(" AND ")
+    val joinKeys = (for (i <- 1 to table.depth) yield "i.k%1$d = o.k%1$d".format(i)).mkString(" AND ")
+    val innerWhereKeys = (for (i <- 1 to accessPath.parts.length) yield "i.k%1$d = ?".format(i)).mkString(" AND ")
 
-    val limitSql = (optOffset, optCount) match {
-      case (Some(offset), Some(count)) => "LIMIT %d, %d".format(offset, count)
-      case (Some(offset), None) => "LIMIT %d".format(offset)
-      case (None, Some(count)) => "LIMIT 0, %d".format(count)
+    val innerLimitSql = (optOffset, optCount) match {
+      case (Some(offset), Some(count)) => f" LIMIT $offset%d, $count%d"
+      case (Some(offset), None) =>
+        // MySQL doesn't support limit on offset without a count
+        f" LIMIT $offset%d, $mysqlTheoricalMaxNbOfRows%s"
+      case (None, Some(count)) => f" LIMIT 0, $count%d"
       case (None, None) => ""
     }
 
+    val innerExcludeDeleted = if (includeDeleted) "" else " HAVING MAX(i.ts) = MAX(IF(o.d IS NOT NULL,i.ts,0)) "
+    val outerExcludeDeleted = if (includeDeleted) "" else " AND o.d IS NOT NULL "
+
     /* Generated SQL looks like:
      *
-     *   SELECT i.max_ts, i.tk, o.ec, o.d, o.k1
-     *   FROM `table1_data` AS o, (
-     *       SELECT i.tk, MAX(i.ts) AS max_ts, i.k1
-     *       FROM `table1_index` AS i
-     *       WHERE i.ts <= ? AND i.tk = ? AND i.k1 = ?
-     *       GROUP BY i.tk, i.k1
-     *       LIMIT 0,1000
+     *   SELECT i.max_ts, i.tk, o.ec,o.d, o.k1,o.k2
+     *   FROM `table1_table1_1_data` AS o, (
+     *     SELECT i.tk, MAX(i.ts) AS max_ts, i.k1,i.k2
+     *     FROM `table1_table1_1_index` AS i, `table1_table1_1_data` AS o
+     *     WHERE i.tk = ? AND i.k1 = o.k1 AND i.k1 = ? AND i.ts <= ?
+     *     AND i.ts = o.ts AND o.tk = i.tk
+     *     GROUP BY i.tk, i.k1,i.k2
+     *     HAVING MAX(i.ts) = MAX(IF(o.d IS NOT NULL,i.ts,0))
+     *     LIMIT ?
      *   ) AS i
-     *   WHERE o.tk = i.tk
-     *   AND i.k1 = o.k1
+     *   WHERE o.tk = i.tk AND i.k1 = o.k1 AND i.k2 = o.k2
      *   AND o.ts = i.max_ts
-     *   AND o.d IS NOT NULL
+     *   AND o.d IS NOT NULL;
      */
-    var sql = """
+    val sql = """
         SELECT i.max_ts, i.tk, o.ec, o.d, %1$s
         FROM `%2$s_data` AS o, (
             SELECT i.tk, MAX(i.ts) AS max_ts, %3$s
-            FROM `%2$s_index` AS i
+            FROM `%2$s_index` AS i, `%2$s_data` AS o
             WHERE i.tk = ? AND %4$s AND i.ts <= ?
+            AND i.ts = o.ts AND i.tk = o.tk AND %5$s
             GROUP BY i.tk, %3$s
-            %5$s
+            %6$s
+            %7$s
         ) AS i
-        WHERE o.tk = i.tk AND %6$s
+        WHERE o.tk = i.tk AND %5$s
         AND o.ts = i.max_ts
-              """.format(outerProjKeys, fullTableName, innerProjKeys, innerWhereKeys, limitSql, outerWhereKeys)
+        %8$s
+              """.format(outerProjKeys, fullTableName, innerProjKeys, innerWhereKeys, joinKeys, innerExcludeDeleted, innerLimitSql, outerExcludeDeleted)
 
 
-    if (!includeDeleted)
-      sql += " AND o.d IS NOT NULL "
 
     var results: SqlResults = null
     try {
@@ -260,9 +269,9 @@ class MysqlTransaction(protected val storage: MysqlStorage, protected val contex
       case TimelineSelectMode.FromTimestamp => Seq(
         """
               AND ai.ts >= %1$d AND ai.ts <= %3$d
-              ORDER BY ai.ts ASC
+              ORDER BY ai.ts, ai.tk, %4$s ASC
               LIMIT 0, %2$d
-        """.format(timestamp.value, count, lastConsistentTimestamp.value)
+        """.format(timestamp.value, count, lastConsistentTimestamp.value, projInnerKeys)
       )
       case TimelineSelectMode.AtTimestamp => Seq("AND ai.ts = %1$d".format(timestamp.value))
     })).mkString
@@ -282,12 +291,12 @@ class MysqlTransaction(protected val storage: MysqlStorage, protected val contex
      *       ))
      *       WHERE ((ai.tk >= 3221225461 AND ai.tk <= 3310703945))
      *       AND ai.ts >= 13667145296450014 AND ai.ts <= 13667318799830001
-     *       ORDER BY ai.ts ASC
+     *       ORDER BY ai.ts, ai.tk, ai.k1,ai.k2,ai.k3 ASC
      *       LIMIT 0, 100
      *     ) AS q1
      *     JOIN `table1_data` AS ad ON (q1.k1 = ad.k1 AND q1.k2 = ad.k2 AND q1.k3 = ad.k3 AND q1.tk = ad.tk AND q1.new_ts = ad.ts)
      *     LEFT JOIN `table1_data` AS bd ON (q1.k1 = bd.k1 AND q1.k2 = bd.k2 AND q1.k3 = bd.k3 AND q1.tk = bd.tk AND q1.old_ts = bd.ts)
-     *     ORDER BY ad.ts ASC;
+     *     ORDER BY ad.ts, q1.tk, q1.k1, q1.k2, q1.k3 ASC;
      */
     val sql = """
                 SELECT q1.tk, ad.ts, ad.ec, ad.d, bd.ts, bd.ec, bd.d, %1$s
@@ -304,7 +313,7 @@ class MysqlTransaction(protected val storage: MysqlStorage, protected val contex
                 ) AS q1
                 JOIN `%2$s_data` AS ad ON (%3$s AND q1.tk = ad.tk AND q1.new_ts = ad.ts)
                 LEFT JOIN `%2$s_data` AS bd ON (%6$s AND q1.tk = bd.tk AND q1.old_ts = bd.ts)
-                ORDER BY ad.ts ASC;
+                ORDER BY ad.ts, q1.tk, %1$s ASC;
               """.format(projOuterKeys, fullTableName, whereKeys1, whereKeys2, whereKeys3, whereKeys4, innerWhere, projInnerKeys)
 
     val ret = ArrayBuffer[MutationRecord]()
@@ -517,8 +526,10 @@ class MysqlTransaction(protected val storage: MysqlStorage, protected val contex
           val keys = Seq.range(0, fromRecord.accessPath.parts.size).map(i => "i.k%d".format(i + 1)).zip(fromRecord.accessPath.parts.map(_.key))
           this.genWhereHigherEqualTuple((Seq(("i.tk", scala.math.max(range.start, fromRecord.token))) ++ keys).toMap)
         } catch {
-          case e: Exception => e.printStackTrace()
-          ("", Seq())
+          case e: Exception => {
+            e.printStackTrace()
+            ("", Seq())
+          }
         }
 
       case None => ("i.tk >= %d".format(range.start), Seq())
@@ -949,6 +960,33 @@ class MutationRecord {
       Some(serializer.decodeValue(bytes).asInstanceOf[MapValue])
     else
       None
+  }
+}
+
+case class CompositeKey[T](keys: T*)(implicit ord: math.Ordering[T]) extends Comparable[CompositeKey[T]] {
+  def compareTo(that: CompositeKey[T]) = math.Ordering.Iterable[T].compare(keys, that.keys)
+
+  def head = CompositeKey(keys.head)
+
+  def parent = CompositeKey(keys.dropRight(1): _*)
+
+  def ancestors: List[CompositeKey[T]] = {
+    if (keys.size > 1) {
+      parent :: parent.ancestors
+    } else {
+      Nil
+    }
+  }
+}
+
+object CompositeKey {
+  def apply(table: Table, keys: String*): CompositeKey[(String, String)] = {
+    require(table.path.size == keys.size)
+    new CompositeKey(table.path.map(_.name).zip(keys): _*)
+  }
+
+  def apply(record: Record): CompositeKey[(String, String)] = {
+    CompositeKey(record.table, record.accessPath.keys: _*)
   }
 }
 

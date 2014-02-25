@@ -1,11 +1,12 @@
 package com.wajam.mry.storage.mysql
 
-import com.wajam.nrv.Logging
+import com.wajam.commons.Logging
 import com.wajam.spnl.feeder.CachedDataFeeder
 import com.wajam.spnl.TaskContext
 import com.wajam.mry.storage.mysql.TimelineSelectMode.{FromTimestamp, AtTimestamp}
-import com.wajam.nrv.utils.timestamp.Timestamp
 import com.wajam.nrv.service.TokenRange
+import com.wajam.nrv.utils.timestamp.Timestamp
+import com.wajam.spnl.feeder.Feeder.FeederData
 
 /**
  * Table mutation timeline task feeder
@@ -81,12 +82,12 @@ class TableTimelineFeeder(val name: String, storage: MysqlStorage, table: Table,
       }
 
       mutations map (mr => Map(
-        "keys" -> mr.accessPath.keys,
-        "token" -> mr.token.toString,
-        "old_timestamp" -> mr.oldTimestamp,
-        "old_value" -> mr.oldValue,
-        "new_timestamp" -> mr.newTimestamp,
-        "new_value" -> mr.newValue
+            "keys" -> mr.accessPath.keys,
+            "token" -> mr.token.toString,
+            "old_timestamp" -> mr.oldTimestamp,
+            "old_value" -> mr.oldValue,
+            "new_timestamp" -> mr.newTimestamp,
+            "new_value" -> mr.newValue
       ))
     } catch {
       case e: Exception =>
@@ -99,7 +100,7 @@ class TableTimelineFeeder(val name: String, storage: MysqlStorage, table: Table,
     }
   }
 
-  override def next(): Option[Map[String, Any]] = {
+  override def next(): Option[FeederData] = {
     val optElem = super.next()
     for (elem <- optElem) {
       val (timestamp, keys) = getTimestampKey(elem)
@@ -110,7 +111,7 @@ class TableTimelineFeeder(val name: String, storage: MysqlStorage, table: Table,
     optElem
   }
 
-  def ack(data: Map[String, Any]) {
+  def ack(data: FeederData) {
     currentTimestamps = currentTimestamps filter (_ != getTimestampKey(data))
     if (currentTimestamps.isEmpty) {
       for ((ts, _) <- lastElement) context.data += ("from_timestamp" -> ts.value.toString)
@@ -123,7 +124,7 @@ class TableTimelineFeeder(val name: String, storage: MysqlStorage, table: Table,
     TimelineFeederContextCache.unregister(name, context)
   }
 
-  private def getTimestampKey(data: Map[String, Any]) = {
+  private def getTimestampKey(data: FeederData) = {
     val timestamp = data("new_timestamp").asInstanceOf[Timestamp]
     val keys = data("keys").asInstanceOf[Seq[String]]
     (timestamp, keys)

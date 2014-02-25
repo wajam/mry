@@ -5,7 +5,7 @@ import com.wajam.mry.execution.Implicits._
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import com.wajam.mry.execution._
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{Matchers => ShouldMatchers}
 import com.wajam.mry.api.Transport
 import com.wajam.mry.execution.Operation._
 
@@ -188,6 +188,53 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
     transport2.transaction.isDefined should be(false)
 
     assert(results == results2)
+  }
+
+  ignore("transport encode/decode: with (n > 100K), should terminate and yield the proper size") {
+
+    def randomTransaction(opCount: Int) = {
+      val t = new Transaction
+      val v = t.from("followees").get(Long.MaxValue)
+
+      for (i <- 1 to opCount)
+        v.from("followeers").delete(Long.MaxValue)
+
+      t
+    }
+
+    def timed(method: () => Unit): Long = {
+
+      val startTime = System.currentTimeMillis()
+
+      method()
+
+      val endTime = System.currentTimeMillis()
+
+      endTime - startTime
+    }
+
+    val n = 100 * 1000
+
+    val t = new ProtobufTranslator()
+
+    val trx: Transaction = randomTransaction(n)
+
+    var bytes: Array[Byte] = null
+
+    val encodeMs = timed {
+      () =>  { bytes = t.encodeTransaction(trx) }
+    }
+
+    encodeMs should be <= 10000L // Should actually be around 1500ms
+    println(encodeMs)
+    bytes.length should be === 11954748
+
+    val decodeMs = timed {
+      () =>  { bytes = t.encodeTransaction(trx) }
+    }
+
+    println(decodeMs)
+    decodeMs should be <= 10000L // Should actually be around 2000ms
   }
 
   /**

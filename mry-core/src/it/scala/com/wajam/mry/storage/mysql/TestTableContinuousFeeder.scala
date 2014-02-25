@@ -3,11 +3,12 @@ package com.wajam.mry.storage.mysql
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers._
+import org.scalatest.Matchers._
 import com.wajam.nrv.service.{TokenRangeSeq, TokenRange}
 import com.wajam.spnl.TaskContext
 import org.mockito.Mockito._
 import com.wajam.mry.storage.mysql.FeederTestHelper._
+import com.wajam.spnl.feeder.Feeder.FeederData
 
 @RunWith(classOf[JUnitRunner])
 class TestTableContinuousFeeder extends FunSuite {
@@ -36,7 +37,7 @@ class TestTableContinuousFeeder extends FunSuite {
       }).take(limit)
     }
 
-    def toRecord(data: Map[String, Any]) = data.get("token").map(_.toString.toLong)
+    def toRecord(data: FeederData) = data.get("token").map(_.toString.toLong)
 
     def fromRecord(record: Long) = Map("token" -> record)
   }

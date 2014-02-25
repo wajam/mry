@@ -2,7 +2,7 @@ package com.wajam.mry.execution
 
 import org.scalatest.FunSuite
 import com.wajam.mry.execution.Implicits._
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{Matchers => ShouldMatchers}
 
 /**
  * Test non-database dependent Mry Operations

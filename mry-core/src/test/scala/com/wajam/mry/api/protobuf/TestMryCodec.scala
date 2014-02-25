@@ -4,13 +4,13 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
 import org.scalatest.{BeforeAndAfter, FunSuite}
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import com.wajam.mry.api.MryCodec
 import com.wajam.mry.execution._
 import com.wajam.mry.execution.Implicits._
 
 @RunWith(classOf[JUnitRunner])
-class TestMryCodec extends FunSuite with BeforeAndAfter with ShouldMatchers {
+class TestMryCodec extends FunSuite with BeforeAndAfter with Matchers {
 
   test("can encode null") {
 
@@ -21,7 +21,7 @@ class TestMryCodec extends FunSuite with BeforeAndAfter with ShouldMatchers {
     val bytes = codec.encode(n)
     val n2 = codec.decode(bytes)
 
-    n2 should equal(null)
+    n2 should === (null)
   }
 
   test("can encode transaction") {

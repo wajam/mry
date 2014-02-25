@@ -1,9 +1,11 @@
 package com.wajam.mry.storage.mysql
 
-import com.wajam.nrv.Logging
+import com.wajam.commons.Logging
 import com.wajam.nrv.service.{TokenRangeSeq, TokenRange}
 import com.wajam.mry.execution.{NullValue, Value}
 import scala.annotation.tailrec
+import com.wajam.spnl.TaskContext.ContextData
+import com.wajam.spnl.feeder.Feeder.FeederData
 
 /**
  * Fetches all current defined (not null) data on a table.
@@ -53,7 +55,7 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
 
   def token(record: Record) = record.token
 
-  def toRecord(data: Map[String, Any]) = {
+  def toRecord(data: FeederData) = {
     if (data.contains(Keys) && data.contains(Token) && data.contains(Timestamp))
     {
       try {
@@ -76,12 +78,12 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
 
   def fromRecord(record: Record) = {
     Map(Keys -> record.accessPath.keys,
-      Token -> record.token.toString,
-      Value -> record.value,
-      Timestamp -> record.timestamp)
+        Token -> record.token.toString,
+        Value -> record.value,
+        Timestamp -> record.timestamp)
   }
 
-  override def toContextData(data: Map[String, Any]): Map[String, Any] = data - Value
+  override def toContextData(data: FeederData): ContextData = data - Value
 }
 
 object TableAllLatestFeeder {

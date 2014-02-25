@@ -3,14 +3,16 @@ package com.wajam.mry
 import api.MryCodec
 import execution._
 import storage.Storage
-import com.wajam.nrv.{TimeoutException, Logging}
+import com.wajam.commons.Logging
+import com.wajam.nrv.{RemoteException, TimeoutException}
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.nrv.service._
-import com.wajam.nrv.tracing.Traced
+import com.wajam.tracing.Traced
 import com.wajam.nrv.data.InMessage
-import com.wajam.nrv.utils.{SynchronizedIdGenerator, CurrentTime, TimestampIdGenerator}
 import scala.concurrent.{Future, Promise}
 import java.util.concurrent.TimeUnit
+import com.wajam.commons.{CurrentTime, SynchronizedIdGenerator}
+import com.wajam.nrv.utils.TimestampIdGenerator
 
 /**
  * MRY database
@@ -22,7 +24,7 @@ class Database(serviceName: String = "database")
 
   var storages = Map[String, Storage]()
 
-  private var timestampGenerator = new TimestampIdGenerator with SynchronizedIdGenerator[Long]
+  private val timestampGenerator = new TimestampIdGenerator with SynchronizedIdGenerator[Long]
 
   // Set specific resolver and data codec
   applySupportOptions(new ActionSupportOptions(resolver = Some(Database.TOKEN_RESOLVER), nrvCodec = Some(new MryCodec)))
@@ -140,18 +142,17 @@ class Database(serviceName: String = "database")
       context.commit()
       transaction.reset()
 
+      req.reply(
+        null,
+        data = values
+      )
     } catch {
       case e: Exception => {
         debug("Got an exception executing transaction", e)
         context.rollback()
-        throw e
+        req.replyWithError(e)
       }
     }
-
-    req.reply(
-      null,
-      data = values
-    )
   }
 }
 

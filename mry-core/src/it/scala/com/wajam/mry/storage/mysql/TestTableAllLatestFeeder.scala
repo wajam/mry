@@ -2,7 +2,7 @@ package com.wajam.mry.storage.mysql
 
 import com.wajam.mry.execution.Implicits._
 import com.wajam.mry.execution._
-import org.scalatest.matchers.ShouldMatchers._
+import org.scalatest.Matchers._
 import com.wajam.nrv.service.TokenRange
 import com.wajam.spnl.TaskContext
 import com.wajam.mry.storage.mysql.TableAllLatestFeeder._

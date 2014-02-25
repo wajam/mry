@@ -2,7 +2,7 @@ package com.wajam.mry.execution
 
 import com.wajam.mry.execution.Operation.Return
 import collection.mutable.ArrayBuffer
-import com.wajam.nrv.utils.ContentEquals
+import com.wajam.commons.ContentEquals
 
 /**
  * Programmatic block of operations and variables that is executed against storage
