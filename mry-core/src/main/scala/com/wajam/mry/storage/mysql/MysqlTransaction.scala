@@ -866,12 +866,12 @@ object MysqlTransaction {
 
 }
 
-case class AccessKey(var key: String)
+case class AccessKey(key: String)
 
 case class AccessPath(parts: Seq[AccessKey] = Seq()) {
   def last = parts.last
 
-  def length = parts.length
+  val length = parts.length
 
   def keys = parts.map(p => p.key)
 
