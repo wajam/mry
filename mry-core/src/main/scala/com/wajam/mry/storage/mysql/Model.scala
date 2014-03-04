@@ -1,5 +1,7 @@
 package com.wajam.mry.storage.mysql
 
+import scala.annotation.tailrec
+
 class Model extends TableCollection {
 }
 
@@ -46,6 +48,14 @@ class Table(val name: String, parent: Option[Table] = None, val maxVersions: Int
     this.parentTable match {
       case None => List(this)
       case Some(t) => t.path :+  this
+    }
+  }
+
+  @tailrec
+  final def getTopLevelTable(table: Table = this): Table = {
+    table.parentTable match {
+      case Some(tableParent) => getTopLevelTable(tableParent)
+      case None => table
     }
   }
 

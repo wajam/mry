@@ -22,12 +22,17 @@ class TestHierarchicalTableCache extends FlatSpec {
   val table2_1_1 = table2_1.addTable(new Table("table2_1_1"))
 
   implicit def tuple1ToList[T](t: (T)): List[T] = List(t)
-  implicit def tuple2ToList[T](t: (T,T)): List[T] = List(t._1, t._2)
-  implicit def tuple3ToList[T](t: (T,T,T)): List[T] = List(t._1, t._2, t._3)
+
+  implicit def tuple2ToList[T](t: (T, T)): List[T] = List(t._1, t._2)
+
+  implicit def tuple3ToList[T](t: (T, T, T)): List[T] = List(t._1, t._2, t._3)
 
   implicit def seqToPath(keys: Seq[String]): AccessPath = AccessPath(keys.toList.map(new AccessKey(_)))
+
   implicit def tuple1ToPath(t: (String)): AccessPath = List(t)
+
   implicit def tuple2ToPath(t: (String, String)): AccessPath = List(t._1, t._2)
+
   implicit def tuple3ToPath(t: (String, String, String)): AccessPath = List(t._1, t._2, t._3)
 
   def toPath(keys: String*) = AccessPath(keys.toList.map(new AccessKey(_)))
@@ -64,21 +69,21 @@ class TestHierarchicalTableCache extends FlatSpec {
     val c = toRecord(table1, "c", "c")
 
     val all = Seq(a, a_a, a_b, a_bb, aa_a, b, b_a, b_a_a, bb, c)
-//    val all_shuffled = Random.shuffle(all)
+    //    val all_shuffled = Random.shuffle(all)
     val all_a = withAncestor(all, "a")
     val all_aa = withAncestor(all, "aa")
     val all_b = withAncestor(all, "b")
     val all_bb = withAncestor(all, "bb")
     val all_c = withAncestor(all, "c")
     val all_not_a = withoutAncestor(all, "a")
-//    val all_not_c = withoutAncestor(all, "c")
+    //    val all_not_c = withoutAncestor(all, "c")
 
     all_a.size should be(4)
     all_aa.size should be(1)
     all_b.size should be(3)
     all_bb.size should be(1)
     all_c.size should be(1)
-    all_not_a.size should be(all.size-all_a.size)
+    all_not_a.size should be(all.size - all_a.size)
   }
 
   "HierarchicalTableCache" should "cache all values" in {
@@ -87,9 +92,9 @@ class TestHierarchicalTableCache extends FlatSpec {
     val cache = new HierarchicalTableCache(1000, 200)
 
     // Cache all records and verify their presence/value
-    all.foreach{r => cache.getIfPresent(r.accessPath) should be(None)}
+    all.foreach { r => cache.getIfPresent(r.accessPath) should be(None)}
     all.foreach(r => cache.put(r.accessPath, r))
-    all.foreach{r => cache.getIfPresent(r.accessPath) should be(Some(r))}
+    all.foreach { r => cache.getIfPresent(r.accessPath) should be(Some(r))}
 
     // Update one leaf value and verify cache is updated
     cache.getIfPresent(b_a_a.accessPath) should be(Some(b_a_a))
@@ -98,24 +103,24 @@ class TestHierarchicalTableCache extends FlatSpec {
     cache.getIfPresent(b_a_a.accessPath) should be(Some(b_a_a2))
   }
 
-  it should "update should invalidate children" in {
+  it should "update should NOT invalidate children" in {
     import Records._
 
     val cache = new HierarchicalTableCache(1000, 200)
 
     // Cache all records and verify their presence/value
-    all.foreach{r => cache.getIfPresent(r.accessPath) should be(None)}
+    all.foreach { r => cache.getIfPresent(r.accessPath) should be(None)}
     all.foreach(r => cache.put(r.accessPath, r))
-    all.foreach{r => cache.getIfPresent(r.accessPath) should be(Some(r))}
+    all.foreach { r => cache.getIfPresent(r.accessPath) should be(Some(r))}
 
-    // Update one value and verify cache is updated and children invalidated
+    // Update one value and verify cache is updated and children NOT invalidated
     cache.getIfPresent(a.accessPath) should be(Some(a))
     val a2 = toRecord(a.table, a.accessPath, "2")
     cache.put(a2.accessPath, a2)
     cache.getIfPresent(a.accessPath) should be(Some(a2))
-    cache.getIfPresent(a_a.accessPath) should be(None)
-    all_a.foreach{r => cache.getIfPresent(r.accessPath) should not be Some(r)}
-    all_not_a.foreach{r => cache.getIfPresent(r.accessPath) should be(Some(r))}
+    cache.getIfPresent(a_a.accessPath) should be(Some(a_a))
+    all_a.tail.foreach { r => cache.getIfPresent(r.accessPath) should be(Some(r))}
+    all_not_a.foreach { r => cache.getIfPresent(r.accessPath) should be(Some(r))}
   }
 
   it should "invalidate should invalidate children" in {
@@ -124,23 +129,23 @@ class TestHierarchicalTableCache extends FlatSpec {
     val cache = new HierarchicalTableCache(1000, 200)
 
     // Cache all records and verify their presence/value
-    all.foreach{r => cache.getIfPresent(r.accessPath) should be(None)}
+    all.foreach { r => cache.getIfPresent(r.accessPath) should be(None)}
     all.foreach(r => cache.put(r.accessPath, r))
-    all.foreach{r => cache.getIfPresent(r.accessPath) should be(Some(r))}
+    all.foreach { r => cache.getIfPresent(r.accessPath) should be(Some(r))}
 
     // Invalidate a leaf and verify not cached anymore
     cache.getIfPresent(c.accessPath) should be(Some(c))
     cache.invalidate(c.accessPath)
     cache.getIfPresent(c.accessPath) should be(None)
     val all_not_c = withoutAncestor(all, "c")
-    all_not_c.foreach{r => cache.getIfPresent(r.accessPath) should be(Some(r))}
+    all_not_c.foreach { r => cache.getIfPresent(r.accessPath) should be(Some(r))}
 
     // Invalidate a parent and verify itself/children not cached anymore
     cache.getIfPresent(a.accessPath) should be(Some(a))
     cache.invalidate(a.accessPath)
-    all_a.foreach{r => cache.getIfPresent(r.accessPath) should be(None)}
+    all_a.foreach { r => cache.getIfPresent(r.accessPath) should be(None)}
     val all_not_c_and_a = withoutAncestor(all_not_c, "a")
-    all_not_c_and_a.foreach{r => cache.getIfPresent(r.accessPath) should be(Some(r))}
+    all_not_c_and_a.foreach { r => cache.getIfPresent(r.accessPath) should be(Some(r))}
   }
 
   it should "evict least recently used record when reaching max cache size" in {
@@ -148,10 +153,10 @@ class TestHierarchicalTableCache extends FlatSpec {
 
     val cache = new HierarchicalTableCache(1000, maximumSize = all_a.size)
 
-    all_a.foreach{r => cache.getIfPresent(r.accessPath) should be(None)}
+    all_a.foreach { r => cache.getIfPresent(r.accessPath) should be(None)}
     all_a.foreach(r => cache.put(r.accessPath, r))
-    all_a.foreach{r => cache.getIfPresent(r.accessPath) should be(Some(r))}
-    all_not_a.foreach{r => cache.getIfPresent(r.accessPath) should be(None)}
+    all_a.foreach { r => cache.getIfPresent(r.accessPath) should be(Some(r))}
+    all_not_a.foreach { r => cache.getIfPresent(r.accessPath) should be(None)}
 
     // Add an extra record, the first record should be evicted. Note that even if the evicted record has children
     // in the cache, the children are not evicted.
@@ -161,10 +166,11 @@ class TestHierarchicalTableCache extends FlatSpec {
     all_a.head should be(a)
 
     val other_a = all_a.filterNot(_.accessPath == all_a.head.accessPath)
-    other_a.foreach{r => cache.getIfPresent(r.accessPath) should be(Some(r))}
+    other_a.foreach { r => cache.getIfPresent(r.accessPath) should be(Some(r))}
   }
 
   it should "evict records after expiration" in new Eventually {
+
     import Records._
 
     implicit override val patienceConfig =
@@ -172,15 +178,14 @@ class TestHierarchicalTableCache extends FlatSpec {
 
     val cache = new HierarchicalTableCache(expireMs = 25, 200)
 
-    all.foreach{r => cache.getIfPresent(r.accessPath) should be(None)}
+    all.foreach { r => cache.getIfPresent(r.accessPath) should be(None)}
     all.foreach(r => cache.put(r.accessPath, r))
     all.exists(r => cache.getIfPresent(r.accessPath) == Some(r))
 
     eventually {
-      all.foreach{r => cache.getIfPresent(r.accessPath) should be(None)}
+      all.foreach { r => cache.getIfPresent(r.accessPath) should be(None)}
     }
   }
-
 
   "AccessPathOrdering" should "compare" in {
     import Records._
@@ -210,6 +215,8 @@ class TestHierarchicalTableCache extends FlatSpec {
     AccessPathOrdering.isAncestor(b.accessPath, b_a_a.accessPath) === true
   }
 
+  import TransactionCache._
+
   "HierarchicalCache" should "cache records per trx and flush them in the global cache when trx is committed" in {
     import Records._
 
@@ -219,28 +226,28 @@ class TestHierarchicalTableCache extends FlatSpec {
     // Empty cache + new trx cache. Both should be empty. Load records in trx cache without committing trx.
     // The other trx should not see the loaded values.
     val trxCache1 = cache.createTransactionCache
-    all.foreach{r => trxCache1.get(r.table, r.accessPath) should be(None)}
-    all.foreach{r => trxCache1.getOrSet(r.table, r.accessPath, Some(r)) should be(Some(r))}
-    all.foreach{r => trxCache1.get(r.table, r.accessPath) should be(Some(Some(r)))}
+    all.foreach { r => trxCache1.get(r.table, r.accessPath) should be(None)}
+    all.foreach { r => trxCache1.getOrSet(r.table, r.accessPath, Some(r)) should be(Some(r))}
+    all.foreach { r => trxCache1.get(r.table, r.accessPath) should be(Some(CachedValue(Some(r), Action.Get)))}
 
     // New trx cache. Both are still empty. Load and commit records. Future trx should see the loaded values.
     val trxCache2 = cache.createTransactionCache
-    all.foreach{r => trxCache2.get(r.table, r.accessPath) should be(None)}
-    all.foreach{r => trxCache2.getOrSet(r.table, r.accessPath, Some(r)) should be(Some(r))}
+    all.foreach { r => trxCache2.get(r.table, r.accessPath) should be(None)}
+    all.foreach { r => trxCache2.getOrSet(r.table, r.accessPath, Some(r)) should be(Some(r))}
     trxCache2.commit()
 
     // New trx now see the cached values
     val trxCache3 = cache.createTransactionCache
-    all.foreach{r => trxCache3.get(r.table, r.accessPath) should be(Some(Some(r)))}
+    all.foreach { r => trxCache3.get(r.table, r.accessPath) should be(Some(CachedValue(Some(r), Action.Get)))}
 
     // New trx update one record without committing.
     val trxCache4 = cache.createTransactionCache
     trxCache4.put(a.table, a.accessPath, Some(a2))
-    trxCache4.get(a.table, a.accessPath) should be(Some(Some(a2)))
+    trxCache4.get(a.table, a.accessPath) should be(Some(CachedValue(Some(a2), Action.Put)))
 
     // New trx does not see the value updated but not committed by previous trx
     val trxCache5 = cache.createTransactionCache
-    trxCache5.get(a.table, a.accessPath) should be(Some(Some(a)))
+    trxCache5.get(a.table, a.accessPath) should be(Some(CachedValue(Some(a), Action.Get)))
 
     // New trx update the record and commit it this time
     val trxCache6 = cache.createTransactionCache
@@ -249,7 +256,7 @@ class TestHierarchicalTableCache extends FlatSpec {
 
     // New trx see the updated value
     val trxCache7 = cache.createTransactionCache
-    trxCache7.get(a.table, a.accessPath) should be(Some(Some(a2)))
+    trxCache7.get(a.table, a.accessPath) should be(Some(CachedValue(Some(a2), Action.Get)))
 
     // New trx reset the value commit it
     val trxCache8 = cache.createTransactionCache
@@ -273,32 +280,45 @@ class TestHierarchicalTableCache extends FlatSpec {
     trxCache1.get(t1_a.table, a.accessPath) should be(None)
     trxCache1.get(t2_a.table, a.accessPath) should be(None)
     trxCache1.getOrSet(t1_a.table, a.accessPath, Some(t1_a))
-    trxCache1.get(t1_a.table, a.accessPath) should be(Some(Some(t1_a)))
+    trxCache1.get(t1_a.table, a.accessPath) should be(Some(CachedValue(Some(t1_a), Action.Get)))
     trxCache1.get(t2_a.table, a.accessPath) should be(None)
     trxCache1.commit()
 
     val trxCache2 = cache.createTransactionCache
-    trxCache2.get(t1_a.table, a.accessPath) should be(Some(Some(t1_a)))
+    trxCache2.get(t1_a.table, a.accessPath) should be(Some(CachedValue(Some(t1_a), Action.Get)))
     trxCache2.get(t2_a.table, a.accessPath) should be(None)
     trxCache2.put(t2_a.table, a.accessPath, Some(t2_a))
-    trxCache2.get(t1_a.table, a.accessPath) should be(Some(Some(t1_a)))
-    trxCache2.get(t2_a.table, a.accessPath) should be(Some(Some(t2_a)))
+    trxCache2.get(t1_a.table, a.accessPath) should be(Some(CachedValue(Some(t1_a), Action.Get)))
+    trxCache2.get(t2_a.table, a.accessPath) should be(Some(CachedValue(Some(t2_a), Action.Put)))
     trxCache2.commit()
 
-//    val trxCache3 = cache.createTransactionCache
-//    trxCache3.get(t1_a.table, a.accessPath) should be(Some(Some(t1_a)))
-//    trxCache3.get(t2_a.table, a.accessPath) should be(Some(Some(t2_a)))
-//    trxCache3.put(t2_a.table, a.accessPath, None)
-//    trxCache3.get(t1_a.table, a.accessPath) should be(Some(Some(t1_a)))
-//    trxCache3.get(t2_a.table, a.accessPath) should be(None)
-//    trxCache3.commit()
-//
-//    val trxCache4 = cache.createTransactionCache
-//    trxCache4.get(t1_a.table, a.accessPath) should be(Some(Some(t1_a)))
-//    trxCache4.get(t2_a.table, a.accessPath) should be(None)
+    val trxCache3 = cache.createTransactionCache
+    trxCache3.get(t1_a.table, a.accessPath) should be(Some(CachedValue(Some(t1_a), Action.Get)))
+    trxCache3.get(t2_a.table, a.accessPath) should be(Some(CachedValue(Some(t2_a), Action.Get)))
   }
 
-  ignore should "cache hierarchical values" in {
+  it should "be invalidated when trx cache is deleted (i.e. record == None)" in {
+    import Records._
+
+    val cache = new HierarchicalCache(model, 1000, 200)
+
+    val trxCache1 = cache.createTransactionCache
+    trxCache1.get(a.table, a.accessPath) should be(None)
+    trxCache1.getOrSet(a.table, a.accessPath, Some(a))
+    trxCache1.get(a.table, a.accessPath) should be(Some(CachedValue(Some(a), Action.Get)))
+    trxCache1.commit()
+
+    val trxCache2 = cache.createTransactionCache
+    trxCache2.get(a.table, a.accessPath) should be(Some(CachedValue(Some(a), Action.Get)))
+    trxCache2.put(a.table, a.accessPath, None)
+    trxCache2.get(a.table, a.accessPath) should be(Some(CachedValue(None, Action.Put)))
+    trxCache2.commit()
+
+    val trxCache3 = cache.createTransactionCache
+    trxCache3.get(a.table, a.accessPath) should be(None)
+  }
+
+  it should "cache hierarchical values" in {
     import Records._
 
     val cache = new HierarchicalCache(model, 1000, 200)
@@ -308,26 +328,36 @@ class TestHierarchicalTableCache extends FlatSpec {
     trxCache1.get(a.table, a.accessPath) should be(None)
     trxCache1.get(a_a.table, a_a.accessPath) should be(None)
     trxCache1.get(a_b.table, a_b.accessPath) should be(None)
-    trxCache1.put(a_b.table, a_b.accessPath, Some(a_b))
-    trxCache1.put(a.table, a_b.accessPath, Some(a))
-    trxCache1.get(a.table, a.accessPath) should be(Some(a))
+    trxCache1.getOrSet(a.table, a.accessPath, Some(a))
+    trxCache1.getOrSet(a_b.table, a_b.accessPath, Some(a_b))
+    trxCache1.get(a.table, a.accessPath) should be(Some(CachedValue(Some(a), Action.Get)))
     trxCache1.get(a_a.table, a_a.accessPath) should be(None)
-    trxCache1.get(a_b.table, a_b.accessPath) should be(Some(a_b))
+    trxCache1.get(a_b.table, a_b.accessPath) should be(Some(CachedValue(Some(a_b), Action.Get)))
     trxCache1.commit()
 
     val trxCache2 = cache.createTransactionCache
-    trxCache2.get(a.table, a.accessPath) should be(Some(a))
+    trxCache2.get(a.table, a.accessPath) should be(Some(CachedValue(Some(a), Action.Get)))
     trxCache2.get(a_a.table, a_a.accessPath) should be(None)
-    trxCache2.get(a_b.table, a_b.accessPath) should be(Some(a_b))
-    trxCache2.put(a.table, a_b.accessPath, Some(a2))
-    trxCache2.get(a.table, a.accessPath) should be(Some(a2))
-    trxCache2.get(a_a.table, a_a.accessPath) should be(None)
-    trxCache2.get(a_b.table, a_b.accessPath) should be(None)
-    trxCache2.commit()
+    trxCache2.get(a_b.table, a_b.accessPath) should be(Some(CachedValue(Some(a_b), Action.Get)))
 
+    // Updating parent record should NOT invalidate the descendants
     val trxCache3 = cache.createTransactionCache
-    trxCache3.get(a.table, a.accessPath) should be(Some(a2))
-    trxCache3.get(a_a.table, a_a.accessPath) should be(None)
-    trxCache3.get(a_b.table, a_b.accessPath) should be(None)
+    trxCache3.put(a.table, a.accessPath, Some(a2))
+    trxCache3.commit()
+
+    val trxCache4 = cache.createTransactionCache
+    trxCache4.get(a.table, a.accessPath) should be(Some(CachedValue(Some(a2), Action.Get)))
+    trxCache4.get(a_a.table, a_a.accessPath) should be(None)
+    trxCache4.get(a_b.table, a_b.accessPath) should be(Some(CachedValue(Some(a_b), Action.Get)))
+
+    // Deleting parent record should invalidate the descendants
+    val trxCache5 = cache.createTransactionCache
+    trxCache5.put(a.table, a.accessPath, None)
+    trxCache5.commit()
+
+    val trxCache6 = cache.createTransactionCache
+    trxCache6.get(a.table, a.accessPath) should be(None)
+    trxCache6.get(a_a.table, a_a.accessPath) should be(None)
+    trxCache6.get(a_b.table, a_b.accessPath) should be(None)
   }
 }

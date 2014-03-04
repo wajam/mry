@@ -7,7 +7,7 @@ import com.wajam.commons.Logging
 
 class HierarchicalCache(model: => Model, expireMs: Long, maximumSizePerTable: Int) {
 
-  // Keep one cache per top level table. All descendant tables are cached in the same cache than their ancestor
+  // Keep one cache per top level table. All descendant tables are cached in the same cache than their top level ancestor
   private lazy val tableCaches: Map[Table, HierarchicalTableCache] = model.tables.values.map(table =>
     table -> new HierarchicalTableCache(expireMs, maximumSizePerTable)).toMap
 
@@ -16,30 +16,21 @@ class HierarchicalCache(model: => Model, expireMs: Long, maximumSizePerTable: In
    */
   def createTransactionCache = new TransactionCache(getTopLevelTableCache)
 
-  private def getTopLevelTableCache(table: Table): HierarchicalTableCache = tableCaches(getTopLevelTable(table))
-
-  @tailrec
-  private def getTopLevelTable(table: Table): Table = {
-    table.parentTable match {
-      case Some(parent) => getTopLevelTable(parent)
-      case None => table
-    }
-  }
+  private def getTopLevelTableCache(table: Table): HierarchicalTableCache = tableCaches(table.getTopLevelTable())
 }
 
 /**
  * Trait to manipulate cached records per table
  */
-trait TableCache[K, V] {
-  def getIfPresent(key: K): Option[V]
+trait TableCache[V] {
+  def getIfPresent(key: AccessPath): Option[V]
 
-  def put(key: K, record: V): Unit
+  def put(key: AccessPath, record: V): Unit
 
-  def invalidate(key: K): Unit
+  def invalidate(key: AccessPath): Unit
 }
 
-
-class HierarchicalTableCache(expireMs: Long, maximumSize: Int) extends TableCache[AccessPath, Record] with Logging {
+class HierarchicalTableCache(expireMs: Long, maximumSize: Int) extends TableCache[Record] with Logging {
 
   private val keys = new ConcurrentSkipListSet[AccessPath](AccessPathOrdering)
   private val cache = CacheBuilder
@@ -55,23 +46,22 @@ class HierarchicalTableCache(expireMs: Long, maximumSize: Int) extends TableCach
 
   def put(path: AccessPath, record: Record) = {
     info(s"put(): $record")
-    invalidateChildren(record.accessPath)
     keys.add(record.accessPath)
     cache.put(record.accessPath, record)
   }
 
   def invalidate(path: AccessPath) = {
     info(s"invalidate(): $path")
-    invalidateChildren(path)
+    invalidateDescendants(path)
     keys.remove(path)
     cache.invalidate(path)
   }
 
-  private def invalidateChildren(path: AccessPath): Unit = {
+  private def invalidateDescendants(path: AccessPath): Unit = {
     import collection.JavaConversions._
     import AccessPathOrdering.isAncestor
 
-    info(s"invalidateChildren(): $path")
+    info(s"invalidateDescendants(): $path")
     keys.tailSet(path, false).takeWhile(isAncestor(path, _)).foreach { child =>
       info(s" removing: $child")
       keys.remove(child)
@@ -116,22 +106,27 @@ object AccessPathOrdering extends Ordering[AccessPath] {
   }
 }
 
-class TransactionCache(getTableCache: (Table) => TableCache[AccessPath, Record]) {
+class TransactionCache(getTableCache: (Table) => TableCache[Record]) extends Logging {
+
+  import TransactionCache._
+
   private var trxTableCaches: Map[Table, TransactionTableCache] = Map.empty
 
-  // TODO explain Option[Option[Record]]
   /**
    * Returns the specified table path cached record. Use the record value cached in the current transaction but
    * fallback to the storage cache if necessary.
    */
-  def get(table: Table, path: AccessPath): Option[Option[Record]] = {
-    getOrCreateTrxCache(table).getIfPresent(path) match {
+  private[mysql] def get(table: Table, path: AccessPath): Option[CachedValue] = {
+    val trxTableCache = getOrCreateTrxCache(table)
+    trxTableCache.getIfPresent(path) match {
       case rec@Some(_) => rec
+      case None if trxTableCache.isAncestorUpdated(path) => None
       case None => {
         getTableCache(table).getIfPresent(path) match {
           case rec@Some(_) => {
-            getOrCreateTrxCache(table).put(path, rec)
-            Some(rec)
+            val value = CachedValue(rec, Action.Get)
+            trxTableCache.put(path, value)
+            Some(value)
           }
           case None => None
         }
@@ -145,10 +140,10 @@ class TransactionCache(getTableCache: (Table) => TableCache[AccessPath, Record])
    */
   def getOrSet(table: Table, path: AccessPath, record: => Option[Record]): Option[Record] = {
     get(table, path) match {
-      case Some(rec) => rec
+      case Some(CachedValue(rec, _)) => rec
       case None => {
         val rec = record
-        put(table, path, rec)
+        getOrCreateTrxCache(table).put(path, CachedValue(rec, Action.Get))
         rec
       }
     }
@@ -158,45 +153,101 @@ class TransactionCache(getTableCache: (Table) => TableCache[AccessPath, Record])
    * Update the cached table path record
    */
   def put(table: Table, path: AccessPath, record: => Option[Record]): Unit = {
-    getOrCreateTrxCache(table).put(path, record)
+    getOrCreateTrxCache(table).put(path, CachedValue(record, Action.Put))
   }
 
   /**
    * Flush the current transaction cache to the storage cache.
    */
   def commit(): Unit = {
-
     implicit val ordering = AccessPathOrdering
 
     trxTableCaches.foreach {
-      case (table, trxTableCache) => trxTableCache.toIterable.toSeq.sortBy(_._1).foreach {
-        case (path, Some(rec)) => getTableCache(table).put(path, rec)
-        case (path, None) => getTableCache(table).invalidate(path)
+      case (table, trxTableCache) => trxTableCache.toIterable.foreach {
+        case (path, CachedValue(Some(rec), _)) => getTableCache(table).put(path, rec)
+        case (path, CachedValue(None, _)) => getTableCache(table).invalidate(path)
       }
     }
     trxTableCaches = Map.empty
   }
 
   private def getOrCreateTrxCache(table: Table): TransactionTableCache = {
-    trxTableCaches.get(table) match {
+    val topLevelTable = table.getTopLevelTable()
+
+    trxTableCaches.get(topLevelTable) match {
       case Some(cache) => cache
       case None => {
         val cache = new TransactionTableCache()
-        trxTableCaches += table -> cache
+        trxTableCaches += topLevelTable -> cache
         cache
       }
     }
   }
 
-  private class TransactionTableCache extends TableCache[AccessPath, Option[Record]] {
-    private var cache = Map[AccessPath, Option[Record]]()
+  private class TransactionTableCache extends TableCache[CachedValue] {
+    private var cache = new java.util.TreeMap[AccessPath, CachedValue](AccessPathOrdering)
 
-    def getIfPresent(path: AccessPath) = cache.get(path)
+    def getIfPresent(path: AccessPath) = Option(cache.get(path))
 
-    def put(path: AccessPath, record: Option[Record]) = cache += path -> record
+    def put(path: AccessPath, value: CachedValue) = {
+      info(s"put(): $path=$value")
 
-    def invalidate(path: AccessPath) = cache -= path
+      if (value.action == Action.Put && value.record.isEmpty) {
+        // If the cached record is deleted, invalidate its descendants
+        getDescendants(path).foreach { case (descPath, _) => invalidate(descPath)}
+      }
+      cache.put(path, value)
+    }
 
-    def toIterable: Iterable[(AccessPath, Option[Record])] = cache.toIterable
+    def invalidate(path: AccessPath) = cache.remove(path)
+
+    def toIterable: Iterable[(AccessPath, CachedValue)] = {
+      import collection.JavaConversions._
+
+      info(s"toIterable()")
+      cache.entrySet().toIterator.toIterable.map(e => e.getKey -> e.getValue)
+    }
+
+    @tailrec
+    final def isAncestorUpdated(path: AccessPath): Boolean = {
+      val parentPathSeq = path.parts.dropRight(1)
+      if (parentPathSeq.isEmpty) {
+        false
+      } else {
+        val parentPath = AccessPath(parentPathSeq)
+        getIfPresent(parentPath) match {
+          case Some(CachedValue(_, Action.Put)) => true
+          case _ => isAncestorUpdated(parentPath)
+        }
+      }
+    }
+
+    private def getDescendants(path: AccessPath): Iterable[(AccessPath, CachedValue)] = {
+      import collection.JavaConversions._
+      import AccessPathOrdering.isAncestor
+
+      cache.tailMap(path, false).takeWhile(t => isAncestor(path, t._1))
+    }
   }
+
+}
+
+object TransactionCache {
+
+  sealed trait Action
+
+  object Action {
+
+    object Get extends Action {
+      override def toString = "Get"
+    }
+
+    object Put extends Action {
+      override def toString = "Put"
+    }
+
+  }
+
+  case class CachedValue(record: Option[Record], action: Action)
+
 }
