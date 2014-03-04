@@ -1,14 +1,18 @@
-package com.wajam.mry.storage.mysql
+package com.wajam.mry.storage.mysql.cache
 
 import org.scalatest.Matchers._
 import org.scalatest.FlatSpec
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import com.wajam.mry.execution.StringValue
 import language.implicitConversions
 import scala.util.Random
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
+import com.wajam.mry.storage.mysql._
+import com.wajam.mry.storage.mysql.AccessKey
+import scala.Some
+import com.wajam.mry.storage.mysql.AccessPath
+import com.wajam.mry.execution.StringValue
 
 @RunWith(classOf[JUnitRunner])
 class TestHierarchicalTableCache extends FlatSpec {

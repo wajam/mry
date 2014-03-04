@@ -1,6 +1,8 @@
-package com.wajam.mry.storage.mysql
+package com.wajam.mry.storage.mysql.cache
 
 import com.wajam.nrv.utils.timestamp.Timestamp
+import com.wajam.mry.storage.mysql._
+import com.wajam.mry.storage.mysql.AccessPath
 
 trait CachedMysqlTransaction extends MysqlTransaction {
 

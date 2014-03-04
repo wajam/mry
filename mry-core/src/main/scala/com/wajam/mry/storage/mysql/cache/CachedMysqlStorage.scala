@@ -1,6 +1,7 @@
-package com.wajam.mry.storage.mysql
+package com.wajam.mry.storage.mysql.cache
 
 import com.wajam.mry.execution.ExecutionContext
+import com.wajam.mry.storage.mysql.{MysqlTransaction, MysqlStorage}
 
 trait CachedMysqlStorage extends MysqlStorage {
 

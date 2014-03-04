@@ -1,110 +1,8 @@
-package com.wajam.mry.storage.mysql
+package com.wajam.mry.storage.mysql.cache
 
-import com.google.common.cache.{RemovalCause, RemovalNotification, RemovalListener, CacheBuilder}
-import java.util.concurrent.{ConcurrentSkipListSet, TimeUnit}
-import scala.annotation.tailrec
+import com.wajam.mry.storage.mysql.{AccessPath, Record, Table}
 import com.wajam.commons.Logging
-
-class HierarchicalCache(model: => Model, expireMs: Long, maximumSizePerTable: Int) {
-
-  // Keep one cache per top level table. All descendant tables are cached in the same cache than their top level ancestor
-  private lazy val tableCaches: Map[Table, HierarchicalTableCache] = model.tables.values.map(table =>
-    table -> new HierarchicalTableCache(expireMs, maximumSizePerTable)).toMap
-
-  /**
-   * Returns a new transaction cache
-   */
-  def createTransactionCache = new TransactionCache(getTopLevelTableCache)
-
-  private def getTopLevelTableCache(table: Table): HierarchicalTableCache = tableCaches(table.getTopLevelTable())
-}
-
-/**
- * Trait to manipulate cached records per table
- */
-trait TableCache[V] {
-  def getIfPresent(key: AccessPath): Option[V]
-
-  def put(key: AccessPath, record: V): Unit
-
-  def invalidate(key: AccessPath): Unit
-}
-
-class HierarchicalTableCache(expireMs: Long, maximumSize: Int) extends TableCache[Record] with Logging {
-
-  private val keys = new ConcurrentSkipListSet[AccessPath](AccessPathOrdering)
-  private val cache = CacheBuilder
-    .newBuilder()
-    .expireAfterAccess(expireMs, TimeUnit.MILLISECONDS)
-    .maximumSize(maximumSize)
-    .removalListener(CacheRemovalListener)
-    .build[AccessPath, Record]
-
-  def getIfPresent(path: AccessPath): Option[Record] = {
-    Option(cache.getIfPresent(path))
-  }
-
-  def put(path: AccessPath, record: Record) = {
-    info(s"put(): $record")
-    keys.add(record.accessPath)
-    cache.put(record.accessPath, record)
-  }
-
-  def invalidate(path: AccessPath) = {
-    info(s"invalidate(): $path")
-    invalidateDescendants(path)
-    keys.remove(path)
-    cache.invalidate(path)
-  }
-
-  private def invalidateDescendants(path: AccessPath): Unit = {
-    import collection.JavaConversions._
-    import AccessPathOrdering.isAncestor
-
-    info(s"invalidateDescendants(): $path")
-    keys.tailSet(path, false).takeWhile(isAncestor(path, _)).foreach { child =>
-      info(s" removing: $child")
-      keys.remove(child)
-      cache.invalidate(child)
-    }
-  }
-
-  private object CacheRemovalListener extends RemovalListener[AccessPath, Record] {
-    def onRemoval(notification: RemovalNotification[AccessPath, Record]) {
-      val cause = notification.getCause
-      info(s" onRemoval(): ${notification.getCause}, evicted=${wasEvicted(cause)}, $notification")
-      if (wasEvicted(cause)) {
-        keys.remove(notification.getKey)
-      }
-    }
-
-    private def wasEvicted(cause: RemovalCause) = cause != RemovalCause.EXPLICIT && cause != RemovalCause.REPLACED
-  }
-
-}
-
-object AccessPathOrdering extends Ordering[AccessPath] {
-  def compare(path1: AccessPath, path2: AccessPath) = {
-    compare(path1.parts, path2.parts)
-  }
-
-  def isAncestor(ancestor: AccessPath, child: AccessPath): Boolean = {
-    ancestor.length < child.length && ancestor.parts == child.parts.take(ancestor.length)
-  }
-
-  @tailrec
-  private def compare(keys1: Seq[AccessKey], keys2: Seq[AccessKey]): Int = {
-    (keys1, keys2) match {
-      case (Nil, Nil) => 0
-      case (Nil, _) => -1
-      case (_, Nil) => 1
-      case (h1 :: t1, h2 :: t2) => {
-        val result = h1.key.compareTo(h2.key)
-        if (result == 0) compare(t1, t2) else result
-      }
-    }
-  }
-}
+import scala.annotation.tailrec
 
 class TransactionCache(getTableCache: (Table) => TableCache[Record]) extends Logging {
 
@@ -251,3 +149,4 @@ object TransactionCache {
   case class CachedValue(record: Option[Record], action: Action)
 
 }
+
