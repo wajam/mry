@@ -8,29 +8,8 @@ class TransactionCache(getTableCache: (Table) => TableCache[Record]) extends Log
 
   import TransactionCache._
 
+  // Keep one cache per top level table. All descendant tables are cached in the same cache than their top level ancestor
   private var trxTableCaches: Map[Table, TransactionTableCache] = Map.empty
-
-  /**
-   * Returns the specified table path cached record. Use the record value cached in the current transaction but
-   * fallback to the storage cache if necessary.
-   */
-  private[mysql] def get(table: Table, path: AccessPath): Option[CachedValue] = {
-    val trxTableCache = getOrCreateTrxCache(table)
-    trxTableCache.getIfPresent(path) match {
-      case rec@Some(_) => rec
-      case None if trxTableCache.isAncestorUpdated(path) => None
-      case None => {
-        getTableCache(table).getIfPresent(path) match {
-          case rec@Some(_) => {
-            val value = CachedValue(rec, Action.Get)
-            trxTableCache.put(path, value)
-            Some(value)
-          }
-          case None => None
-        }
-      }
-    }
-  }
 
   /**
    * Returns the specified table path cached record or load the record with the provided function. If loaded, the
@@ -67,6 +46,28 @@ class TransactionCache(getTableCache: (Table) => TableCache[Record]) extends Log
       }
     }
     trxTableCaches = Map.empty
+  }
+
+  /**
+   * Returns the specified table path cached record. Use the record value cached in the current transaction but
+   * fallback to the storage cache if allowed (i.e. ancestor not deleted) and necessary.
+   */
+  private[cache] def get(table: Table, path: AccessPath): Option[CachedValue] = {
+    val trxTableCache = getOrCreateTrxCache(table)
+    trxTableCache.getIfPresent(path) match {
+      case rec@Some(_) => rec
+      case None if trxTableCache.isAncestorDeleted(path) => None
+      case None => {
+        getTableCache(table).getIfPresent(path) match {
+          case rec@Some(_) => {
+            val value = CachedValue(rec, Action.Get)
+            trxTableCache.put(path, value)
+            Some(value)
+          }
+          case None => None
+        }
+      }
+    }
   }
 
   private def getOrCreateTrxCache(table: Table): TransactionTableCache = {
@@ -107,15 +108,15 @@ class TransactionCache(getTableCache: (Table) => TableCache[Record]) extends Log
     }
 
     @tailrec
-    final def isAncestorUpdated(path: AccessPath): Boolean = {
+    final def isAncestorDeleted(path: AccessPath): Boolean = {
       val parentPathSeq = path.parts.dropRight(1)
       if (parentPathSeq.isEmpty) {
         false
       } else {
         val parentPath = AccessPath(parentPathSeq)
         getIfPresent(parentPath) match {
-          case Some(CachedValue(_, Action.Put)) => true
-          case _ => isAncestorUpdated(parentPath)
+          case Some(CachedValue(None, Action.Put)) => true
+          case _ => isAncestorDeleted(parentPath)
         }
       }
     }
