@@ -4,7 +4,6 @@ import com.google.common.cache.{RemovalCause, RemovalNotification, RemovalListen
 import java.util.concurrent.{ConcurrentSkipListSet, TimeUnit}
 import com.wajam.commons.Logging
 import com.wajam.mry.storage.mysql._
-import com.wajam.mry.storage.mysql.AccessPath
 
 class HierarchicalCache(model: => Model, expireMs: Long, maximumSizePerTable: Int) {
 

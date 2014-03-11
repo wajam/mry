@@ -51,10 +51,10 @@ trait MysqlStorageFixture {
       mysqlStorage.syncModel(model)
       mysqlStorage.start()
       mysqlStorage.setCurrentConsistentTimestamp((_) => currentConsistentTimestamp)
-      val theFixture = FixtureParam(mysqlStorage, Map("mysql" -> mysqlStorage))
+      val fixture = FixtureParam(mysqlStorage, Map("mysql" -> mysqlStorage))
 
       // "loan" the fixture to the test
-      test(theFixture)
+      test(fixture)
     }
     finally {
       // clean up the fixture

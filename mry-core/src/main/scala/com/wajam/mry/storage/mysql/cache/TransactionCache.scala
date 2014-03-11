@@ -112,10 +112,7 @@ class TransactionCache(getTableCache: (Table) => TableCache[Record]) extends Log
         false
       } else {
         val parentPath = AccessPath(parentPathSeq)
-        getIfPresent(parentPath) match {
-          case Some(CachedValue(None, Action.Put)) => true
-          case _ => isAncestorDeleted(parentPath)
-        }
+        (getIfPresent(parentPath) == Some(CachedValue(None, Action.Put))) || isAncestorDeleted(parentPath)
       }
     }
 

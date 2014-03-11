@@ -3,8 +3,6 @@ package com.wajam.mry.storage.mysql.cache
 import language.implicitConversions
 import com.wajam.mry.storage.mysql._
 import org.scalatest.Matchers._
-import com.wajam.mry.storage.mysql.AccessPath
-import com.wajam.mry.storage.mysql.AccessKey
 import com.wajam.mry.execution.StringValue
 
 trait CacheSetup {
