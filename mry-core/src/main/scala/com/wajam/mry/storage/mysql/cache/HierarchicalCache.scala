@@ -35,13 +35,13 @@ class HierarchicalTableCache(expireMs: Long, maximumSize: Int) extends TableCach
   }
 
   def put(path: AccessPath, record: Record) = {
-    info(s"put(): $record")
+    trace(s"put(): $record")
     keys.add(record.accessPath)
     cache.put(record.accessPath, record)
   }
 
   def invalidate(path: AccessPath) = {
-    info(s"invalidate(): $path")
+    trace(s"invalidate(): $path")
     invalidateDescendants(path)
     keys.remove(path)
     cache.invalidate(path)
@@ -51,7 +51,7 @@ class HierarchicalTableCache(expireMs: Long, maximumSize: Int) extends TableCach
     import collection.JavaConversions._
     import AccessPathOrdering.isAncestor
 
-    info(s"invalidateDescendants(): $path")
+    trace(s"invalidateDescendants(): $path")
     keys.tailSet(path, false).takeWhile(isAncestor(path, _)).foreach { child =>
       info(s" removing: $child")
       keys.remove(child)
@@ -62,7 +62,7 @@ class HierarchicalTableCache(expireMs: Long, maximumSize: Int) extends TableCach
   private object CacheRemovalListener extends RemovalListener[AccessPath, Record] {
     def onRemoval(notification: RemovalNotification[AccessPath, Record]) {
       val cause = notification.getCause
-      info(s" onRemoval(): ${notification.getCause}, evicted=${wasEvicted(cause)}, $notification")
+      trace(s" onRemoval(): ${notification.getCause}, evicted=${wasEvicted(cause)}, $notification")
       if (wasEvicted(cause)) {
         keys.remove(notification.getKey)
       }

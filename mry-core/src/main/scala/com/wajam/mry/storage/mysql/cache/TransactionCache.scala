@@ -89,7 +89,7 @@ class TransactionCache(getTableCache: (Table) => TableCache[Record]) extends Log
     def getIfPresent(path: AccessPath) = Option(cache.get(path))
 
     def put(path: AccessPath, value: CachedValue) = {
-      info(s"put(): $path=$value")
+      trace(s"put(): $path=$value")
 
       if (value.action == Action.Put && value.record.isEmpty) {
         // If the cached record is deleted, invalidate its descendants
@@ -102,8 +102,6 @@ class TransactionCache(getTableCache: (Table) => TableCache[Record]) extends Log
 
     def toIterable: Iterable[(AccessPath, CachedValue)] = {
       import collection.JavaConversions._
-
-      info(s"toIterable()")
       cache.entrySet().toIterator.toIterable.map(e => e.getKey -> e.getValue)
     }
 
