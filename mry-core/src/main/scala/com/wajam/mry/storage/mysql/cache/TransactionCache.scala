@@ -100,6 +100,8 @@ class TransactionCache(getTableCache: (Table) => TableCache[Record]) extends Log
 
     def invalidate(path: AccessPath) = cache.remove(path)
 
+    def invalidateAll() = throw new NotImplementedError
+
     def toIterable: Iterable[(AccessPath, CachedValue)] = {
       import collection.JavaConversions._
       cache.entrySet().toIterator.toIterable.map(e => e.getKey -> e.getValue)
@@ -145,4 +147,3 @@ object TransactionCache {
   case class CachedValue(record: Option[Record], action: Action)
 
 }
-

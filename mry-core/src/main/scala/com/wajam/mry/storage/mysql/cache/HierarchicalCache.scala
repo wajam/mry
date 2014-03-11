@@ -16,6 +16,8 @@ class HierarchicalCache(model: => Model, expireMs: Long, maximumSizePerTable: In
    */
   def createTransactionCache = new TransactionCache(getTopLevelTableCache)
 
+  def invalidateAll(): Unit = tableCaches.valuesIterator.foreach(_.invalidateAll())
+
   private def getTopLevelTableCache(table: Table): HierarchicalTableCache = tableCaches(table.getTopLevelTable)
 }
 
@@ -44,6 +46,11 @@ class HierarchicalTableCache(expireMs: Long, maximumSize: Int) extends TableCach
     invalidateDescendants(path)
     keys.remove(path)
     cache.invalidate(path)
+  }
+
+  def invalidateAll() = {
+    cache.invalidateAll()
+    keys.clear()
   }
 
   private def invalidateDescendants(path: AccessPath): Unit = {

@@ -12,4 +12,6 @@ trait TableCache[V] {
   def put(key: AccessPath, record: V): Unit
 
   def invalidate(key: AccessPath): Unit
+
+  def invalidateAll(): Unit
 }
