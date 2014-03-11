@@ -52,10 +52,10 @@ class Table(val name: String, parent: Option[Table] = None, val maxVersions: Int
   }
 
   @tailrec
-  final def getTopLevelTable(table: Table = this): Table = {
-    table.parentTable match {
-      case Some(tableParent) => getTopLevelTable(tableParent)
-      case None => table
+  final def getTopLevelTable: Table = {
+    this.parentTable match {
+      case Some(tableParent) => tableParent.getTopLevelTable
+      case None => this
     }
   }
 

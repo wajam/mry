@@ -71,7 +71,7 @@ class TransactionCache(getTableCache: (Table) => TableCache[Record]) extends Log
   }
 
   private def getOrCreateTrxCache(table: Table): TransactionTableCache = {
-    val topLevelTable = table.getTopLevelTable()
+    val topLevelTable = table.getTopLevelTable
 
     trxTableCaches.get(topLevelTable) match {
       case Some(cache) => cache

@@ -17,7 +17,7 @@ class HierarchicalCache(model: => Model, expireMs: Long, maximumSizePerTable: In
    */
   def createTransactionCache = new TransactionCache(getTopLevelTableCache)
 
-  private def getTopLevelTableCache(table: Table): HierarchicalTableCache = tableCaches(table.getTopLevelTable())
+  private def getTopLevelTableCache(table: Table): HierarchicalTableCache = tableCaches(table.getTopLevelTable)
 }
 
 class HierarchicalTableCache(expireMs: Long, maximumSize: Int) extends TableCache[Record] with Logging {

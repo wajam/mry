@@ -14,6 +14,7 @@ import com.yammer.metrics.core.Gauge
 import annotation.tailrec
 import com.wajam.commons.{Logging, Closable}
 import com.wajam.nrv.utils.timestamp.Timestamp
+import com.wajam.mry.storage.mysql.cache.{CachedMysqlTransaction, HierarchicalCache}
 
 /**
  * MySQL backed storage
@@ -42,9 +43,20 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   datasource.setMaxPoolSize(config.maxPoolSize)
   datasource.setNumHelperThreads(config.numhelperThread)
 
-  def createStorageTransaction(context: ExecutionContext) = new MysqlTransaction(this, Some(context))
+  lazy private val cache = new HierarchicalCache(model,
+    config.cacheExpirationMinutes * 60 * 1000, config.cachePerTableMaximumSize)
+  
+  def createStorageTransaction(context: ExecutionContext): MysqlTransaction = createStorageTransaction(Some(context))
 
-  def createStorageTransaction = new MysqlTransaction(this, None)
+  def createStorageTransaction: MysqlTransaction = createStorageTransaction(None)
+
+  def createStorageTransaction(context: Option[ExecutionContext]): MysqlTransaction = {
+    if (config.cacheEnabled) {
+      new MysqlTransaction(this, context) with CachedMysqlTransaction {
+        val transactionCache = cache.createTransactionCache
+      }      
+    } else new MysqlTransaction(this, context)
+  }
 
   def closeStorageTransaction(trx: MysqlTransaction) {
     model.allHierarchyTables.map(table => {
@@ -881,8 +893,10 @@ case class MysqlStorageConfiguration(name: String,
                                      gcCollectionFactor: Double = 1.2,
                                      gcTokenStep: Long = 10000,
                                      gcDelayMs: Int = 1000,
-                                     gcVersionsBatch: Int = 100)
-
+                                     gcVersionsBatch: Int = 100,
+                                     cacheEnabled: Boolean = false,
+                                     cacheExpirationMinutes: Int = 10,
+                                     cachePerTableMaximumSize: Int = 1000)
 
 class SqlResults {
   var statement: PreparedStatement = null

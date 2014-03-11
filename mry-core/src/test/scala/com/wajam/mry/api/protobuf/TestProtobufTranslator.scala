@@ -227,7 +227,7 @@ class TestProtobufTranslator extends FunSuite with ShouldMatchers {
 
     encodeMs should be <= 10000L // Should actually be around 1500ms
     println(encodeMs)
-    bytes.length should be === 11954748
+    bytes.length should be(11954748)
 
     val decodeMs = timed {
       () =>  { bytes = t.encodeTransaction(trx) }

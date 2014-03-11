@@ -22,10 +22,10 @@ class TestMysqlStorage extends FunSuite with MysqlStorageFixture with ShouldMatc
 
   def createNowTimestamp() = Timestamp(System.currentTimeMillis(), 0)
 
-  testsFor(apiOperations("MysqlStorage")(createMysqlStorage _))
-  testsFor(apiOperations("CachedMysqlStorage")(createCachedMysqlStorage _))
+  testsFor(apiOperations("MysqlStorage")(defaultConfig))
+  testsFor(apiOperations("MysqlStorage with cache")(defaultConfig.copy(cacheEnabled = true)))
 
-  def apiOperations(textPrefix: String)(implicit createStorage: () => MysqlStorage) {
+  def apiOperations(textPrefix: String)(implicit storageConfig: MysqlStorageConfiguration) {
     test(s"$textPrefix - should get committed record") {
       withFixture { f =>
         f.exec(t => {

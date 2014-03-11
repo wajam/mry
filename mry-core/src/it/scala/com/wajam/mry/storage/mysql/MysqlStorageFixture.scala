@@ -4,7 +4,6 @@ import com.wajam.mry.storage.Storage
 import com.wajam.nrv.service.TokenRange
 import com.wajam.nrv.utils.timestamp.Timestamp
 import com.wajam.mry.execution.{ExecutionContext, Value, Transaction}
-import com.wajam.mry.storage.mysql.cache.CachedMysqlStorage
 
 trait MysqlStorageFixture {
 
@@ -37,21 +36,15 @@ trait MysqlStorageFixture {
   val table2_1 = table2.addTable(new Table("table2_1"))
   val table2_1_1 = table2_1.addTable(new Table("table2_1_1"))
 
-  val storageConfig = MysqlStorageConfiguration("mysql", "localhost", "mry", "mry", "mry",
+  val defaultConfig = MysqlStorageConfiguration("mysql", "localhost", "mry", "mry", "mry",
     gcTokenStep = TokenRange.MaxToken)
 
   var currentConsistentTimestamp: Timestamp = Long.MaxValue
 
-  def createMysqlStorage: MysqlStorage = new MysqlStorage(storageConfig, garbageCollection = false)
-
-  def createCachedMysqlStorage: MysqlStorage = {
-    new MysqlStorage(storageConfig, garbageCollection = false) with CachedMysqlStorage
-  }
-
-  def withFixture(test: (FixtureParam) => Unit)(implicit createStorage: () => MysqlStorage = createMysqlStorage _) = {
+  def withFixture(test: (FixtureParam) => Unit)(implicit config: MysqlStorageConfiguration = defaultConfig) = {
 
     // create the fixture
-    var mysqlStorage: MysqlStorage = createStorage()
+    val mysqlStorage: MysqlStorage = new MysqlStorage(config, garbageCollection = false)
     try {
       // Setup the fixture
       mysqlStorage.nuke()
