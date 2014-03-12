@@ -27,19 +27,16 @@ trait CacheMetrics extends Instrumented {
     }
 
     private def getOrAddMetric(scope: String): T = {
-      cacheMetrics.get(scope) match {
-        case Some(metric) => metric
-        case None => {
-          val metric = newMetric(scope)
-          cacheMetrics += scope -> metric
-          metric
-        }
+      cacheMetrics.get(scope).getOrElse {
+        val metric = newMetric(scope)
+        cacheMetrics += scope -> metric
+        metric
       }
     }
   }
 
   class TableGauges[T: Numeric](name: String) {
-    private var cacheGauges: Map[String, Function0[T]] = Map()
+    private var cacheGauges: Map[String, () => T] = Map()
 
     def addTable(table: Table, value: => T): Unit = {
       addGauge(table.getTopLevelTable.name, value)
