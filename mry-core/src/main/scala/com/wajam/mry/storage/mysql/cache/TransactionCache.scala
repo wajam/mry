@@ -4,7 +4,7 @@ import com.wajam.mry.storage.mysql.{AccessPath, Record, Table}
 import com.wajam.commons.Logging
 import scala.annotation.tailrec
 
-class TransactionCache(getTableCache: (Table) => TableCache[Record]) extends Logging {
+class TransactionCache(metrics: CacheMetrics, getTableCache: (Table) => TableCache[Record]) extends Logging {
 
   import TransactionCache._
 
@@ -17,9 +17,13 @@ class TransactionCache(getTableCache: (Table) => TableCache[Record]) extends Log
    */
   def getOrSet(table: Table, path: AccessPath, record: => Option[Record]): Option[Record] = {
     get(table, path) match {
-      case Some(CachedValue(rec, _)) => rec
+      case Some(CachedValue(rec, _, _)) => {
+        metrics.hitsMeter(table).foreach(_.mark())
+        rec
+      }
       case None => {
         val rec = record
+        metrics.missesMeter(table).foreach(_.mark())
         getOrCreateTrxCache(table).put(path, CachedValue(rec, Action.Get))
         rec
       }
@@ -41,8 +45,15 @@ class TransactionCache(getTableCache: (Table) => TableCache[Record]) extends Log
 
     trxTableCaches.foreach {
       case (table, trxTableCache) => trxTableCache.toIterable.foreach {
-        case (path, CachedValue(Some(rec), _)) => getTableCache(table).put(path, rec)
-        case (path, CachedValue(None, _)) => getTableCache(table).invalidate(path)
+        case (path, CachedValue(Some(rec), _, invalidateDescendants)) if invalidateDescendants => {
+          // Support resurrected access path i.e. an access path deleted earlier in the transaction.
+          // The original descendants are invalidated before transferring the new cached record to the storage
+          // cache.
+          getTableCache(table).invalidate(path)
+          getTableCache(table).put(path, rec)
+        }
+        case (path, CachedValue(Some(rec), _, _)) => getTableCache(table).put(path, rec)
+        case (path, CachedValue(None, _, _)) => getTableCache(table).invalidate(path)
       }
     }
     trxTableCaches = Map.empty
@@ -56,7 +67,7 @@ class TransactionCache(getTableCache: (Table) => TableCache[Record]) extends Log
     val trxTableCache = getOrCreateTrxCache(table)
     trxTableCache.getIfPresent(path) match {
       case rec@Some(_) => rec
-      case None if trxTableCache.isAncestorDeleted(path) => None
+      case None if trxTableCache.isAncestorInvalidated(path) => None
       case None => {
         getTableCache(table).getIfPresent(path) match {
           case rec@Some(_) => {
@@ -92,10 +103,20 @@ class TransactionCache(getTableCache: (Table) => TableCache[Record]) extends Log
       trace(s"put(): $path=$value")
 
       if (value.action == Action.Put && value.record.isEmpty) {
-        // If the cached record is deleted, invalidate its descendants
+        // If the cached record is deleted, invalidate its descendants before caching it
         getDescendants(path).foreach { case (descPath, _) => invalidate(descPath)}
+        cache.put(path, value.copy(invalidateDescendants = true))
+      } else {
+        Option(cache.put(path, value)) match {
+          case Some(prevValue) if prevValue.invalidateDescendants => {
+            // Support resurrected access path i.e. caching a record for an access path deleted earlier in the
+            // transaction. The original descendants must be invalidated when transferring the value to the storage
+            // cache..
+            cache.put(path, value.copy(invalidateDescendants = true))
+          }
+          case _ =>
+        }
       }
-      cache.put(path, value)
     }
 
     def invalidate(path: AccessPath) = cache.remove(path)
@@ -108,13 +129,16 @@ class TransactionCache(getTableCache: (Table) => TableCache[Record]) extends Log
     }
 
     @tailrec
-    final def isAncestorDeleted(path: AccessPath): Boolean = {
+    final def isAncestorInvalidated(path: AccessPath): Boolean = {
       val parentPathSeq = path.parts.dropRight(1)
       if (parentPathSeq.isEmpty) {
         false
       } else {
         val parentPath = AccessPath(parentPathSeq)
-        (getIfPresent(parentPath) == Some(CachedValue(None, Action.Put))) || isAncestorDeleted(parentPath)
+        getIfPresent(parentPath) match {
+          case Some(CachedValue(_, _, invalidateDescendants)) if invalidateDescendants => true
+          case _ => isAncestorInvalidated(parentPath)
+        }
       }
     }
 
@@ -144,6 +168,6 @@ object TransactionCache {
 
   }
 
-  case class CachedValue(record: Option[Record], action: Action)
+  case class CachedValue(record: Option[Record], action: Action, invalidateDescendants: Boolean = false)
 
 }

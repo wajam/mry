@@ -12,7 +12,7 @@ import org.scalatest.time.{Millis, Seconds, Span}
 class TestHierarchicalTableCache extends FlatSpec {
 
   "HierarchicalTableCache" should "cache all values" in new CacheSetup {
-    val cache = new HierarchicalTableCache(1000, 200)
+    val cache = new HierarchicalTableCache(table1, new CacheMetrics {}, 1000, 200)
 
     // Cache all records and verify their presence/value
     all.foreach { r => cache.getIfPresent(r.accessPath) should be(None)}
@@ -27,7 +27,7 @@ class TestHierarchicalTableCache extends FlatSpec {
   }
 
   it should "update should NOT invalidate children" in new CacheSetup {
-    val cache = new HierarchicalTableCache(1000, 200)
+    val cache = new HierarchicalTableCache(table1, new CacheMetrics {}, 1000, 200)
 
     // Cache all records and verify their presence/value
     all.foreach { r => cache.getIfPresent(r.accessPath) should be(None)}
@@ -45,7 +45,7 @@ class TestHierarchicalTableCache extends FlatSpec {
   }
 
   it should "invalidate should invalidate children" in new CacheSetup {
-    val cache = new HierarchicalTableCache(1000, 200)
+    val cache = new HierarchicalTableCache(table1, new CacheMetrics {}, 1000, 200)
 
     // Cache all records and verify their presence/value
     all.foreach { r => cache.getIfPresent(r.accessPath) should be(None)}
@@ -68,7 +68,7 @@ class TestHierarchicalTableCache extends FlatSpec {
   }
 
   it should "evict least recently used record when reaching max cache size" in new CacheSetup {
-    val cache = new HierarchicalTableCache(1000, maximumSize = all_a.size)
+    val cache = new HierarchicalTableCache(table1, new CacheMetrics {}, 1000, maximumSize = all_a.size)
 
     all_a.foreach { r => cache.getIfPresent(r.accessPath) should be(None)}
     all_a.foreach(r => cache.put(r.accessPath, r))
@@ -87,7 +87,7 @@ class TestHierarchicalTableCache extends FlatSpec {
   }
 
   it should "evict records after expiration" in new CacheSetup with Eventually {
-    val cache = new HierarchicalTableCache(expireMs = 25, 200)
+    val cache = new HierarchicalTableCache(table1, new CacheMetrics {}, expireMs = 25, 200)
     implicit override val patienceConfig =
       PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(30, Millis)))
 

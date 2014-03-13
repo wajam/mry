@@ -118,6 +118,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   def start() {
     assert(this.model != null, "No model has been synced")
 
+    cache.start()
     if (garbageCollection) {
       GarbageCollector.start()
     }
@@ -125,6 +126,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
   def stop() {
     GarbageCollector.kill()
+    cache.stop()
     this.datasource.close()
   }
 

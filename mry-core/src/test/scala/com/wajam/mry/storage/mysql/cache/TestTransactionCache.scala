@@ -97,7 +97,7 @@ class TestTransactionCache extends FlatSpec {
     val trxCache2 = cache.createTransactionCache
     trxCache2.get(a.table, a.accessPath) should be(Some(CachedValue(Some(a), Action.Get)))
     trxCache2.put(a.table, a.accessPath, None)
-    trxCache2.get(a.table, a.accessPath) should be(Some(CachedValue(None, Action.Put)))
+    trxCache2.get(a.table, a.accessPath) should be(Some(CachedValue(None, Action.Put, invalidateDescendants = true)))
     trxCache2.commit()
 
     val trxCache3 = cache.createTransactionCache
@@ -143,5 +143,38 @@ class TestTransactionCache extends FlatSpec {
     trxCache6.get(a.table, a.accessPath) should be(None)
     trxCache6.get(a_a.table, a_a.accessPath) should be(None)
     trxCache6.get(a_b.table, a_b.accessPath) should be(None)
+  }
+
+  it should "invalidate original descendants of resurrected record" in new CacheSetup {
+    val cache = new HierarchicalCache(model, 1000, 200)
+    val b2 = record(b.table, b.accessPath, "2")
+
+    val trxCache1 = cache.createTransactionCache
+    trxCache1.get(b.table, a.accessPath) should be(None)
+    trxCache1.get(b_a.table, b_a.accessPath) should be(None)
+    trxCache1.get(b_a_a.table, b_a_a.accessPath) should be(None)
+    trxCache1.getOrSet(b.table, b.accessPath, Some(b))
+    trxCache1.getOrSet(b_a_a.table, b_a_a.accessPath, Some(b_a_a))
+    trxCache1.commit()
+
+    val trxCache2 = cache.createTransactionCache
+    trxCache2.get(b.table, b.accessPath) should be(Some(CachedValue(Some(b), Action.Get)))
+    trxCache2.get(b_a_a.table, b_a_a.accessPath) should be(Some(CachedValue(Some(b_a_a), Action.Get)))
+    trxCache2.get(b_a.table, b_a.accessPath) should be(None)
+
+    // Deleting parent record and resurrecting should invalidate original descendant but not the new one
+    val trxCache3 = cache.createTransactionCache
+    trxCache3.put(b.table, b.accessPath, None)
+    trxCache3.put(b.table, b.accessPath, Some(b2))
+    trxCache3.put(b_a.table, b_a.accessPath, Some(b_a))
+    trxCache3.get(b.table, b.accessPath) should be(Some(CachedValue(Some(b2), Action.Put, invalidateDescendants = true)))
+    trxCache3.get(b_a.table, b_a.accessPath) should be(Some(CachedValue(Some(b_a), Action.Put)))
+    trxCache3.get(b_a_a.table, b_a_a.accessPath) should be(None)
+    trxCache3.commit()
+
+    val trxCache4 = cache.createTransactionCache
+    trxCache4.get(b.table, b.accessPath) should be(Some(CachedValue(Some(b2), Action.Get)))
+    trxCache4.get(b_a.table, b_a.accessPath) should be(Some(CachedValue(Some(b_a), Action.Get)))
+    trxCache4.get(b_a_a.table, b_a_a.accessPath) should be(None)
   }
 }
