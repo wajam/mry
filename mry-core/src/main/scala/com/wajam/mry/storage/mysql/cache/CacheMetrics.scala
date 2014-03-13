@@ -4,11 +4,11 @@ import com.yammer.metrics.scala.Instrumented
 import com.wajam.mry.storage.mysql.Table
 
 trait CacheMetrics extends Instrumented {
-  lazy val hitsMeter = new TableMetrics(descendants = true, scope => metrics.meter("hits", "hits", scope))
-  lazy val missesMeter = new TableMetrics(descendants = true, scope => metrics.meter("misses", "misses", scope))
+  lazy val hitsMeter = new TableMetrics(ancestor = false, scope => metrics.meter("hits", "hits", scope))
+  lazy val missesMeter = new TableMetrics(ancestor = false, scope => metrics.meter("misses", "misses", scope))
 
-  lazy val evictionExpiredCounter = new TableMetrics(descendants = false, scope => metrics.counter("eviction-expired", scope))
-  lazy val evictionSizeCounter = new TableMetrics(descendants = false, scope => metrics.counter("eviction-size", scope))
+  lazy val evictionExpiredCounter = new TableMetrics(ancestor = true, scope => metrics.counter("eviction-expired", scope))
+  lazy val evictionSizeCounter = new TableMetrics(ancestor = true, scope => metrics.counter("eviction-size", scope))
 
   val cacheCurrentSizeGauge = new TableGauges[Int]("cache-current-size")
   val cacheMaxSizeGauge = new TableGauges[Int]("cache-max-size")
@@ -18,12 +18,13 @@ trait CacheMetrics extends Instrumented {
     cacheMaxSizeGauge.reset()
   }
 
-  class TableMetrics[T](descendants: Boolean, newMetric: (String) => T) {
+  class TableMetrics[T](ancestor: Boolean, newMetric: (String) => T) {
     private var cacheMetrics: Map[String, T] = Map()
 
     def apply(table: Table): Seq[T] = {
-      val seq = getOrAddMetric(CacheMetrics.TotalScope) :: getOrAddMetric(table.getTopLevelTable.name) :: Nil
-      if (descendants) getOrAddMetric(table.toString) :: seq else seq
+      val totalMetric = getOrAddMetric(CacheMetrics.TotalScope)
+      val tableMetric = if (ancestor) getOrAddMetric(table.getTopLevelTable.name)  else getOrAddMetric(table.toString)
+      Seq(totalMetric, tableMetric)
     }
 
     private def getOrAddMetric(scope: String): T = {
