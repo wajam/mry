@@ -2,6 +2,7 @@ package com.wajam.mry.storage.mysql.cache
 
 import com.yammer.metrics.scala.Instrumented
 import com.wajam.mry.storage.mysql.Table
+import com.yammer.metrics.core.{Gauge, MetricName}
 
 trait CacheMetrics extends Instrumented {
   lazy val hitsMeter = new TableMetrics(ancestor = false, scope => metrics.meter("hits", "hits", scope))
@@ -27,6 +28,8 @@ trait CacheMetrics extends Instrumented {
       Seq(totalMetric, tableMetric)
     }
 
+    def get(scope: String): Option[T] = cacheMetrics.get(scope)
+
     private def getOrAddMetric(scope: String): T = {
       cacheMetrics.get(scope).getOrElse {
         val metric = newMetric(scope)
@@ -42,6 +45,11 @@ trait CacheMetrics extends Instrumented {
     def addTable(table: Table, value: => T): Unit = {
       addGauge(table.getTopLevelTable.name, value)
       metrics.gauge(name, CacheMetrics.TotalScope) { cacheGauges.values.map(_()).sum }
+    }
+
+    def get(scope: String): Option[Gauge[T]] = {
+      val metric = Option(metricsRegistry.allMetrics().get(new MetricName(metrics.klass, name, scope)))
+      metric.collect{ case gauge: Gauge[T] => gauge}
     }
 
     def reset() = {

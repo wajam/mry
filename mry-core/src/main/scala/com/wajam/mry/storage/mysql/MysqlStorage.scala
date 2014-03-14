@@ -51,11 +51,14 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   def createStorageTransaction: MysqlTransaction = createStorageTransaction(None)
 
   def createStorageTransaction(context: Option[ExecutionContext]): MysqlTransaction = {
-    if (config.cacheEnabled) {
-      new MysqlTransaction(this, context) with CachedMysqlTransaction {
-        val transactionCache = cache.createTransactionCache
-      }      
-    } else new MysqlTransaction(this, context)
+    context match {
+      case Some(ctx) if ctx.cacheAllowed && config.cacheEnabled => {
+        new MysqlTransaction(this, context) with CachedMysqlTransaction {
+          val transactionCache = cache.createTransactionCache
+        }
+      }
+      case _ => new MysqlTransaction(this, context)
+    }
   }
 
   def closeStorageTransaction(trx: MysqlTransaction) {
@@ -101,6 +104,10 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   }
 
   def getConnection = datasource.getConnection
+
+  def invalidateCache() {
+    cache.invalidateAll()
+  }
 
   def nuke() {
     this.getTables.foreach(table => {

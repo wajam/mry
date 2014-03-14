@@ -169,4 +169,3 @@ object TransactionCache {
   case class CachedValue(record: Option[Record], action: Action, invalidateDescendants: Boolean = false)
 
 }
-

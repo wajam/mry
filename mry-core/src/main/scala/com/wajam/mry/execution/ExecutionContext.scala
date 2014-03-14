@@ -15,6 +15,7 @@ class ExecutionContext(var storages: Map[String, Storage], val timestamp: Option
   var isMutation: Boolean = false
   var tokens: List[Long] = List()
   var cluster: Cluster = null
+  var cacheAllowed: Boolean = true
 
   var storageTransactions = Map[Storage, StorageTransaction]()
   var returnValues: Seq[Value] = Seq()

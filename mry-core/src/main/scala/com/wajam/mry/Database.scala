@@ -126,6 +126,7 @@ class Database(serviceName: String = "database")
     var values: Seq[Value] = null
     val context = new ExecutionContext(storages, req.timestamp)
     context.cluster = Database.this.cluster
+    context.cacheAllowed = isMasterReplicaOf(req.token)
 
     try {
       val transaction = req.getData[Transaction]
@@ -152,6 +153,13 @@ class Database(serviceName: String = "database")
         context.rollback()
         req.replyWithError(e)
       }
+    }
+  }
+
+  private def isMasterReplicaOf(token: Long): Boolean = {
+    resolveMembers(token, 1) match {
+      case headMember :: _ if cluster.isLocalNode(headMember.node) => true
+      case _ => false
     }
   }
 }

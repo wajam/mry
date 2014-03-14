@@ -13,3 +13,7 @@ trait TableCache[V] {
 
   def invalidate(key: AccessPath): Unit
 }
+
+trait ResettableTableCache[V] extends TableCache[V] {
+  def invalidateAll(): Unit
+}
