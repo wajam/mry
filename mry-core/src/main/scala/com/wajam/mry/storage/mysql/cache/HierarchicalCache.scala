@@ -6,12 +6,11 @@ import com.wajam.commons.Logging
 import com.wajam.mry.storage.mysql._
 
 class HierarchicalCache(model: => Model, expireMs: Long, maximumSizePerTable: Int) extends CacheMetrics {
-  // TODO: increment on cache invalidation (done in a separate pull request)
   lazy val invalidateCacheCounter = metrics.counter("cache-invalidation")
 
   // Keep one cache per top level table. All descendant tables are cached in the same cache than their top level ancestor
-  private lazy val tableCaches: Map[Table, HierarchicalTableCache] = model.tables.values.map(table =>
-    table -> new HierarchicalTableCache(table, this, expireMs, maximumSizePerTable)).toMap
+  private lazy val tableCaches: Map[Table, ResettableTableCache[Record]] = model.tables.values.map(table =>
+    table -> new ResettableHierarchicalTableCache(table, this, expireMs, maximumSizePerTable)).toMap
 
   def start(): Unit = resetMetrics()
 
@@ -22,12 +21,20 @@ class HierarchicalCache(model: => Model, expireMs: Long, maximumSizePerTable: In
    */
   def createTransactionCache = new TransactionCache(this, getTopLevelTableCache)
 
-  def invalidateAll(): Unit = tableCaches.valuesIterator.foreach(_.invalidateAll())
+  def invalidateAll(): Unit = {
+    invalidateCacheCounter += 1
+    tableCaches.valuesIterator.foreach(_.invalidateAll())
+  }
 
-  private def getTopLevelTableCache(table: Table): HierarchicalTableCache = tableCaches(table.getTopLevelTable)
+  private def getTopLevelTableCache(table: Table): TableCache[Record] = tableCaches(table.getTopLevelTable)
 }
 
-class HierarchicalTableCache(table: Table, metrics: CacheMetrics, expireMs: Long, maximumSize: Int) extends TableCache[Record] with Logging {
+/**
+ * This class can be invoked from multiple threads for different accessPath but only one thread per accessPath at
+ * a time. The NRV messaging Switchboard provide this guarantee.
+ */
+class HierarchicalTableCache(table: Table, metrics: CacheMetrics, expireMs: Long, maximumSize: Int)
+  extends TableCache[Record] with Logging {
 
   private val keys = new ConcurrentSkipListSet[AccessPath](AccessPathOrdering)
   private val cache = CacheBuilder
@@ -36,9 +43,6 @@ class HierarchicalTableCache(table: Table, metrics: CacheMetrics, expireMs: Long
     .maximumSize(maximumSize)
     .removalListener(CacheRemovalListener)
     .build[AccessPath, Record]
-
-  metrics.cacheMaxSizeGauge.addTable(table, maximumSize)
-  metrics.cacheCurrentSizeGauge.addTable(table, cache.size().toInt)
 
   def getIfPresent(path: AccessPath): Option[Record] = {
     Option(cache.getIfPresent(path))
@@ -57,10 +61,7 @@ class HierarchicalTableCache(table: Table, metrics: CacheMetrics, expireMs: Long
     cache.invalidate(path)
   }
 
-  def invalidateAll() = {
-    cache.invalidateAll()
-    keys.clear()
-  }
+  def size = cache.size()
 
   private def invalidateDescendants(path: AccessPath): Unit = {
     import collection.JavaConversions._
@@ -94,4 +95,29 @@ class HierarchicalTableCache(table: Table, metrics: CacheMetrics, expireMs: Long
     private def wasEvicted(cause: RemovalCause) = cause != RemovalCause.EXPLICIT && cause != RemovalCause.REPLACED
   }
 
+}
+
+/**
+ * A resettable wrapper around HierarchicalTableCache which provide an atomic implementation of invalidateAll()
+ * i.e. put() and invalidateAll() can be invoked concurrently by different threads and the result still be consistent.
+ */
+class ResettableHierarchicalTableCache(table: Table, metrics: CacheMetrics, expireMs: Long, maximumSize: Int)
+  extends ResettableTableCache[Record] with Logging {
+
+  @volatile
+  private var cache = new HierarchicalTableCache(table, metrics, expireMs, maximumSize)
+
+  metrics.cacheMaxSizeGauge.addTable(table, maximumSize)
+  metrics.cacheCurrentSizeGauge.addTable(table, cache.size.toInt)
+
+  def getIfPresent(path: AccessPath) = cache.getIfPresent(path)
+
+  def put(path: AccessPath, record: Record) = cache.put(path, record)
+
+  def invalidate(path: AccessPath) = cache.invalidate(path)
+
+  def invalidateAll(): Unit = {
+    trace(s"invalidateAll(): $table")
+    cache = new HierarchicalTableCache(table, metrics, expireMs, maximumSize)
+  }
 }

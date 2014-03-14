@@ -121,8 +121,6 @@ class TransactionCache(metrics: CacheMetrics, getTableCache: (Table) => TableCac
 
     def invalidate(path: AccessPath) = cache.remove(path)
 
-    def invalidateAll() = throw new NotImplementedError
-
     def toIterable: Iterable[(AccessPath, CachedValue)] = {
       import collection.JavaConversions._
       cache.entrySet().toIterator.toIterable.map(e => e.getKey -> e.getValue)
