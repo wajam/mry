@@ -44,7 +44,7 @@ class TransactionCache(metrics: CacheMetrics, getTableCache: (Table) => TableCac
     implicit val ordering = AccessPathOrdering
 
     trxTableCaches.foreach {
-      case (table, trxTableCache) => trxTableCache.toIterable.foreach {
+      case (table, trxTableCache) => trxTableCache.toIterator.foreach {
         case (path, CachedValue(Some(rec), _, invalidateDescendants)) if invalidateDescendants => {
           // Support resurrected access path i.e. an access path deleted earlier in the transaction.
           // The original descendants are invalidated before transferring the new cached record to the storage
@@ -83,14 +83,10 @@ class TransactionCache(metrics: CacheMetrics, getTableCache: (Table) => TableCac
 
   private def getOrCreateTrxCache(table: Table): TransactionTableCache = {
     val topLevelTable = table.getTopLevelTable
-
-    trxTableCaches.get(topLevelTable) match {
-      case Some(cache) => cache
-      case None => {
-        val cache = new TransactionTableCache()
-        trxTableCaches += topLevelTable -> cache
-        cache
-      }
+    trxTableCaches.get(topLevelTable) getOrElse {
+      val cache = new TransactionTableCache()
+      trxTableCaches += topLevelTable -> cache
+      cache
     }
   }
 
@@ -121,9 +117,9 @@ class TransactionCache(metrics: CacheMetrics, getTableCache: (Table) => TableCac
 
     def invalidate(path: AccessPath) = cache.remove(path)
 
-    def toIterable: Iterable[(AccessPath, CachedValue)] = {
+    def toIterator: Iterator[(AccessPath, CachedValue)] = {
       import collection.JavaConversions._
-      cache.entrySet().toIterator.toIterable.map(e => e.getKey -> e.getValue)
+      cache.entrySet().toIterator.map(e => e.getKey -> e.getValue)
     }
 
     @tailrec

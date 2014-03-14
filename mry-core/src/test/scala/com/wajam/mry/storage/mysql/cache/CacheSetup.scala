@@ -1,6 +1,6 @@
 package com.wajam.mry.storage.mysql.cache
 
-import language.implicitConversions
+import scala.language.implicitConversions
 import com.wajam.mry.storage.mysql._
 import org.scalatest.Matchers._
 import com.wajam.mry.execution.StringValue

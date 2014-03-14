@@ -13,7 +13,7 @@ import com.wajam.nrv.utils.timestamp.Timestamp
 /**
  * Mysql storage transaction
  */
-class MysqlTransaction(protected val storage: MysqlStorage, protected val context: Option[ExecutionContext])
+class MysqlTransaction(storage: MysqlStorage, context: Option[ExecutionContext])
   extends StorageTransaction {
 
   private[mry] val tableMutationsCount = storage.model.allHierarchyTables.map(table => (table, new AtomicInteger(0))).toMap
