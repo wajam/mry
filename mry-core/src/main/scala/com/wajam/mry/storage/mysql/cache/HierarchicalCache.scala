@@ -9,7 +9,7 @@ class HierarchicalCache(model: => Model, expireMs: Long, maximumSizePerTable: In
   lazy val invalidateCacheCounter = metrics.counter("cache-invalidation")
 
   // Keep one cache per top level table. All descendant tables are cached in the same cache than their top level ancestor
-  private lazy val tableCaches: Map[Table, ResettableTableCache[Record]] = model.tables.values.map(table =>
+  private lazy val tableCaches: Map[Table, ResettableHierarchicalTableCache] = model.tables.values.map(table =>
     table -> new ResettableHierarchicalTableCache(table, this, expireMs, maximumSizePerTable)).toMap
 
   def start(): Unit = resetMetrics()
@@ -19,14 +19,18 @@ class HierarchicalCache(model: => Model, expireMs: Long, maximumSizePerTable: In
   /**
    * Returns a new transaction cache
    */
-  def createTransactionCache = new TransactionCache(this, getTopLevelTableCache)
+  def createTransactionCache = {
+    // Make a copy of the current hierarchical table caches at the beginning of the transaction.
+    // If the cache is invalidated during the transaction, the result of the transaction will NOT be flushed in
+    // the new reset caches but flush in the old unused copies instead.
+    val caches = tableCaches.map { case (table, cache) => table -> cache.innerCache }
+    new TransactionCache(this, (table) => caches(table.getTopLevelTable))
+  }
 
   def invalidateAll(): Unit = {
     invalidateCacheCounter += 1
     tableCaches.valuesIterator.foreach(_.invalidateAll())
   }
-
-  private def getTopLevelTableCache(table: Table): TableCache[Record] = tableCaches(table.getTopLevelTable)
 }
 
 /**
@@ -120,4 +124,6 @@ class ResettableHierarchicalTableCache(table: Table, metrics: CacheMetrics, expi
     trace(s"invalidateAll(): $table")
     cache = new HierarchicalTableCache(table, metrics, expireMs, maximumSize)
   }
+
+  private[cache] def innerCache = cache
 }

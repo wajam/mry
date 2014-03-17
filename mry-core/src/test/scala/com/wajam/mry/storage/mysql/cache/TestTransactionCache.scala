@@ -177,4 +177,29 @@ class TestTransactionCache extends FlatSpec {
     trxCache4.get(b_a.table, b_a.accessPath) should be(Some(CachedValue(Some(b_a), Action.Get)))
     trxCache4.get(b_a_a.table, b_a_a.accessPath) should be(None)
   }
+
+  it should "not be flushed in current storage cache if storage cache is invalidated during the transaction" in new CacheSetup {
+    val cache = new HierarchicalCache(model, 1000, 200)
+    val a2 = record(a.table, a.accessPath, "2")
+
+    val trxCache1 = cache.createTransactionCache
+    trxCache1.get(a.table, a.accessPath) should be(None)
+    trxCache1.get(a_a.table, a_a.accessPath) should be(None)
+    trxCache1.get(a_b.table, a_b.accessPath) should be(None)
+    trxCache1.getOrSet(a.table, a.accessPath, Some(a))
+    trxCache1.getOrSet(a_b.table, a_b.accessPath, Some(a_b))
+    trxCache1.get(a.table, a.accessPath) should be(Some(CachedValue(Some(a), Action.Get)))
+    trxCache1.get(a_a.table, a_a.accessPath) should be(None)
+    trxCache1.get(a_b.table, a_b.accessPath) should be(Some(CachedValue(Some(a_b), Action.Get)))
+
+    // Invalidate the storage cache before committing the transaction
+    cache.invalidateAll()
+    trxCache1.commit()
+
+    // The transaction should not be flush in the storage cache
+    val trxCache2 = cache.createTransactionCache
+    trxCache2.get(a.table, a.accessPath) should be(None)
+    trxCache2.get(a_a.table, a_a.accessPath) should be(None)
+    trxCache2.get(a_b.table, a_b.accessPath) should be(None)
+  }
 }
