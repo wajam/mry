@@ -13,7 +13,7 @@ import com.wajam.nrv.utils.timestamp.Timestamp
 /**
  * Mysql storage transaction
  */
-class MysqlTransaction(private val storage: MysqlStorage, private val context: Option[ExecutionContext])
+class MysqlTransaction(storage: MysqlStorage, context: Option[ExecutionContext])
   extends StorageTransaction {
 
   private[mry] val tableMutationsCount = storage.model.allHierarchyTables.map(table => (table, new AtomicInteger(0))).toMap
@@ -866,12 +866,12 @@ object MysqlTransaction {
 
 }
 
-case class AccessKey(var key: String)
+case class AccessKey(key: String)
 
 case class AccessPath(parts: Seq[AccessKey] = Seq()) {
   def last = parts.last
 
-  def length = parts.length
+  val length = parts.length
 
   def keys = parts.map(p => p.key)
 

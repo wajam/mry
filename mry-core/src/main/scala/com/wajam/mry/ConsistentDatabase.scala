@@ -27,6 +27,8 @@ trait ConsistentDatabase extends ConsistentStore with Instrumented {
     case storage: ConsistentStorage => storage
   }
 
+  def invalidateCache() = consistentStorages.foreach(_.invalidateCache())
+
   def requiresConsistency(message: Message): Boolean = {
     if (consistentStorages.nonEmpty) {
       findAction(message.path, message.method) match {
@@ -120,6 +122,7 @@ trait ConsistentDatabase extends ConsistentStore with Instrumented {
       val timestamp = message.timestamp
       val context = new ExecutionContext(storages, timestamp)
       context.cluster = cluster
+      context.cacheAllowed = false
 
       try {
         transaction.execute(context)

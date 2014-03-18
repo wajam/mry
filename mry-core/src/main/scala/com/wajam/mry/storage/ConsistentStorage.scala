@@ -11,6 +11,11 @@ import com.wajam.nrv.utils.timestamp.Timestamp
 trait ConsistentStorage extends Storage {
 
   /**
+   * Force invalidation of the storage cache.
+   */
+  def invalidateCache()
+
+  /**
    * Returns the latest record timestamp for the specified token ranges
    */
   def getLastTimestamp(ranges: Seq[TokenRange]): Option[Timestamp]

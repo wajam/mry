@@ -14,6 +14,7 @@ import com.yammer.metrics.core.Gauge
 import annotation.tailrec
 import com.wajam.commons.{Logging, Closable}
 import com.wajam.nrv.utils.timestamp.Timestamp
+import com.wajam.mry.storage.mysql.cache.{CachedMysqlTransaction, HierarchicalCache}
 
 /**
  * MySQL backed storage
@@ -42,9 +43,23 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   datasource.setMaxPoolSize(config.maxPoolSize)
   datasource.setNumHelperThreads(config.numhelperThread)
 
-  def createStorageTransaction(context: ExecutionContext) = new MysqlTransaction(this, Some(context))
+  lazy private val cache = new HierarchicalCache(model,
+    config.cacheExpirationMinutes * 60 * 1000, config.cachePerTableMaximumSize)
+  
+  def createStorageTransaction(context: ExecutionContext): MysqlTransaction = createStorageTransaction(Some(context))
 
-  def createStorageTransaction = new MysqlTransaction(this, None)
+  def createStorageTransaction: MysqlTransaction = createStorageTransaction(None)
+
+  def createStorageTransaction(context: Option[ExecutionContext]): MysqlTransaction = {
+    context match {
+      case Some(ctx) if ctx.cacheAllowed && config.cacheEnabled => {
+        new MysqlTransaction(this, context) with CachedMysqlTransaction {
+          val transactionCache = cache.createTransactionCache
+        }
+      }
+      case _ => new MysqlTransaction(this, context)
+    }
+  }
 
   def closeStorageTransaction(trx: MysqlTransaction) {
     model.allHierarchyTables.map(table => {
@@ -90,6 +105,10 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
   def getConnection = datasource.getConnection
 
+  def invalidateCache() {
+    cache.invalidateAll()
+  }
+
   def nuke() {
     this.getTables.foreach(table => {
       this.dropTable(table)
@@ -99,6 +118,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
   def start() {
     assert(this.model != null, "No model has been synced")
 
+    cache.start()
     if (garbageCollection) {
       GarbageCollector.start()
     }
@@ -106,6 +126,7 @@ class MysqlStorage(config: MysqlStorageConfiguration, garbageCollection: Boolean
 
   def stop() {
     GarbageCollector.kill()
+    cache.stop()
     this.datasource.close()
   }
 
@@ -881,8 +902,10 @@ case class MysqlStorageConfiguration(name: String,
                                      gcCollectionFactor: Double = 1.2,
                                      gcTokenStep: Long = 10000,
                                      gcDelayMs: Int = 1000,
-                                     gcVersionsBatch: Int = 100)
-
+                                     gcVersionsBatch: Int = 100,
+                                     cacheEnabled: Boolean = false,
+                                     cacheExpirationMinutes: Int = 10,
+                                     cachePerTableMaximumSize: Int = 1000)
 
 class SqlResults {
   var statement: PreparedStatement = null
