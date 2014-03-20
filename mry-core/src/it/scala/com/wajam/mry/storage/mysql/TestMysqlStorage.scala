@@ -770,6 +770,42 @@ class TestMysqlStorage extends FunSuite with MysqlStorageFixture with ShouldMatc
         limited should have size (1)
       }
     }
+
+    test(s"$textPrefix - should support partial updates") {
+      withFixture(f => {
+        f.exec(t => {
+          t.from("mysql").from("table1").set("elem1", Map("id" -> "elem1", "status" -> "new"))
+        }, commit = true)
+
+        f.exec(t => {
+          val table = t.from("mysql").from("table1")
+          val newValue = table.get("elem1").set("status", "updated")
+          table.set("elem1", newValue)
+        }, commit = true)
+
+        val Seq(MapValue(elemUpdated)) = f.exec(t => {
+          t.ret(t.from("mysql").from("table1").get("elem1"))
+        })
+
+        elemUpdated("status") should be (StringValue("updated"))
+        elemUpdated("id") should be (StringValue("elem1"))
+      })
+    }
+
+    test(s"$textPrefix - should support partial updates in same transaction") {
+      withFixture(f => {
+        val Seq(MapValue(elemUpdated)) = f.exec(t => {
+          val table = t.from("mysql").from("table1")
+          table.set("elem1", Map("id" -> "elem1", "status" -> "new"))
+          val newValue = table.get("elem1").set("status", "updated")
+          table.set("elem1", newValue)
+          t.ret(table.get("elem1"))
+        }, commit = true)
+
+        elemUpdated("status") should be (StringValue("updated"))
+        elemUpdated("id") should be (StringValue("elem1"))
+      })
+    }
   }
 
   test("forced garbage collections should truncate versions and keep enough versions") {

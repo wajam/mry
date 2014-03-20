@@ -56,7 +56,7 @@ case class MapValue(mapValue: Map[String, Value]) extends Value {
     new MapValue(newMap)
   }
 
-  override def execFiltering(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) {
+  override def execFiltering(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object): Unit = {
 
     // Foward filtering to children
     into.value = MapValue(mapValue.map { case (k, v) =>
@@ -65,7 +65,7 @@ case class MapValue(mapValue: Map[String, Value]) extends Value {
       })
   }
 
-  override def execPredicate(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object) = {
+  override def execPredicate(context: ExecutionContext, into: Variable, key: Object, filter: MryFilters.MryFilter, value: Object): Unit = {
     val result = mapValue.get(key.toString) match {
       case Some(v) =>
         MryFilters(filter).execute(v, value)
@@ -75,13 +75,21 @@ case class MapValue(mapValue: Map[String, Value]) extends Value {
     into.value = BoolValue(result)
   }
 
-  override def execProjection(context: ExecutionContext, into: Variable, keys: Object*) {
+  override def execProjection(context: ExecutionContext, into: Variable, keys: Object*): Unit = {
     into.value = if (!keys.isEmpty) {
         MapValue(mapValue.filter(e => keys.contains(StringValue(e._1))))
       } else {
         MapValue(mapValue)
       }
   }
+
+  // partial update support
+  override def execSet(context: ExecutionContext, into: Variable, data: Object*): Unit = {
+    val fieldName = param[StringValue](data, 0).strValue
+    val fieldValue = param[Value](data, 1)
+    into.value = MapValue(mapValue + (fieldName -> fieldValue))
+  }
+
 }
 
 @SerialVersionUID(3729883700870722479L)
