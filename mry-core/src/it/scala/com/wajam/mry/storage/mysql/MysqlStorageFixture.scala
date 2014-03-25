@@ -26,6 +26,16 @@ trait MysqlStorageFixture {
           context.rollback()
       }
     }
+
+    def execDryMode(cb: (Transaction => Unit),
+                    onTimestamp: Timestamp = Timestamp(System.currentTimeMillis(), 0)): Unit = {
+      val context = new ExecutionContext(storages, Some(onTimestamp))
+      context.dryMode = true
+
+      val trx = new Transaction()
+      cb(trx)
+      trx.execute(context)
+    }
   }
 
   val model = new Model

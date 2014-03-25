@@ -25,6 +25,8 @@ class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table
     this.optRecord match {
       case Some(r) =>
         r.value
+      case None if context.dryMode =>
+        MapValue(Map())
       case None =>
         NullValue
     }
@@ -36,7 +38,7 @@ class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table
   // Operations are executed on record data (map or null)
   override def proxiedSource: Option[OperationSource] = Some(this.innerValue)
 
-  override def execFrom(context: ExecutionContext, into: Variable, keys: Object*) {
+  override def execFrom(context: ExecutionContext, into: Variable, keys: Object*): Unit = {
     val tableName = param[StringValue](keys, 0).strValue
     val optTable = table.getTable(tableName)
 
