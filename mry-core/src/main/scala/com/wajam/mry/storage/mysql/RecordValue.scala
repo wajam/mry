@@ -25,6 +25,8 @@ class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table
     this.optRecord match {
       case Some(r) =>
         r.value
+      case None if context.dryMode =>
+        MapValue(Map())
       case None =>
         NullValue
     }
@@ -50,14 +52,6 @@ class RecordValue(storage: MysqlStorage, context: ExecutionContext, table: Table
       case None =>
         throw new StorageException("Non existing table %s".format(tableName))
 
-    }
-  }
-
-  override def execSet(context: ExecutionContext, into: Variable, data: Object*): Unit = {
-    if (context.dryMode) {
-      into.value = MapValue(Map())
-    } else {
-      innerValue.execSet(context, into, data: _*)
     }
   }
 }

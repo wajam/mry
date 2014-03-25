@@ -855,6 +855,18 @@ class TestMysqlStorage extends FunSuite with MysqlStorageFixture with ShouldMatc
         })
       })
     }
+
+    test(s"$textPrefix - should support multiple partial updates in same transaction in dry mode") {
+      withFixture(f => {
+        f.execDryMode(t => {
+          val table = t.from("mysql").from("table1")
+          table.set("elem1", Map("id" -> "elem1", "status" -> "new", "updated" -> "false"))
+          val newValue = table.get("elem1").set("status", "updated").set("updated", "true")
+          table.set("elem1", newValue)
+          t.ret(table.get("elem1"))
+        })
+      })
+    }
   }
 
   test("forced garbage collections should truncate versions and keep enough versions") {
