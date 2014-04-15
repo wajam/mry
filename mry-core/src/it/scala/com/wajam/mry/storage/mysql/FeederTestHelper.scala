@@ -16,4 +16,15 @@ object FeederTestHelper {
       def close() = feeder.kill()
     }
   }
+
+  implicit def onceFeederToIterator(feeder: Feeder with TableOnceFeeder): Iterator[Option[FeederData]] with Closable = {
+
+    new Iterator[Option[FeederData]] with Closable {
+      def hasNext = feeder.hasNext
+
+      def next() = feeder.next()
+
+      def close() = feeder.kill()
+    }
+  }
 }
