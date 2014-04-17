@@ -27,11 +27,11 @@ trait ResumableRecordDataFeeder extends RecordDataFeeder {
 
   def ack(data: FeederData) {
     // Update context with the latest acknowledged record data
-    context.data = toContextData(data).map(entry => entry match {
+    context.data = toContextData(data) map {
       case (k, v: String) => (k, v)
       case (k, v: Seq[Any]) => (k, v.map(_.toString))
       case (k, v) => (k, v.toString)
-    })
+    }
   }
 
   /**

@@ -4,6 +4,7 @@ import com.wajam.spnl.feeder.Feeder
 import com.wajam.commons.Closable
 import com.wajam.spnl.feeder.Feeder.FeederData
 import scala.language.implicitConversions
+import com.wajam.nrv.service.{TokenRange, TokenRangeSeq}
 
 object FeederTestHelper {
   implicit def feederToIterator(feeder: Feeder): Iterator[Option[FeederData]] with Closable = {
@@ -17,14 +18,33 @@ object FeederTestHelper {
     }
   }
 
-  implicit def onceFeederToIterator(feeder: Feeder with TableOnceFeeder): Iterator[Option[FeederData]] with Closable = {
+  /**
+   * Test feeder which use token as record. When loading records, it simply enumerates all the tokens in the
+   * specified token range.
+   */
+  abstract class TokenFeeder(val tokenRanges: TokenRangeSeq, limit: Int)
+    extends ResumableRecordDataFeeder {
 
-    new Iterator[Option[FeederData]] with Closable {
-      def hasNext = feeder.hasNext
+    var firstRangeLoadCount = 0
 
-      def next() = feeder.next()
+    type DataRecord = Long
 
-      def close() = feeder.kill()
+    val name = "ContinuousTokenFeeder"
+
+    def token(record: Long) = record
+
+    def loadRecords(range: TokenRange, startAfterRecord: Option[Long]) = {
+      firstRangeLoadCount += (if (range == tokenRanges.head && startAfterRecord.isEmpty) 1 else 0)
+
+      (startAfterRecord match {
+        case Some(start) => (start + 1).to(range.end)
+        case None => range.start.to(range.end)
+      }).take(limit)
     }
+
+    def toRecord(data: FeederData) = data.get("token").map(_.toString.toLong)
+
+    def fromRecord(record: Long) = Map("token" -> record)
   }
+
 }

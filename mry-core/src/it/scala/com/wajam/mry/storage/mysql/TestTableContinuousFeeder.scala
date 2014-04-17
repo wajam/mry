@@ -8,7 +8,6 @@ import com.wajam.nrv.service.{TokenRangeSeq, TokenRange}
 import com.wajam.spnl.TaskContext
 import org.mockito.Mockito._
 import com.wajam.mry.storage.mysql.FeederTestHelper._
-import com.wajam.spnl.feeder.Feeder.FeederData
 
 @RunWith(classOf[JUnitRunner])
 class TestTableContinuousFeeder extends FunSuite {
@@ -17,30 +16,8 @@ class TestTableContinuousFeeder extends FunSuite {
    * Test feeder which use token as record. When loading records, it simply enumerates all the tokens in the
    * specified token range.
    */
-  class ContinuousTokenFeeder(val tokenRanges: TokenRangeSeq, limit: Int)
-    extends ResumableRecordDataFeeder with TableContinuousFeeder {
-
-    var firstRangeLoadCount = 0
-
-    type DataRecord = Long
-
-    val name = "ContinuousTokenFeeder"
-
-    def token(record: Long) = record
-
-    def loadRecords(range: TokenRange, startAfterRecord: Option[Long]) = {
-      firstRangeLoadCount += (if (range == tokenRanges.head && startAfterRecord.isEmpty) 1 else 0)
-
-      (startAfterRecord match {
-        case Some(start) => (start + 1).to(range.end)
-        case None => range.start.to(range.end)
-      }).take(limit)
-    }
-
-    def toRecord(data: FeederData) = data.get("token").map(_.toString.toLong)
-
-    def fromRecord(record: Long) = Map("token" -> record)
-  }
+  class ContinuousTokenFeeder(tokenRanges: TokenRangeSeq, limit: Int)
+    extends TokenFeeder(tokenRanges, limit) with TableContinuousFeeder
 
   test("feeder should loop when loaded all data - large load limit") {
     val ranges = Seq(TokenRange(2, 5), TokenRange(10, 12))
