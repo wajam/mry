@@ -25,7 +25,7 @@ class TestTableOnceFeeder extends FunSuite {
     val ranges = Seq(TokenRange(2, 5), TokenRange(10, 12))
     val feeder = new OnceTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext(Map("token" -> 3)))
-    feeder.start()
+    feeder.start("") should be(true)
     val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(4, 5, 10, 11, 12))
   }
@@ -34,7 +34,7 @@ class TestTableOnceFeeder extends FunSuite {
     val ranges = Seq(TokenRange(2, 5), TokenRange(10, 12))
     val feeder = new OnceTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext(Map("token" -> 8)))
-    feeder.start()
+    feeder.start("") should be(true)
     val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12))
   }
@@ -43,7 +43,7 @@ class TestTableOnceFeeder extends FunSuite {
     val ranges = Seq(TokenRange(2, 5), TokenRange(10, 12))
     val feeder = new OnceTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext())
-    feeder.start()
+    feeder.start("") should be(true)
     val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12))
   }
@@ -52,7 +52,7 @@ class TestTableOnceFeeder extends FunSuite {
     val ranges = List(TokenRange(2, 5), TokenRange(10, 12))
     val feeder = new OnceTokenFeeder(ranges, limit = 2)
     feeder.init(TaskContext())
-    feeder.start()
+    feeder.start("") should be(true)
     val spyFeeder = spy(feeder)
 
     when(spyFeeder.loadRecords(TokenRange(10, 12), Some(11L))).thenThrow(new RuntimeException())
@@ -68,7 +68,7 @@ class TestTableOnceFeeder extends FunSuite {
     val ranges = Seq(TokenRange(2, 5), TokenRange(10, 12))
     val feeder = new OnceTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext())
-    feeder.start()
+    feeder.start("") should be(true)
     feeder.ack(feeder.fromRecord(11L))
     feeder.toRecord(feeder.context.data) should be(Some(11L))
   }
@@ -77,7 +77,7 @@ class TestTableOnceFeeder extends FunSuite {
     val ranges = Seq(TokenRange(2, 5), TokenRange(10, 12))
     val feeder = new OnceTokenFeeder(ranges, limit = 1000)
     feeder.init(TaskContext())
-    feeder.start()
+    feeder.start("") should be(true)
 
     val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12))
@@ -87,7 +87,7 @@ class TestTableOnceFeeder extends FunSuite {
     val ranges = Seq(TokenRange(2, 5), TokenRange(10, 12))
     val feeder = new OnceTokenFeeder(ranges, limit = 2)
     feeder.init(TaskContext())
-    feeder.start()
+    feeder.start("") should be(true)
 
     val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12))
@@ -97,11 +97,11 @@ class TestTableOnceFeeder extends FunSuite {
     val ranges = Seq(TokenRange(2, 5), TokenRange(10, 12))
     val feeder = new OnceTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext())
-    feeder.start()
+    feeder.start("") should be(true)
     val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12))
 
-    feeder.start()
+    feeder.start("") should be(true)
     val records2 = feeder.take(50).flatten.toList
     records2.flatMap(feeder.toRecord).take(15) should be(List())
 
@@ -111,13 +111,16 @@ class TestTableOnceFeeder extends FunSuite {
     val ranges = Seq(TokenRange(2, 5), TokenRange(10, 12))
     val feeder = new OnceTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext())
-    feeder.start()
+    feeder.start("") should be(true)
+    feeder.start("") should be(false)
     val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12))
 
-    feeder.stop()
+    feeder.stop() should be(true)
+    feeder.stop() should be(false)
     Thread.sleep(1000)
-    feeder.start()
+    feeder.start("") should be(true)
+    feeder.start("") should be(false)
     val records2 = feeder.take(50).flatten.toList
     records2.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12))
   }
@@ -126,10 +129,10 @@ class TestTableOnceFeeder extends FunSuite {
     val ranges = Seq(TokenRange(2, 5), TokenRange(10, 12))
     val feeder = new OnceTokenFeeder(ranges, limit = 1)
     feeder.init(TaskContext())
-    feeder.start()
+    feeder.start("") should be(true)
     val records = feeder.take(11).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10))
-    feeder.stop()
+    feeder.stop() should be(true)
     val records2 = feeder.take(5).flatten.toList
     records2.flatMap(feeder.toRecord).take(15) should be(List())
   }
