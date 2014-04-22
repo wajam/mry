@@ -13,9 +13,9 @@ import com.wajam.spnl.TaskContext
 trait TableOnceFeeder extends TableFeederByToken with Job {
   import TableOnceFeeder._
 
-  private def getStartDate = context.data.get(startDate).map(str => dateFormatter.parseDateTime(str.asInstanceOf[String]))
-  private def getFinishedDate = context.data.get(finishedDate).map(str => dateFormatter.parseDateTime(str.asInstanceOf[String]))
-  private def getJobId = context.data.get(finishedDate).map(_.asInstanceOf[String])
+  private def getStartDate = context.data.get(StartDate).map(str => dateFormatter.parseDateTime(str.asInstanceOf[String]))
+  private def getFinishedDate = context.data.get(FinishedDate).map(str => dateFormatter.parseDateTime(str.asInstanceOf[String]))
+  private def getJobId = context.data.get(FinishedDate).map(_.asInstanceOf[String])
 
   private[this] object Lock
   private[this] var contextDataToUpdate = Map.empty[String, String]
@@ -30,7 +30,7 @@ trait TableOnceFeeder extends TableFeederByToken with Job {
   }
 
   private def setDone(): Unit = {
-    updateContext(Map(finishedDate -> dateFormatter.print(DateTime.now)))
+    updateContext(Map(FinishedDate -> dateFormatter.print(DateTime.now)))
   }
 
   private def emptyResult =
@@ -42,24 +42,15 @@ trait TableOnceFeeder extends TableFeederByToken with Job {
     updated
   }
 
-
-  private def getContextToUpdate(emptyContextToUpdate: Boolean = false): Map[String, String] = Lock.synchronized {
-    val out = contextDataToUpdate
-    if (emptyContextToUpdate) {
-      contextDataToUpdate = Map.empty
-    }
-    out
-  }
-
   def start(newJobId: String): Boolean = Lock.synchronized {
-    if (!hasNext && !contextDataToUpdate.contains(startDate)) {
-      updateContext(Map(startDate -> dateFormatter.print(DateTime.now), jobId -> newJobId))
+    if (!hasNext && !contextDataToUpdate.contains(StartDate)) {
+      updateContext(Map(StartDate -> dateFormatter.print(DateTime.now), JobId -> newJobId))
       true
     } else false
   }
 
   def stop(): Boolean = Lock.synchronized {
-    if (hasNext || !contextDataToUpdate.contains(finishedDate)) {
+    if (hasNext || !contextDataToUpdate.contains(FinishedDate)) {
       setDone()
       lastRecord = None
       currentRange = None
@@ -67,30 +58,33 @@ trait TableOnceFeeder extends TableFeederByToken with Job {
     } else false
   }
 
-  def getCurrentId: String = Lock.synchronized(name + getJobId)
+  def currentJobId: String = Lock.synchronized(name + getJobId)
 
   def isStarted: Boolean = hasNext
 
   abstract override def toContextData(data: Feeder.FeederData): TaskContext.ContextData = super.toContextData(data) ++
-    Map(startDate -> getStartDate, finishedDate -> getFinishedDate, jobId -> getJobId)
+    Map(StartDate -> getStartDate, FinishedDate -> getFinishedDate, JobId -> getJobId)
 
-  private[mysql] def getLoadPosition: (TokenRange, Option[DataRecord]) = {
-    context.data ++= getContextToUpdate(emptyContextToUpdate = true)
+  private[mysql] def getLoadPosition: (TokenRange, Option[DataRecord]) = Lock.synchronized {
+    context.data ++= contextDataToUpdate
     if (hasNext) {
       val loadRange = lastRecord match {
         case Some(record) => tokenRanges.find(token(record))
         case None => currentRange match {
           case Some(range) => tokenRanges.next(range) orElse {
             setDone()
+            context.data ++= contextDataToUpdate
             None
           }
           case None => None
         }
       }
 
+      contextDataToUpdate = Map.empty
+
       loadRange match {
         case Some(range) => (range, lastRecord)
-        case None if hasNext && !getContextToUpdate().contains(finishedDate) => (tokenRanges.head, None)
+        case None if hasNext => (tokenRanges.head, None)
         case None => emptyResult
       }
     } else emptyResult
@@ -98,7 +92,7 @@ trait TableOnceFeeder extends TableFeederByToken with Job {
 }
 
 object TableOnceFeeder {
-  private val startDate = "start-date"
-  private val finishedDate = "finished-date"
-  private val jobId = "job-id"
+  private val StartDate = "start-date"
+  private val FinishedDate = "finished-date"
+  private val JobId = "job-id"
 }

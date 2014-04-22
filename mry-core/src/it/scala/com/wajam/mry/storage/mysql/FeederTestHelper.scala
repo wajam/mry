@@ -29,7 +29,7 @@ object FeederTestHelper {
 
     type DataRecord = Long
 
-    val name = "ContinuousTokenFeeder"
+    val name = "TokenFeeder"
 
     def token(record: Long) = record
 

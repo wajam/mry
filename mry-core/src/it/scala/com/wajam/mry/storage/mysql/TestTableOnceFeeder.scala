@@ -137,4 +137,14 @@ class TestTableOnceFeeder extends FunSuite {
     records2.flatMap(feeder.toRecord).take(15) should be(List())
   }
 
+  test("should support empty feeders") {
+    val feeder = new OnceTokenFeeder(Nil, limit = 1)
+    feeder.init(TaskContext())
+    feeder.start("") should be(true)
+    val records = feeder.take(50).flatten.toList
+    records.flatMap(feeder.toRecord).take(15) should be(List())
+    feeder.stop() should be(true)
+    val records2 = feeder.take(50).flatten.toList
+    records2.flatMap(feeder.toRecord).take(15) should be(List())
+  }
 }

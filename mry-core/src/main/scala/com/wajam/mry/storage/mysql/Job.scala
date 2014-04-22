@@ -8,7 +8,7 @@ import com.wajam.nrv.utils.Startable
  */
 trait Job {
   def isStarted: Boolean
-  def getCurrentId: String
+  def currentJobId: String
   def start(jobId: String): Boolean
   def stop(): Boolean
 }
