@@ -65,6 +65,10 @@ trait TableOnceFeeder extends TableFeederByToken with Job {
   abstract override def toContextData(data: Feeder.FeederData): TaskContext.ContextData = super.toContextData(data) ++
     Map(StartDate -> getStartDate, FinishedDate -> getFinishedDate, JobId -> getJobId)
 
+  abstract override def fromRecord(record: DataRecord): Feeder.FeederData = {
+    super.fromRecord(record) ++ Map("job_id" -> getJobId)
+  }
+
   private[mysql] def getLoadPosition: (TokenRange, Option[DataRecord]) = Lock.synchronized {
     context.data ++= contextDataToUpdate
     if (hasNext) {

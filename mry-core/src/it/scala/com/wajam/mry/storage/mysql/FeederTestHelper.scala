@@ -44,7 +44,7 @@ object FeederTestHelper {
 
     def toRecord(data: FeederData) = data.get("token").map(_.toString.toLong)
 
-    def fromRecord(record: Long) = Map("token" -> record)
+    def fromRecord(record: DataRecord): FeederData = Map("token" -> record)
   }
 
 }

@@ -17,9 +17,7 @@ class TestTableOnceFeeder extends FunSuite {
    * specified token range.
    */
   class OnceTokenFeeder(tokenRanges: TokenRangeSeq, limit: Int)
-    extends TokenFeeder(tokenRanges, limit) with TableOnceFeeder {
-
-  }
+    extends TokenFeeder(tokenRanges, limit) with TableOnceFeeder
 
   test("should resume from context position") {
     val ranges = Seq(TokenRange(2, 5), TokenRange(10, 12))
@@ -116,8 +114,11 @@ class TestTableOnceFeeder extends FunSuite {
     val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12))
 
+    feeder.isStarted should be(false) // No more values, but not "resetted"
     feeder.stop() should be(true)
+    feeder.isStarted should be(false)
     feeder.stop() should be(false)
+    feeder.isStarted should be(false)
     Thread.sleep(1000)
     feeder.start("") should be(true)
     feeder.start("") should be(false)
@@ -132,6 +133,7 @@ class TestTableOnceFeeder extends FunSuite {
     feeder.start("") should be(true)
     val records = feeder.take(11).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10))
+    feeder.isStarted should be(true)
     feeder.stop() should be(true)
     val records2 = feeder.take(5).flatten.toList
     records2.flatMap(feeder.toRecord).take(15) should be(List())
@@ -143,6 +145,7 @@ class TestTableOnceFeeder extends FunSuite {
     feeder.start("") should be(true)
     val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List())
+    feeder.isStarted should be(true)
     feeder.stop() should be(true)
     val records2 = feeder.take(50).flatten.toList
     records2.flatMap(feeder.toRecord).take(15) should be(List())
