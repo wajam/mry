@@ -24,8 +24,10 @@ class TestTableOnceFeeder extends FunSuite {
     val feeder = new OnceTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext(Map("token" -> 3)))
     feeder.start("") should be(true)
+    feeder.isProcessing should be(true)
     val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(4, 5, 10, 11, 12))
+    feeder.isProcessing should be(false)
   }
 
   test("should start from beginning when out of range context position") {
@@ -33,8 +35,10 @@ class TestTableOnceFeeder extends FunSuite {
     val feeder = new OnceTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext(Map("token" -> 8)))
     feeder.start("") should be(true)
+    feeder.isProcessing should be(true)
     val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12))
+    feeder.isProcessing should be(false)
   }
 
   test("should start from beginning when context is empty") {
@@ -42,8 +46,10 @@ class TestTableOnceFeeder extends FunSuite {
     val feeder = new OnceTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext())
     feeder.start("") should be(true)
+    feeder.isProcessing should be(true)
     val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12))
+    feeder.isProcessing should be(false)
   }
 
   test("should resume from same position if load fail") {
@@ -54,12 +60,15 @@ class TestTableOnceFeeder extends FunSuite {
     val spyFeeder = spy(feeder)
 
     when(spyFeeder.loadRecords(TokenRange(10, 12), Some(11L))).thenThrow(new RuntimeException())
+    feeder.isProcessing should be(true)
     val recordsWithError = spyFeeder.take(50).flatten.toList
     recordsWithError.flatMap(feeder.toRecord) should be(List(2, 3, 4, 5, 10, 11))
+    feeder.isProcessing should be(true)
 
     reset(spyFeeder)
     val records = spyFeeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(12))
+    feeder.isProcessing should be(false)
   }
 
   test("should save last ack position in context") {
@@ -67,6 +76,7 @@ class TestTableOnceFeeder extends FunSuite {
     val feeder = new OnceTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext())
     feeder.start("") should be(true)
+    feeder.isProcessing should be(true)
     feeder.ack(feeder.fromRecord(11L))
     feeder.toRecord(feeder.context.data) should be(Some(11L))
   }
@@ -77,7 +87,9 @@ class TestTableOnceFeeder extends FunSuite {
     feeder.init(TaskContext())
     feeder.start("") should be(true)
 
+    feeder.isProcessing should be(true)
     val records = feeder.take(50).flatten.toList
+    feeder.isProcessing should be(false)
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12))
   }
 
@@ -87,7 +99,9 @@ class TestTableOnceFeeder extends FunSuite {
     feeder.init(TaskContext())
     feeder.start("") should be(true)
 
+    feeder.isProcessing should be(true)
     val records = feeder.take(50).flatten.toList
+    feeder.isProcessing should be(false)
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12))
   }
 
@@ -96,34 +110,40 @@ class TestTableOnceFeeder extends FunSuite {
     val feeder = new OnceTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext())
     feeder.start("") should be(true)
-    val records = feeder.take(50).flatten.toList
-    records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12))
+    feeder.isProcessing should be(true)
+    val records = feeder.take(5).flatten.toList
+    records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5))
+    feeder.isProcessing should be(true)
+    feeder.stop() should be(true)
+    feeder.isProcessing should be(false)
+    Thread.sleep(1000)
 
     feeder.start("") should be(true)
+    feeder.isProcessing should be(true)
     val records2 = feeder.take(50).flatten.toList
-    records2.flatMap(feeder.toRecord).take(15) should be(List())
+    feeder.isProcessing should be(false)
+    records2.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12))
 
   }
 
-  test("should be able to restart feeder when iteration completed") {
+  test("should be stopped automatically when iteration completed") {
     val ranges = Seq(TokenRange(2, 5), TokenRange(10, 12))
     val feeder = new OnceTokenFeeder(ranges, limit = 10)
     feeder.init(TaskContext())
     feeder.start("") should be(true)
     feeder.start("") should be(false)
+    feeder.isProcessing should be(true)
     val records = feeder.take(50).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12))
 
-    feeder.isStarted should be(false) // No more values, but not "resetted"
-    feeder.stop() should be(true)
-    feeder.isStarted should be(false)
-    feeder.stop() should be(false)
-    feeder.isStarted should be(false)
+    feeder.isProcessing should be(false)
     Thread.sleep(1000)
     feeder.start("") should be(true)
     feeder.start("") should be(false)
+    feeder.isProcessing should be(true)
     val records2 = feeder.take(50).flatten.toList
     records2.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10, 11, 12))
+    feeder.isProcessing should be(false)
   }
 
   test("should not be able to fetch results when feeder is stopped") {
@@ -131,23 +151,13 @@ class TestTableOnceFeeder extends FunSuite {
     val feeder = new OnceTokenFeeder(ranges, limit = 1)
     feeder.init(TaskContext())
     feeder.start("") should be(true)
+    feeder.isProcessing should be(true)
     val records = feeder.take(11).flatten.toList
     records.flatMap(feeder.toRecord).take(15) should be(List(2, 3, 4, 5, 10))
-    feeder.isStarted should be(true)
+    feeder.isProcessing should be(true)
     feeder.stop() should be(true)
     val records2 = feeder.take(5).flatten.toList
     records2.flatMap(feeder.toRecord).take(15) should be(List())
-  }
-
-  test("should support empty feeders") {
-    val feeder = new OnceTokenFeeder(Nil, limit = 1)
-    feeder.init(TaskContext())
-    feeder.start("") should be(true)
-    val records = feeder.take(50).flatten.toList
-    records.flatMap(feeder.toRecord).take(15) should be(List())
-    feeder.isStarted should be(true)
-    feeder.stop() should be(true)
-    val records2 = feeder.take(50).flatten.toList
-    records2.flatMap(feeder.toRecord).take(15) should be(List())
+    feeder.isProcessing should be(false)
   }
 }

@@ -13,8 +13,11 @@ import com.wajam.spnl.TaskContext
 trait TableOnceFeeder extends TableFeederByToken with Job {
   import TableOnceFeeder._
 
-  private def getStartDate = context.data.get(StartDate).map(str => dateFormatter.parseDateTime(str.asInstanceOf[String]))
-  private def getFinishedDate = context.data.get(FinishedDate).map(str => dateFormatter.parseDateTime(str.asInstanceOf[String]))
+  private def parseOptDate(date: Option[Any]) = date.map(str => dateFormatter.parseDateTime(str.asInstanceOf[String]))
+  private def getStartDate = parseOptDate(context.data.get(StartDate))
+  private def getFinishedDate = parseOptDate(context.data.get(FinishedDate))
+  private[this] def getLatestStartDate = parseOptDate(contextDataToUpdate.get(StartDate))
+  private[this] def getLatestFinishedDate = parseOptDate(contextDataToUpdate.get(FinishedDate))
   private def getJobId = context.data.get(FinishedDate).map(_.asInstanceOf[String])
 
   private[this] object Lock
@@ -22,19 +25,8 @@ trait TableOnceFeeder extends TableFeederByToken with Job {
 
   def dateFormatter = ISODateTimeFormat.dateTime()
 
-  private[mysql] def hasNext: Boolean = Lock.synchronized {
-    getStartDate match {
-      case Some(date) => getFinishedDate.forall(_ < date) // Finished date, if defined, is older than start date
-      case None => false
-    }
-  }
-
-  private def setDone(): Unit = {
-    updateContext(Map(FinishedDate -> dateFormatter.print(DateTime.now)))
-  }
-
-  private def emptyResult =
-    (TokenRange(1, 0), lastRecord) // start is after end
+  private val dummyRange = TokenRange(1, 0) // start is after end
+  private def emptyResult = (dummyRange, lastRecord)
 
   private def updateContext(values: Map[String, String]): Unit = Lock.synchronized {
     val updated = contextDataToUpdate ++ values
@@ -43,15 +35,15 @@ trait TableOnceFeeder extends TableFeederByToken with Job {
   }
 
   def start(newJobId: String): Boolean = Lock.synchronized {
-    if (!hasNext && !contextDataToUpdate.contains(StartDate)) {
+    if (!isProcessing) {
       updateContext(Map(StartDate -> dateFormatter.print(DateTime.now), JobId -> newJobId))
       true
     } else false
   }
 
   def stop(): Boolean = Lock.synchronized {
-    if (hasNext || !contextDataToUpdate.contains(FinishedDate)) {
-      setDone()
+    if (isProcessing) {
+      updateContext(Map(FinishedDate -> dateFormatter.print(DateTime.now)))
       lastRecord = None
       currentRange = None
       true
@@ -60,7 +52,13 @@ trait TableOnceFeeder extends TableFeederByToken with Job {
 
   def currentJobId: String = Lock.synchronized(name + getJobId)
 
-  def isStarted: Boolean = hasNext
+  def isProcessing: Boolean = Lock.synchronized {
+    // Finished date, if defined, is older than start date
+    (getLatestStartDate orElse getStartDate) match {
+      case Some(date) => (getLatestFinishedDate orElse getFinishedDate).forall(_ < date)
+      case None => false
+    }
+  }
 
   abstract override def toContextData(data: Feeder.FeederData): TaskContext.ContextData = super.toContextData(data) ++
     Map(StartDate -> getStartDate, FinishedDate -> getFinishedDate, JobId -> getJobId)
@@ -71,12 +69,14 @@ trait TableOnceFeeder extends TableFeederByToken with Job {
 
   private[mysql] def getLoadPosition: (TokenRange, Option[DataRecord]) = Lock.synchronized {
     context.data ++= contextDataToUpdate
-    if (hasNext) {
-      val loadRange = lastRecord match {
+    contextDataToUpdate = Map.empty
+    if (isProcessing) {
+      val loadRange: Option[TokenRange] = lastRecord match {
         case Some(record) => tokenRanges.find(token(record))
         case None => currentRange match {
+          case Some(range) if range == dummyRange => Some(tokenRanges.head)
           case Some(range) => tokenRanges.next(range) orElse {
-            setDone()
+            stop()
             context.data ++= contextDataToUpdate
             None
           }
@@ -88,7 +88,7 @@ trait TableOnceFeeder extends TableFeederByToken with Job {
 
       loadRange match {
         case Some(range) => (range, lastRecord)
-        case None if hasNext => (tokenRanges.head, None)
+        case None if isProcessing => (tokenRanges.head, None)
         case None => emptyResult
       }
     } else emptyResult
