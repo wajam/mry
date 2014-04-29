@@ -76,7 +76,7 @@ abstract class TableAllLatestFeeder(val name: String, storage: MysqlStorage, tab
     }
   }
 
-  def fromRecord(record: Record) = {
+  def fromRecord(record: Record): FeederData = {
     Map(Keys -> record.accessPath.keys,
         Token -> record.token.toString,
         Value -> record.value,

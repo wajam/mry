@@ -27,6 +27,7 @@ object MryBuild extends Build {
     "c3p0" % "c3p0" % "0.9.1.2",
     "org.rogach" %% "scallop" % "0.9.1",
     "mysql" % "mysql-connector-java" % "5.1.6",
+    "com.github.nscala-time" %% "nscala-time" % "0.8.0",
     "org.scalatest" %% "scalatest" % "2.0" % "test,it",
     "junit" % "junit" % "4.10" % "test,it",
     "org.mockito" % "mockito-core" % "1.9.0" % "test,it"
