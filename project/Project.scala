@@ -63,6 +63,12 @@ object MryBuild extends Build {
     .settings(SbtStartScript.startScriptForClassesSettings: _*)
     .settings(parallelExecution in IntegrationTest := false)
 
+  lazy val entity = Project("mry-entity", file("mry-entity"))
+    .configs(IntegrationTest)
+    .settings(defaultSettings: _*)
+    .settings(testOptions in IntegrationTest := Seq(Tests.Filter(s => s.contains("Test"))))
+    .settings(parallelExecution in IntegrationTest := false)
+
   import sbtprotobuf.{ProtobufPlugin => PB}
 
   // We keep it as a separate projet, to avoid a dependency on protoc
